@@ -1,0 +1,356 @@
+/**
+ * @file ControlBinder.cpp
+ * @brief 控件绑定器实现
+ */
+
+#include "lua/binding/ControlBinder.h"
+#include "lua/binding/LuaBinder.h"
+#include <iostream>
+
+namespace LuaUI {
+namespace Lua {
+namespace Binding {
+
+// 控件映射表（存储所有已注册的控件）
+static std::map<std::string, UI::BaseControl*> g_controlMap;
+
+ControlBinder::ControlBinder(lua_State* lua)
+    : m_lua(lua)
+{
+}
+
+ControlBinder::~ControlBinder() {
+}
+
+void ControlBinder::initialize() {
+    if (!m_lua) {
+        return;
+    }
+    
+    // 创建UI全局表
+    lua_newtable(m_lua);
+    
+    // 注册函数
+    lua_pushcfunction(m_lua, luaGetControl);
+    lua_setfield(m_lua, -2, "getControl");
+    
+    lua_pushcfunction(m_lua, luaSetProperty);
+    lua_setfield(m_lua, -2, "setProperty");
+    
+    lua_pushcfunction(m_lua, luaGetProperty);
+    lua_setfield(m_lua, -2, "getProperty");
+    
+    lua_pushcfunction(m_lua, luaShow);
+    lua_setfield(m_lua, -2, "show");
+    
+    lua_pushcfunction(m_lua, luaHide);
+    lua_setfield(m_lua, -2, "hide");
+    
+    lua_pushcfunction(m_lua, luaEnable);
+    lua_setfield(m_lua, -2, "enable");
+    
+    lua_pushcfunction(m_lua, luaDisable);
+    lua_setfield(m_lua, -2, "disable");
+    
+    lua_pushcfunction(m_lua, luaSetPosition);
+    lua_setfield(m_lua, -2, "setPosition");
+    
+    lua_pushcfunction(m_lua, luaSetSize);
+    lua_setfield(m_lua, -2, "setSize");
+    
+    lua_pushcfunction(m_lua, luaSetText);
+    lua_setfield(m_lua, -2, "setText");
+    
+    lua_pushcfunction(m_lua, luaGetText);
+    lua_setfield(m_lua, -2, "getText");
+    
+    // 设置为全局变量
+    lua_setglobal(m_lua, "UI");
+}
+
+void ControlBinder::registerControl(UI::BaseControl* control, const std::string& name) {
+    if (control && !name.empty()) {
+        g_controlMap[name] = control;
+    }
+}
+
+void ControlBinder::unregisterControl(const std::string& name) {
+    std::map<std::string, UI::BaseControl*>::iterator it = g_controlMap.find(name);
+    if (it != g_controlMap.end()) {
+        g_controlMap.erase(it);
+    }
+}
+
+UI::BaseControl* ControlBinder::getControl(const std::string& name) {
+    std::map<std::string, UI::BaseControl*>::iterator it = g_controlMap.find(name);
+    if (it != g_controlMap.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
+int ControlBinder::luaGetControl(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1 || !lua_isstring(L, 1)) {
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    UI::BaseControl* control = nullptr;
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    if (it != g_controlMap.end()) {
+        control = it->second;
+    }
+    
+    if (control) {
+        lua_pushlightuserdata(L, control);
+    } else {
+        lua_pushnil(L);
+    }
+    
+    return 1;
+}
+
+int ControlBinder::luaSetProperty(lua_State* L) {
+    // 参数：controlId, name, value
+    if (lua_gettop(L) < 3) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    const char* name = lua_tostring(L, 2);
+    const char* value = lua_tostring(L, 3);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->setProperty(name, value);
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaGetProperty(lua_State* L) {
+    // 参数：controlId, name
+    if (lua_gettop(L) < 2) {
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    const char* name = lua_tostring(L, 2);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    if (it != g_controlMap.end()) {
+        std::string value = it->second->getProperty(name);
+        lua_pushstring(L, value.c_str());
+    } else {
+        lua_pushnil(L);
+    }
+    
+    return 1;
+}
+
+int ControlBinder::luaShow(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->show();
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaHide(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->hide();
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaEnable(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->enable();
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaDisable(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->disable();
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaSetPosition(lua_State* L) {
+    // 参数：controlId, x, y
+    if (lua_gettop(L) < 3) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    int x = (int)lua_tointeger(L, 2);
+    int y = (int)lua_tointeger(L, 3);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->setPosition(x, y);
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaSetSize(lua_State* L) {
+    // 参数：controlId, width, height
+    if (lua_gettop(L) < 3) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    int width = (int)lua_tointeger(L, 2);
+    int height = (int)lua_tointeger(L, 3);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->setSize(width, height);
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaSetText(lua_State* L) {
+    // 参数：controlId, text
+    if (lua_gettop(L) < 2) {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    const char* text = lua_tostring(L, 2);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    bool result = false;
+    
+    if (it != g_controlMap.end()) {
+        it->second->setProperty("text", text);
+        result = true;
+    }
+    
+    lua_pushboolean(L, result ? 1 : 0);
+    return 1;
+}
+
+int ControlBinder::luaGetText(lua_State* L) {
+    // 参数：controlId
+    if (lua_gettop(L) < 1) {
+        lua_pushnil(L);
+        return 1;
+    }
+    
+    const char* controlId = lua_tostring(L, 1);
+    
+    std::map<std::string, UI::BaseControl*>::iterator it = 
+        g_controlMap.find(controlId);
+    
+    if (it != g_controlMap.end()) {
+        std::string text = it->second->getProperty("text");
+        lua_pushstring(L, text.c_str());
+    } else {
+        lua_pushnil(L);
+    }
+    
+    return 1;
+}
+
+} // namespace Binding
+} // namespace Lua
+} // namespace LuaUI
