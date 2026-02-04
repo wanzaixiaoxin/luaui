@@ -15,6 +15,7 @@ extern "C" {
 #include <lua.h>
 }
 #include "LuaState.h"
+#include "ILuaUI.h"  // 包含接口定义
 
 namespace LuaUI {
 namespace Core {
@@ -37,7 +38,7 @@ typedef void (*ScriptLifecycleCallback)(const std::string& scriptName);
  * engine.shutdown();
  * @endcode
  */
-class ScriptEngine {
+class ScriptEngine : public IScriptEngine {
 public:
     /**
      * @brief 构造函数
@@ -178,6 +179,11 @@ public:
      * @return 成功返回true，失败返回false
      */
     bool reloadScript(const std::string& scriptName);
+    
+    // IScriptEngine 接口实现 - 这些方法已在类中定义，无需重复声明
+    // virtual bool loadScript(const std::string& luaFile) override;
+    // virtual bool executeString(const std::string& script) override;
+    // virtual bool callFunction(const std::string& funcName) override;
     
 private:
     LuaState m_luaState;                          ///< Lua状态管理器

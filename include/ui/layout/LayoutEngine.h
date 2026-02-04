@@ -10,8 +10,10 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include "xml/parser/XmlParser.h"
 #include "ui/controls/BaseControl.h"
+#include "ILuaUI.h"  // 包含接口定义
 
 namespace LuaUI {
 namespace Layout {
@@ -146,7 +148,7 @@ struct Rect {
 /**
  * @brief 布局引擎类
  */
-class LayoutEngine {
+class LayoutEngine : public ILayoutEngine {
 public:
     /**
      * @brief 构造函数
@@ -183,7 +185,7 @@ public:
      * @param id 控件ID
      * @return 控件指针，如果不存在返回nullptr
      */
-    UI::BaseControl* getControl(const std::string& id);
+    UI::BaseControl* getControlById(const std::string& id);
     
     /**
      * @brief 获取所有控件
@@ -212,6 +214,11 @@ public:
      * @return 布局类型
      */
     LayoutType getLayoutType(const std::string& containerId);
+    
+    // ILayoutEngine 接口实现
+    virtual bool loadFromXml(const std::string& xmlFile) override;
+    virtual bool loadFromXmlString(const std::string& xmlContent) override;
+    virtual std::shared_ptr<IControl> getControl(const std::string& id) override;
     
 private:
     UI::BaseControl* m_rootControl;               ///< 根控件

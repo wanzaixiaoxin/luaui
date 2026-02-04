@@ -4,12 +4,18 @@
  */
 
 #include "core/App.h"
+#include "ui/layout/LayoutEngine.h"
+#include "core/ScriptEngine.h"
+#include <windows.h>
+#include <winbase.h>
 
 namespace LuaUI {
 
 App::App()
     : m_initialized(false)
     , m_exitCode(0)
+    , m_layoutEngine(nullptr)
+    , m_scriptEngine(nullptr)
 {
 }
 
@@ -23,6 +29,13 @@ bool App::initialize(const std::string& appTitle) {
     }
     
     m_appTitle = appTitle;
+    
+    // 创建布局引擎
+    m_layoutEngine = new Layout::LayoutEngine();
+    
+    // 创建脚本引擎
+    m_scriptEngine = new Core::ScriptEngine();
+    
     m_initialized = true;
     
     return true;
@@ -31,6 +44,17 @@ bool App::initialize(const std::string& appTitle) {
 void App::shutdown() {
     if (!m_initialized) {
         return;
+    }
+    
+    // 清理引擎实例
+    if (m_layoutEngine) {
+        delete m_layoutEngine;
+        m_layoutEngine = nullptr;
+    }
+    
+    if (m_scriptEngine) {
+        delete m_scriptEngine;
+        m_scriptEngine = nullptr;
     }
     
     m_initialized = false;
@@ -45,8 +69,26 @@ int App::run() {
         return -1;
     }
     
-    // 主循环 - 将在实际实现中由MFC消息循环接管
-    return m_exitCode;
+    // 在真实应用中，这里应该启动MFC消息循环
+    // 但现在我们只是等待一段时间或直到用户关闭应用
+    // 这里暂时使用一个简单的循环来避免立即退出
+    
+    MSG msg;
+    while (true) {
+        // 检查消息队列
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                break;
+            }
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        } else {
+            // 没有消息时短暂休眠，避免CPU占用过高
+            Sleep(1);
+        }
+    }
+    
+    return static_cast<int>(msg.wParam);
 }
 
 void App::exit(int exitCode) {
@@ -55,13 +97,11 @@ void App::exit(int exitCode) {
 }
 
 ILayoutEngine* App::getLayoutEngine() {
-    // 将在实际实现中返回布局引擎实例
-    return nullptr;
+    return m_layoutEngine;
 }
 
 IScriptEngine* App::getScriptEngine() {
-    // 将在实际实现中返回脚本引擎实例
-    return nullptr;
+    return m_scriptEngine;
 }
 
 } // namespace LuaUI

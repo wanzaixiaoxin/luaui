@@ -60,6 +60,24 @@ void Shutdown();
  */
 const char* GetBuildInfo();
 
+/**
+ * @brief 运行应用程序主循环
+ * @return 退出码
+ */
+int RunMainLoop();
+
+/**
+ * @brief 获取布局引擎
+ * @return 布局引擎指针
+ */
+class ILayoutEngine* GetLayoutEngine();
+
+/**
+ * @brief 获取脚本引擎
+ * @return 脚本引擎指针
+ */
+class IScriptEngine* GetScriptEngine();
+
 } // namespace LuaUI
 
 #endif // LUAUI_H

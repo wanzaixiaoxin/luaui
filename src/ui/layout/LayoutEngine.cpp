@@ -66,7 +66,7 @@ UI::BaseControl* LayoutEngine::getRootControl() {
     return m_rootControl;
 }
 
-UI::BaseControl* LayoutEngine::getControl(const std::string& id) {
+UI::BaseControl* LayoutEngine::getControlById(const std::string& id) {
     std::map<std::string, UI::BaseControl*>::iterator it = m_controls.find(id);
     if (it != m_controls.end()) {
         return it->second;
@@ -229,6 +229,41 @@ LayoutType LayoutEngine::parseLayoutType(const std::string& layoutStr) {
         return LAYOUT_FLEX;
     }
     return LAYOUT_ABSOLUTE;
+}
+
+bool LayoutEngine::loadFromXml(const std::string& xmlFile) {
+    // 使用XML解析器解析文件
+    Xml::XmlParser parser;
+    auto* rootElement = parser.parseFile(xmlFile.c_str());
+    if (!rootElement) {
+        return false;
+    }
+    
+    // 创建布局
+    return createLayout(rootElement);
+}
+
+bool LayoutEngine::loadFromXmlString(const std::string& xmlContent) {
+    // 使用XML解析器解析字符串
+    Xml::XmlParser parser;
+    auto* rootElement = parser.parseString(xmlContent.c_str());
+    if (!rootElement) {
+        return false;
+    }
+    
+    // 创建布局
+    return createLayout(rootElement);
+}
+
+std::shared_ptr<IControl> LayoutEngine::getControl(const std::string& id) {
+    // 使用内部方法获取控件，然后包装成共享指针
+    UI::BaseControl* control = getControlById(id);
+    if (control) {
+        // 由于BaseControl现在继承自IControl，我们可以直接返回
+        return std::shared_ptr<IControl>(dynamic_cast<IControl*>(control));
+    }
+    
+    return nullptr;
 }
 
 } // namespace Layout

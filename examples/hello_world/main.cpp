@@ -6,6 +6,7 @@
 
 #include <LuaUI.h>
 #include <iostream>
+#include <string>
 
 /**
  * @brief 主函数
@@ -24,14 +25,43 @@ int main(int /*argc*/, char* /*argv*/[]) {
     std::cout << "Build Info: " << LuaUI::GetBuildInfo() << std::endl;
     std::cout << std::endl;
     
-    // TODO: 加载XML布局
-    // TODO: 加载Lua脚本
-    // TODO: 创建UI控件
-    // TODO: 运行主循环
+    // 获取布局引擎和脚本引擎
+    auto* layoutEngine = LuaUI::GetLayoutEngine();
+    if (!layoutEngine) {
+        std::cerr << "Failed to get layout engine!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
     
-    std::cout << "Application running..." << std::endl;
-    std::cout << "Press Enter to exit..." << std::endl;
-    std::cin.get();
+    auto* scriptEngine = LuaUI::GetScriptEngine();
+    if (!scriptEngine) {
+        std::cerr << "Failed to get script engine!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    // 加载XML布局
+    std::cout << "Loading XML layout..." << std::endl;
+    if (!layoutEngine->loadFromXml("layout.xml")) {
+        std::cerr << "Failed to load layout from XML!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    // 加载Lua脚本
+    std::cout << "Loading Lua script..." << std::endl;
+    if (!scriptEngine->loadScript("main.lua")) {
+        std::cerr << "Failed to load Lua script!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    std::cout << "UI and script loaded successfully. Running main loop..." << std::endl;
+    
+    // 运行应用程序主循环
+    int result = LuaUI::RunMainLoop();
+    
+    std::cout << "Application exiting with code: " << result << std::endl;
     
     // 关闭LuaUI框架
     LuaUI::Shutdown();

@@ -19,7 +19,10 @@ target_link_libraries(HelloWorld
 
 # Copy Lua and XML files to output directory
 add_custom_command(TARGET HelloWorld POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    $<TARGET_FILE_DIR:HelloWorld>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/layout.xml"
+        "$<TARGET_FILE_DIR:HelloWorld>/layout.xml"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/main.lua"
+        "$<TARGET_FILE_DIR:HelloWorld>/main.lua"
 )

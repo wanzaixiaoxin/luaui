@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include "xml/parser/XmlParser.h"
+#include "ILuaUI.h"  // 包含接口定义
 
 // MFC forward declarations
 class CWnd;
@@ -55,7 +56,7 @@ struct LuaFunctionRef {
  * @brief 控件基类
  * @details 提供所有UI控件的通用接口和实现
  */
-class BaseControl {
+class BaseControl : public IControl {
 public:
     /**
      * @brief 构造函数

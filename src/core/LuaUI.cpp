@@ -37,8 +37,25 @@ void Shutdown() {
     }
 }
 
+int RunMainLoop() {
+    if (g_app) {
+        return g_app->run();
+    }
+    return -1;
+}
 
+ILayoutEngine* GetLayoutEngine() {
+    if (g_app) {
+        return g_app->getLayoutEngine();
+    }
+    return nullptr;
+}
 
-
+IScriptEngine* GetScriptEngine() {
+    if (g_app) {
+        return g_app->getScriptEngine();
+    }
+    return nullptr;
+}
 
 } // namespace LuaUI
