@@ -23,23 +23,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # 查找第三方库
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# Lua使用DLL方式，头文件在third_party/lua
+# Lua 静态库，头文件和源码在 third_party/lua
 set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/lua")
-set(LUA_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/libs")
 
 # 检查Lua头文件
 if(NOT EXISTS "${LUA_INCLUDE_DIR}/lua.h")
     message(FATAL_ERROR "Lua headers not found in ${LUA_INCLUDE_DIR}. Please place Lua headers there.")
-endif()
-
-# 查找Lua库文件
-find_library(LUA_LIBRARY 
-    NAMES lua54 lua5.4 lua liblua
-    PATHS ${LUA_LIBRARY_DIR}
-    NO_DEFAULT_PATH
-)
-if(NOT LUA_LIBRARY)
-    message(WARNING "Lua library not found in ${LUA_LIBRARY_DIR}. Please place lua54.dll/lib there.")
 endif()
 
 # 包含目录
@@ -52,20 +41,13 @@ include_directories(
 # 第三方库 - TinyXML2（源码编译）
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
-# 创建Lua静态库目标
-if(LUA_LIBRARY)
-    add_library(lua STATIC IMPORTED GLOBAL)
-    set_target_properties(lua PROPERTIES
-        IMPORTED_LOCATION "${LUA_LIBRARY}"
-        INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
-    )
-else()
-    # 如果没有找到库文件，创建一个接口库，只提供头文件路径
-    add_library(lua INTERFACE IMPORTED GLOBAL)
-    set_target_properties(lua PROPERTIES
-        INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
-    )
-endif()
+# Lua 静态库（导入预编译库）
+add_library(lua STATIC IMPORTED)
+set_target_properties(lua PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/libs/lua54.lib"
+    IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/libs/lua54.lib"
+)
+
 
 # 核心库
 add_subdirectory(src/core)
@@ -112,8 +94,3 @@ install(TARGETS
     tinyxml2
     DESTINATION lib
 )
-
-# 安装Lua DLL（如果存在）
-if(EXISTS "${LUA_LIBRARY_DIR}/lua54.dll")
-    install(FILES "${LUA_LIBRARY_DIR}/lua54.dll" DESTINATION bin)
-endif()
