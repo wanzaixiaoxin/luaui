@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           elementFormDefault="qualified" 
+           attributeFormDefault="unqualified">
+
+  <!-- 根元素 -->
+  <xs:element name="window" type="WindowType">
+    <xs:annotation>
+      <xs:documentation>窗口元素，是布局的根元素</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+
+  <!-- 窗口类型 -->
+  <xs:complexType name="WindowType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="button" type="ButtonType"/>
+        <xs:element name="edit" type="EditType"/>
+        <xs:element name="label" type="LabelType"/>
+        <xs:element name="list" type="ListType"/>
+        <xs:element name="tree" type="TreeType"/>
+        <xs:element name="grid" type="GridType"/>
+        <xs:element name="menu" type="MenuType"/>
+        <xs:element name="toolbar" type="ToolBarType"/>
+        <xs:element name="statusbar" type="StatusBarType"/>
+        <xs:element name="panel" type="PanelType"/>
+        <xs:element name="group" type="GroupType"/>
+        <xs:element name="image" type="ImageType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="title" type="xs:string" use="required"/>
+    <xs:attribute name="resizable" type="xs:boolean" default="true"/>
+  </xs:complexType>
+
+  <!-- 按钮类型 -->
+  <xs:complexType name="ButtonType">
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="text" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 编辑框类型 -->
+  <xs:complexType name="EditType">
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="multiline" type="xs:boolean" default="false"/>
+    <xs:attribute name="readonly" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <!-- 标签类型 -->
+  <xs:complexType name="LabelType">
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="text" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 列表类型 -->
+  <xs:complexType name="ListType">
+    <xs:sequence>
+      <xs:element name="item" type="ItemType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 树形类型 -->
+  <xs:complexType name="TreeType">
+    <xs:sequence>
+      <xs:element name="node" type="NodeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 表格类型 -->
+  <xs:complexType name="GridType">
+    <xs:sequence>
+      <xs:element name="column" type="ColumnType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 菜单类型 -->
+  <xs:complexType name="MenuType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="menuitem" type="MenuItemType"/>
+        <xs:element name="separator"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 菜单项类型 -->
+  <xs:complexType name="MenuItemType">
+    <xs:sequence>
+      <xs:element name="menuitem" type="MenuItemType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="separator" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="text" type="xs:string" use="required"/>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 工具栏类型 -->
+  <xs:complexType name="ToolBarType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="toolbutton" type="ToolButtonType"/>
+        <xs:element name="separator"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 工具按钮类型 -->
+  <xs:complexType name="ToolButtonType">
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="icon" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 状态栏类型 -->
+  <xs:complexType name="StatusBarType">
+    <xs:sequence>
+      <xs:element name="pane" type="PaneType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 面板类型 -->
+  <xs:complexType name="PanelType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="button" type="ButtonType"/>
+        <xs:element name="edit" type="EditType"/>
+        <xs:element name="label" type="LabelType"/>
+        <xs:element name="list" type="ListType"/>
+        <xs:element name="tree" type="TreeType"/>
+        <xs:element name="grid" type="GridType"/>
+        <xs:element name="panel" type="PanelType"/>
+        <xs:element name="group" type="GroupType"/>
+        <xs:element name="image" type="ImageType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+  </xs:complexType>
+
+  <!-- 分组框类型 -->
+  <xs:complexType name="GroupType">
+    <xs:sequence>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element name="button" type="ButtonType"/>
+        <xs:element name="edit" type="EditType"/>
+        <xs:element name="label" type="LabelType"/>
+        <xs:element name="list" type="ListType"/>
+        <xs:element name="tree" type="TreeType"/>
+        <xs:element name="grid" type="GridType"/>
+        <xs:element name="panel" type="PanelType"/>
+        <xs:element name="image" type="ImageType"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="caption" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 图片类型 -->
+  <xs:complexType name="ImageType">
+    <xs:attributeGroup ref="CommonAttributes"/>
+    <xs:attribute name="src" type="xs:string"/>
+    <xs:attribute name="stretch" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <!-- 列表项类型 -->
+  <xs:complexType name="ItemType">
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 树节点类型 -->
+  <xs:complexType name="NodeType">
+    <xs:sequence>
+      <xs:element name="node" type="NodeType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 表格列类型 -->
+  <xs:complexType name="ColumnType">
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="width" type="xs:int"/>
+    <xs:attribute name="id" type="xs:string"/>
+  </xs:complexType>
+
+  <!-- 状态栏面板类型 -->
+  <xs:complexType name="PaneType">
+    <xs:attribute name="text" type="xs:string"/>
+    <xs:attribute name="width" type="xs:int"/>
+  </xs:complexType>
+
+  <!-- 公共属性组 -->
+  <xs:attributeGroup name="CommonAttributes">
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="x" type="xs:int"/>
+    <xs:attribute name="y" type="xs:int"/>
+    <xs:attribute name="width" type="xs:int"/>
+    <xs:attribute name="height" type="xs:int"/>
+    <xs:attribute name="visible" type="xs:boolean" default="true"/>
+    <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+    <xs:attribute name="style" type="xs:string"/>
+    <xs:attribute name="class" type="xs:string"/>
+  </xs:attributeGroup>
+
+</xs:schema>
