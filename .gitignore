@@ -14,11 +14,8 @@ out/
 # Compiled files
 *.obj
 *.o
-*.exe
-*.dll
 *.so
 *.dylib
-*.lib
 *.a
 *.pyd
 *.pyc
