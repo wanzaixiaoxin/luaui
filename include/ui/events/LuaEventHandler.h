@@ -10,7 +10,11 @@
 
 #include <string>
 #include <map>
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include "ui/events/EventManager.h"
 #include "ui/events/EventRouter.h"
 

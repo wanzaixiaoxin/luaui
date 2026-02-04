@@ -10,7 +10,11 @@
 
 #include <string>
 #include <vector>
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include "core/ScriptEngine.h"
 
 namespace LuaUI {

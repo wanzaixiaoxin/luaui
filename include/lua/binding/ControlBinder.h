@@ -9,7 +9,11 @@
 #define LUAUI_CONTROLBINDER_H
 
 #include <string>
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include "ui/controls/BaseControl.h"
 
 namespace LuaUI {

@@ -11,7 +11,11 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include "core/ScriptEngine.h"
 #include "lua/lifecycle/ScriptLoader.h"
 #include "lua/lifecycle/ScriptRunner.h"

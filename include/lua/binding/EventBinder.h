@@ -9,7 +9,11 @@
 #define LUAUI_EVENTBINDER_H
 
 #include <string>
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include "ui/events/EventManager.h"
 
 namespace LuaUI {

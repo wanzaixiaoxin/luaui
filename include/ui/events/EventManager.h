@@ -12,7 +12,11 @@
 #include <map>
 #include <functional>
 #include "ui/controls/BaseControl.h"
-#include <lua.hpp>
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 
 namespace LuaUI {
 namespace Events {
