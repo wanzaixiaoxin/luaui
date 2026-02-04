@@ -11,6 +11,9 @@
 #include <string>
 #include <vector>
 #include <map>
+extern "C" {
+#include <lua.h>
+}
 #include "LuaState.h"
 
 namespace LuaUI {

@@ -9,9 +9,9 @@
 #define LUAUI_LUASTATE_H
 
 #include <string>
-
-// Forward declaration for lua_State
-struct lua_State;
+extern "C" {
+#include <lua.h>
+}
 
 namespace LuaUI {
 namespace Core {

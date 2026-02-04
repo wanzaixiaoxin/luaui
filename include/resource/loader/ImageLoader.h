@@ -11,8 +11,16 @@
 #include <string>
 #include <map>
 
-// MFC forward declarations
-class CImage;
+// Simple image class placeholder
+class CImage {
+public:
+    CImage() {}
+    ~CImage() {}
+    bool Load(void* stream) { return false; }
+    unsigned int GetWidth() const { return 0; }
+    unsigned int GetHeight() const { return 0; }
+    unsigned int GetBPP() const { return 0; }
+};
 
 namespace LuaUI {
 namespace Resource {

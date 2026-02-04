@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include "xml/parser/XmlParser.h"
 
 namespace LuaUI {

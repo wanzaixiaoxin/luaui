@@ -7,56 +7,72 @@
 #include <fstream>
 #include <sstream>
 
-namespace luaui {
-namespace utils {
+namespace LuaUI {
+namespace Utils {
 
-bool FileUtils::exists(const std::string& path) {
-    std::ifstream file(path);
+bool FileUtils::exists(const std::string& filepath) {
+    std::ifstream file(filepath);
     return file.good();
 }
 
-std::string FileUtils::readAllText(const std::string& path) {
-    std::ifstream file(path);
+std::string FileUtils::readFile(const std::string& filepath) {
+    std::ifstream file(filepath);
     if (!file.is_open()) return "";
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
 }
 
-bool FileUtils::writeAllText(const std::string& path, const std::string& content) {
-    std::ofstream file(path);
+bool FileUtils::writeFile(const std::string& filepath, const std::string& content) {
+    std::ofstream file(filepath);
     if (!file.is_open()) return false;
     file << content;
     return file.good();
 }
 
-std::string FileUtils::getDirectory(const std::string& path) {
-    size_t pos = path.find_last_of("/\\");
+bool FileUtils::appendFile(const std::string& filepath, const std::string& content) {
+    std::ofstream file(filepath, std::ios::app);
+    if (!file.is_open()) return false;
+    file << content;
+    return file.good();
+}
+
+long FileUtils::getFileSize(const std::string& filepath) {
+    std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+    if (!file.is_open()) return -1;
+    return static_cast<long>(file.tellg());
+}
+
+std::string FileUtils::getFileExtension(const std::string& filepath) {
+    size_t pos = filepath.find_last_of('.');
     if (pos == std::string::npos) return "";
-    return path.substr(0, pos);
+    return filepath.substr(pos + 1);
 }
 
-std::string FileUtils::getFileName(const std::string& path) {
-    size_t pos = path.find_last_of("/\\");
-    if (pos == std::string::npos) return path;
-    return path.substr(pos + 1);
+std::string FileUtils::getFileName(const std::string& filepath) {
+    size_t pos = filepath.find_last_of("/\\");
+    if (pos == std::string::npos) return filepath;
+    return filepath.substr(pos + 1);
 }
 
-std::string FileUtils::getExtension(const std::string& path) {
-    std::string filename = getFileName(path);
-    size_t pos = filename.find_last_of('.');
-    if (pos == std::string::npos) return "";
-    return filename.substr(pos);
+std::string FileUtils::getDirectory(const std::string& filepath) {
+    size_t pos = filepath.find_last_of("/\\");
+    if (pos == std::string::npos) return ".";
+    return filepath.substr(0, pos);
 }
 
-std::string FileUtils::combine(const std::string& path1, const std::string& path2) {
-    if (path1.empty()) return path2;
-    if (path2.empty()) return path1;
-    char last = path1[path1.size() - 1];
-    if (last == '/' || last == '\\') {
-        return path1 + path2;
-    }
-    return path1 + "/" + path2;
+std::string FileUtils::getAbsolutePath(const std::string& filepath) {
+    // 简单实现，返回原路径
+    return filepath;
+}
+
+bool FileUtils::createDirectory(const std::string& dirpath) {
+    // 简单实现，返回false（Windows需要特殊处理）
+    return false;
+}
+
+bool FileUtils::removeFile(const std::string& filepath) {
+    return std::remove(filepath.c_str()) == 0;
 }
 
 } // namespace utils

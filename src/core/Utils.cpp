@@ -8,6 +8,7 @@
 #include <cctype>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <cstring>
 #include <sys/stat.h>
 #include <windows.h>

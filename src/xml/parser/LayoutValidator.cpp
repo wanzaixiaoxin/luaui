@@ -5,6 +5,7 @@
 
 #include "xml/parser/LayoutValidator.h"
 #include <algorithm>
+#include <map>
 
 namespace LuaUI {
 namespace Xml {

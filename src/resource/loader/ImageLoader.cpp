@@ -4,7 +4,6 @@
  */
 
 #include "resource/loader/ImageLoader.h"
-#include <atlimage.h>
 #include "core/Utils.h"
 
 namespace LuaUI {

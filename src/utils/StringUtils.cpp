@@ -7,15 +7,66 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <cstdarg>
 
-namespace luaui {
-namespace utils {
+namespace LuaUI {
+namespace Utils {
 
 std::string StringUtils::trim(const std::string& str) {
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) return "";
-    size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, (last - first + 1));
+    return trimRight(trimLeft(str));
+}
+
+std::string StringUtils::trimLeft(const std::string& str) {
+    size_t start = str.find_first_not_of(" \t\n\r");
+    return (start == std::string::npos) ? "" : str.substr(start);
+}
+
+std::string StringUtils::trimRight(const std::string& str) {
+    size_t end = str.find_last_not_of(" \t\n\r");
+    return (end == std::string::npos) ? "" : str.substr(0, end + 1);
+}
+
+std::vector<std::string> StringUtils::split(const std::string& str, char delimiter) {
+    std::vector<std::string> tokens;
+    std::stringstream ss(str);
+    std::string token;
+    
+    while (std::getline(ss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
+
+std::string StringUtils::join(const std::vector<std::string>& strings, 
+                              const std::string& delimiter) {
+    if (strings.empty()) {
+        return "";
+    }
+    
+    std::ostringstream oss;
+    for (size_t i = 0; i < strings.size(); ++i) {
+        if (i > 0) {
+            oss << delimiter;
+        }
+        oss << strings[i];
+    }
+    
+    return oss.str();
+}
+
+std::string StringUtils::replace(const std::string& str, 
+                                   const std::string& from, 
+                                   const std::string& to) {
+    std::string result = str;
+    size_t pos = 0;
+    
+    while ((pos = result.find(from, pos)) != std::string::npos) {
+        result.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+    
+    return result;
 }
 
 std::string StringUtils::toLower(const std::string& str) {
@@ -31,42 +82,30 @@ std::string StringUtils::toUpper(const std::string& str) {
 }
 
 bool StringUtils::startsWith(const std::string& str, const std::string& prefix) {
-    return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+    if (str.length() < prefix.length()) {
+        return false;
+    }
+    return str.substr(0, prefix.length()) == prefix;
 }
 
 bool StringUtils::endsWith(const std::string& str, const std::string& suffix) {
-    return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
-
-std::vector<std::string> StringUtils::split(const std::string& str, char delimiter) {
-    std::vector<std::string> tokens;
-    std::stringstream ss(str);
-    std::string token;
-    while (std::getline(ss, token, delimiter)) {
-        tokens.push_back(token);
+    if (str.length() < suffix.length()) {
+        return false;
     }
-    return tokens;
+    return str.substr(str.length() - suffix.length()) == suffix;
 }
 
-std::string StringUtils::join(const std::vector<std::string>& parts, const std::string& separator) {
-    if (parts.empty()) return "";
-    std::string result = parts[0];
-    for (size_t i = 1; i < parts.size(); ++i) {
-        result += separator + parts[i];
-    }
-    return result;
+bool StringUtils::contains(const std::string& str, const std::string& substr) {
+    return str.find(substr) != std::string::npos;
 }
 
-int StringUtils::toInt(const std::string& str, int defaultValue) {
-    try {
-        return std::stoi(str);
-    } catch (...) {
-        return defaultValue;
-    }
-}
-
-std::string StringUtils::fromInt(int value) {
-    return std::to_string(value);
+std::string StringUtils::format(const char* format, ...) {
+    char buffer[4096];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    return std::string(buffer);
 }
 
 } // namespace utils

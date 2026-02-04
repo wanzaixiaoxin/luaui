@@ -4,6 +4,11 @@
  */
 
 #include "core/ScriptEngine.h"
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 #include <algorithm>
 
 namespace LuaUI {

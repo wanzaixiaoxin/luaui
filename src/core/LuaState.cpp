@@ -175,7 +175,7 @@ void LuaState::registerFunction(const std::string& name, lua_CFunction func) {
     std::string::size_type dotPos = name.find('.');
     if (dotPos != std::string::npos) {
         std::string module = name.substr(0, dotPos);
-        std::string func = name.substr(dotPos + 1);
+        std::string funcName = name.substr(dotPos + 1);
         
         lua_getglobal(m_luaState, module.c_str());
         if (!lua_istable(m_luaState, -1)) {
@@ -186,7 +186,7 @@ void LuaState::registerFunction(const std::string& name, lua_CFunction func) {
         }
         
         lua_pushcfunction(m_luaState, func);
-        lua_setfield(m_luaState, -2, func.c_str());
+        lua_setfield(m_luaState, -2, funcName.c_str());
         lua_pop(m_luaState, 1);
     } else {
         lua_register(m_luaState, name.c_str(), func);
