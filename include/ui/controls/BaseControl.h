@@ -64,9 +64,15 @@ public:
     BaseControl();
     
     /**
-     * @brief 虚析构函数
+     * @brief 析构函数
      */
     virtual ~BaseControl();
+    
+    /**
+     * @brief 创建实例的静态方法
+     * @return 新的控件实例
+     */
+    static BaseControl* createInstance();
     
     /**
      * @brief 从XML创建控件

@@ -24,22 +24,43 @@ int main(int /*argc*/, char* /*argv*/[]) {
     std::cout << "Build Info: " << LuaUI::GetBuildInfo() << std::endl;
     std::cout << std::endl;
     
-    // TODO: 加载XML布局文件
-    // TODO: 加载Lua脚本文件
-    // TODO: 创建并显示记事本窗口
-    // TODO: 运行主循环
+    // 获取布局引擎和脚本引擎
+    auto* layoutEngine = LuaUI::GetLayoutEngine();
+    if (!layoutEngine) {
+        std::cerr << "Failed to get layout engine!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
     
-    std::cout << "Notepad application running..." << std::endl;
-    std::cout << std::endl;
-    std::cout << "Features:" << std::endl;
-    std::cout << "  - File operations (New, Open, Save, Save As)" << std::endl;
-    std::cout << "  - Edit operations (Undo, Redo, Cut, Copy, Paste)" << std::endl;
-    std::cout << "  - Format options (Font, Word Wrap)" << std::endl;
-    std::cout << "  - Status bar information" << std::endl;
-    std::cout << "  - Menu and Toolbar" << std::endl;
-    std::cout << std::endl;
-    std::cout << "Press Enter to exit..." << std::endl;
-    std::cin.get();
+    auto* scriptEngine = LuaUI::GetScriptEngine();
+    if (!scriptEngine) {
+        std::cerr << "Failed to get script engine!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    // 加载XML布局
+    std::cout << "Loading XML layout..." << std::endl;
+    if (!layoutEngine->loadFromXml("notepad_layout.xml")) {
+        std::cerr << "Failed to load layout from XML!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    // 加载Lua脚本
+    std::cout << "Loading Lua script..." << std::endl;
+    if (!scriptEngine->loadScript("notepad_main.lua")) {
+        std::cerr << "Failed to load Lua script!" << std::endl;
+        LuaUI::Shutdown();
+        return -1;
+    }
+    
+    std::cout << "UI and script loaded successfully. Running main loop..." << std::endl;
+    
+    // 运行应用程序主循环
+    int result = LuaUI::RunMainLoop();
+    
+    std::cout << "Application exiting with code: " << result << std::endl;
     
     // 关闭LuaUI框架
     LuaUI::Shutdown();

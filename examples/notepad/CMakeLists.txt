@@ -17,9 +17,12 @@ target_link_libraries(Notepad
     LuaUI_Utils
 )
 
-# Copy Lua and XML files to output directory
+# Copy Lua and XML files to output directory with unique names for Notepad
 add_custom_command(TARGET Notepad POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    $<TARGET_FILE_DIR:Notepad>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/layout.xml"
+        "$<TARGET_FILE_DIR:Notepad>/notepad_layout.xml"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/notepad.lua"
+        "$<TARGET_FILE_DIR:Notepad>/notepad_main.lua"
 )

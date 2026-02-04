@@ -31,6 +31,7 @@ Thumbs.db
 .vscode/
 *.code-workspace
 .codebuddy/
+.trae/
 
 # Log files
 *.log

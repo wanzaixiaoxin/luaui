@@ -52,12 +52,11 @@ include_directories(
 # 第三方库 - TinyXML2（源码编译）
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
-# 创建Lua导入库目标（如果找到库文件）
+# 创建Lua静态库目标
 if(LUA_LIBRARY)
-    add_library(lua SHARED IMPORTED GLOBAL)
+    add_library(lua STATIC IMPORTED GLOBAL)
     set_target_properties(lua PROPERTIES
-        IMPORTED_LOCATION "${LUA_LIBRARY_DIR}/lua54.dll"
-        IMPORTED_IMPLIB "${LUA_LIBRARY}"
+        IMPORTED_LOCATION "${LUA_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
     )
 else()

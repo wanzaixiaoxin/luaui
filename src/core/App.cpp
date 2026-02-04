@@ -84,7 +84,7 @@ int App::run() {
             DispatchMessage(&msg);
         } else {
             // 没有消息时短暂休眠，避免CPU占用过高
-            Sleep(1);
+            Sleep(10);
         }
     }
     

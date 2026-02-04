@@ -4,6 +4,7 @@
  */
 
 #include "ui/factory/ControlFactory.h"
+#include "ui/controls/GenericControl.h"
 
 namespace LuaUI {
 namespace UI {
@@ -73,12 +74,17 @@ bool ControlFactory::unregisterControl(const std::string& type) {
 }
 
 void ControlFactory::registerBuiltinControls() {
-    // 内置控件类型将在具体控件实现后注册
-    // 例如：
-    // REGISTER_CONTROL(window, WindowControl);
-    // REGISTER_CONTROL(button, ButtonControl);
-    // REGISTER_CONTROL(edit, EditControl);
-    // REGISTER_CONTROL(label, LabelControl);
+    // 注册内置控件类型到通用控件实现
+    registerControl("window", &GenericControl::createInstance);
+    registerControl("button", &GenericControl::createInstance);
+    registerControl("label", &GenericControl::createInstance);
+    registerControl("edit", &GenericControl::createInstance);
+    registerControl("menu", &GenericControl::createInstance);
+    registerControl("menuitem", &GenericControl::createInstance);
+    registerControl("toolbar", &GenericControl::createInstance);
+    registerControl("toolbutton", &GenericControl::createInstance);
+    registerControl("statusbar", &GenericControl::createInstance);
+    registerControl("pane", &GenericControl::createInstance);
 }
 
 } // namespace UI

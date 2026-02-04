@@ -215,5 +215,17 @@ BaseControl* BaseControl::findChildById(const std::string& /*id*/) {
     return nullptr;
 }
 
+std::string BaseControl::getType() const {
+    return "BaseControl";
+}
+
+CWnd* BaseControl::getWindow() {
+    return nullptr; // BaseControl 本身不包含具体的 MFC 窗口
+}
+
+const CWnd* BaseControl::getWindow() const {
+    return nullptr; // BaseControl 本身不包含具体的 MFC 窗口
+}
+
 } // namespace UI
 } // namespace LuaUI
