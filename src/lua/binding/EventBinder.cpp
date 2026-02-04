@@ -106,6 +106,8 @@ int EventBinder::luaFireEvent(lua_State* L) {
     
     // TODO: 实现触发事件的逻辑
     // 需要通过Lua事件处理器触发
+    (void)controlId;  // 避免未使用警告
+    (void)eventName;  // 避免未使用警告
     
     lua_pushboolean(L, 0);
     return 1;

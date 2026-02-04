@@ -19,7 +19,7 @@ EventManager::~EventManager() {
     m_luaHandlers.clear();
 }
 
-int EventManager::registerHandler(const std::string& controlId, EventType eventType,
+int EventManager::registerHandler(const std::string& /*controlId*/, EventType /*eventType*/,
                                  EventHandler handler) {
     int handlerId = m_nextHandlerId++;
     m_handlers[handlerId] = handler;
@@ -157,7 +157,6 @@ bool EventManager::callLuaHandler(const LuaHandlerInfo& info, EventArgs* args) {
     
     if (result != LUA_OK) {
         // 错误处理
-        const char* error = lua_tostring(info.lua, -1);
         lua_pop(info.lua, 1);
         return false;
     }

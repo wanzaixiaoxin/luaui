@@ -66,7 +66,7 @@ std::string FileUtils::getAbsolutePath(const std::string& filepath) {
     return filepath;
 }
 
-bool FileUtils::createDirectory(const std::string& dirpath) {
+bool FileUtils::createDirectory(const std::string& /*dirpath*/) {
     // 简单实现，返回false（Windows需要特殊处理）
     return false;
 }

@@ -10,7 +10,7 @@
 /**
  * @brief 主函数
  */
-int main(int argc, char* argv[]) {
+int main(int /*argc*/, char* /*argv*/[]) {
     std::cout << "LuaUI Notepad Example" << std::endl;
     std::cout << "=========================" << std::endl;
     

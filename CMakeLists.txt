@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # 编译选项
 if(MSVC)
-    add_compile_options(/W4 /MT)
+    add_compile_options(/W4 /MT /wd4819)  # 禁用C4819警告
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /RTC1")
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /DNDEBUG")
 else()

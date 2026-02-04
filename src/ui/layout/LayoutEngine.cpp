@@ -108,7 +108,7 @@ LayoutType LayoutEngine::getLayoutType(const std::string& containerId) {
     return LAYOUT_ABSOLUTE;
 }
 
-UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI::BaseControl* parent) {
+UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI::BaseControl* /*parent*/) {
     if (!xmlElement) {
         return nullptr;
     }
@@ -162,7 +162,7 @@ void LayoutEngine::calculateControlLayout(UI::BaseControl* control, const Rect& 
     }
 }
 
-void LayoutEngine::calculateAbsoluteLayout(UI::BaseControl* control, const Rect& rect) {
+void LayoutEngine::calculateAbsoluteLayout(UI::BaseControl* control, const Rect& /*rect*/) {
     if (!control) {
         return;
     }
@@ -182,13 +182,13 @@ void LayoutEngine::calculateAbsoluteLayout(UI::BaseControl* control, const Rect&
     // ...省略子控件处理
 }
 
-void LayoutEngine::calculateVerticalLayout(UI::BaseControl* control, const Rect& rect) {
+void LayoutEngine::calculateVerticalLayout(UI::BaseControl* control, const Rect& /*rect*/) {
     if (!control) {
         return;
     }
     
     // 垂直布局：子控件从上到下排列
-    int currentY = rect.y;
+    // int currentY = rect.y;
     int spacing = 5; // 默认间距
     
     std::string spacingStr = control->getProperty("spacing");
@@ -200,13 +200,13 @@ void LayoutEngine::calculateVerticalLayout(UI::BaseControl* control, const Rect&
     // ...省略子控件处理
 }
 
-void LayoutEngine::calculateHorizontalLayout(UI::BaseControl* control, const Rect& rect) {
+void LayoutEngine::calculateHorizontalLayout(UI::BaseControl* control, const Rect& /*rect*/) {
     if (!control) {
         return;
     }
     
     // 水平布局：子控件从左到右排列
-    int currentX = rect.x;
+    // int currentX = rect.x;
     int spacing = 5; // 默认间距
     
     std::string spacingStr = control->getProperty("spacing");

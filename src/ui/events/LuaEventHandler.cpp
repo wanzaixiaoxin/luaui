@@ -120,7 +120,7 @@ bool LuaEventHandler::unbindControlEvent(const std::string& controlId, const std
     return false;
 }
 
-bool LuaEventHandler::handleEvent(const std::string& controlId, EventType eventType, EventArgs* args) {
+bool LuaEventHandler::handleEvent(const std::string& controlId, EventType /*eventType*/, EventArgs* args) {
     if (!args || !m_eventManager) {
         return false;
     }
@@ -255,7 +255,6 @@ bool LuaEventHandler::callLuaFunction(const LuaFunctionRef& funcRef, EventArgs* 
     
     if (result != LUA_OK) {
         // 错误处理
-        const char* error = lua_tostring(funcRef.lua, -1);
         lua_pop(funcRef.lua, 1);
         return false;
     }

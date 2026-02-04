@@ -34,7 +34,7 @@ BaseControl::~BaseControl() {
     m_eventHandlers.clear();
 }
 
-bool BaseControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* parent) {
+bool BaseControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* /*parent*/) {
     if (!xmlElement) {
         return false;
     }
@@ -55,7 +55,7 @@ bool BaseControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* parent) {
     return true;
 }
 
-void BaseControl::bindLuaFunctions(lua_State* lua) {
+void BaseControl::bindLuaFunctions(lua_State* /*lua*/) {
     // 基类不绑定任何函数，由子类实现
 }
 
@@ -196,7 +196,6 @@ bool BaseControl::callLuaHandler(const LuaFunctionRef& handler) {
     
     if (result != LUA_OK) {
         // 错误处理
-        const char* error = lua_tostring(handler.lua, -1);
         lua_pop(handler.lua, 1);
         return false;
     }
@@ -204,13 +203,13 @@ bool BaseControl::callLuaHandler(const LuaFunctionRef& handler) {
     return true;
 }
 
-bool BaseControl::addChild(BaseControl* child) {
+bool BaseControl::addChild(BaseControl* /*child*/) {
     // 默认实现：返回false，因为基础控件可能不支持子控件
     // 具体容器控件应该重写此方法
     return false;
 }
 
-BaseControl* BaseControl::findChildById(const std::string& id) {
+BaseControl* BaseControl::findChildById(const std::string& /*id*/) {
     // 默认实现：返回nullptr，因为基础控件可能不支持子控件
     // 具体容器控件应该重写此方法
     return nullptr;

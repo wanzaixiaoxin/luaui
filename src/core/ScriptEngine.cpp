@@ -139,7 +139,8 @@ bool ScriptEngine::callFunctionWithArgs(const std::string& funcName,
     }
     
     // 调用函数
-    int result = lua_pcall(m_luaState.getState(), args.size(), 0, 0);
+    int nargs = static_cast<int>(args.size());
+    int result = lua_pcall(m_luaState.getState(), nargs, 0, 0);
     if (result != LUA_OK) {
         std::string error = lua_tostring(m_luaState.getState(), -1);
         lua_pop(m_luaState.getState(), 1);

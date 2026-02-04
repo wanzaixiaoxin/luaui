@@ -177,7 +177,7 @@ EventManager* EventRouter::getEventManager() {
     return m_eventManager;
 }
 
-bool EventRouter::triggerEvent(UI::BaseControl* control, EventType eventType, EventArgs* args) {
+bool EventRouter::triggerEvent(UI::BaseControl* control, EventType /*eventType*/, EventArgs* args) {
     if (m_eventManager) {
         return m_eventManager->fireEventByControl(control, args);
     }
