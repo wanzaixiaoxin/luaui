@@ -204,5 +204,17 @@ bool BaseControl::callLuaHandler(const LuaFunctionRef& handler) {
     return true;
 }
 
+bool BaseControl::addChild(BaseControl* child) {
+    // 默认实现：返回false，因为基础控件可能不支持子控件
+    // 具体容器控件应该重写此方法
+    return false;
+}
+
+BaseControl* BaseControl::findChildById(const std::string& id) {
+    // 默认实现：返回nullptr，因为基础控件可能不支持子控件
+    // 具体容器控件应该重写此方法
+    return nullptr;
+}
+
 } // namespace UI
 } // namespace LuaUI

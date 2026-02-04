@@ -73,6 +73,14 @@ inline Version GetVersion() {
     return v;
 }
 
+/**
+ * @brief 获取框架构建信息
+ * @return 构建信息字符串
+ */
+inline const char* GetBuildInfo() {
+    return LUAUI_VERSION_FULL;
+}
+
 } // namespace LuaUI
 
 #endif // LUAUI_VERSION_H

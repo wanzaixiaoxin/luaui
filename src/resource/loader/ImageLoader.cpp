@@ -6,6 +6,10 @@
 #include "resource/loader/ImageLoader.h"
 #include "core/Utils.h"
 
+// Windows headers for memory management
+#include <windows.h>
+#include <ole2.h>
+
 namespace LuaUI {
 namespace Resource {
 namespace Loader {

@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     
-    std::cout << "LuaUI Version: " << LuaUI::GetVersion() << std::endl;
+    std::cout << "LuaUI Version: " << LuaUI::GetVersion().toString() << std::endl;
     std::cout << "Build Info: " << LuaUI::GetBuildInfo() << std::endl;
     std::cout << std::endl;
     

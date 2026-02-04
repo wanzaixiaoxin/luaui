@@ -6,6 +6,8 @@
 #include "xml/parser/LayoutValidator.h"
 #include <algorithm>
 #include <map>
+#include <vector>
+#include <string>
 
 namespace LuaUI {
 namespace Xml {
@@ -40,8 +42,37 @@ ValidationInfo LayoutValidator::validate(XmlElement* rootElement) {
                  duplicateIds[i]);
     }
     
-    // 递归验证所有元素
-    validateElementRecursive(rootElement);
+    // 递归验证所有元素 - 内联实现
+    if (rootElement) {
+        // 验证元素类型
+        std::string element_type = rootElement->getType();
+        bool isValidType = false;
+        for (size_t i = 0; i < m_validTypes.size(); ++i) {
+            if (m_validTypes[i] == element_type) {
+                isValidType = true;
+                break;
+            }
+        }
+        
+        if (!isValidType) {
+            addError(VALIDATION_ERROR_INVALID_TYPE, 
+                     "Invalid control type: " + element_type, 
+                     rootElement->getId());
+        }
+        
+        // 验证元素属性
+        std::string id = rootElement->getId();
+        if (id.empty() && element_type == "window") {
+            addError(VALIDATION_ERROR_MISSING_ATTR, 
+                     "Element 'window' must have 'id' attribute");
+        }
+        
+        // 递归验证子元素
+        const std::vector<XmlElement*>& children = rootElement->getChildren();
+        for (size_t i = 0; i < children.size(); ++i) {
+            validateElementRecursiveInternal(children[i]);
+        }
+    }
     
     // 返回第一个错误（如果有）
     if (!m_errors.empty()) {
@@ -167,23 +198,7 @@ void LayoutValidator::addError(ValidationError error, const std::string& message
     m_errors.push_back(ValidationInfo(error, message, elementId));
 }
 
-void LayoutValidator::validateElementRecursive(XmlElement* element) {
-    if (!element) {
-        return;
-    }
-    
-    // 验证元素类型
-    validateElementType(element);
-    
-    // 验证元素属性
-    validateElementAttributes(element);
-    
-    // 递归验证子元素
-    const std::vector<XmlElement*>& children = element->getChildren();
-    for (size_t i = 0; i < children.size(); ++i) {
-        validateElementRecursive(children[i]);
-    }
-}
+
 
 void LayoutValidator::initValidTypes() {
     // 基础控件
@@ -208,6 +223,44 @@ void LayoutValidator::initValidTypes() {
     
     // 其他
     m_validTypes.push_back("image");
+}
+
+void LayoutValidator::validateElementRecursiveInternal(XmlElement* element) {
+    if (!element) {
+        return;
+    }
+    
+    // 验证元素类型 - 内联实现
+    std::string element_type = element->getType();
+    bool isValidType = false;
+    for (size_t i = 0; i < m_validTypes.size(); ++i) {
+        if (m_validTypes[i] == element_type) {
+            isValidType = true;
+            break;
+        }
+    }
+    
+    if (!isValidType) {
+        addError(VALIDATION_ERROR_INVALID_TYPE, 
+                 "Invalid control type: " + element_type, 
+                 element->getId());
+    }
+    
+    // 验证元素属性 - 内联实现
+    std::string id = element->getId();
+    if (id.empty()) {
+        // 根元素必须有ID，其他元素可选
+        if (element_type == "window") {
+            addError(VALIDATION_ERROR_MISSING_ATTR, 
+                     "Element 'window' must have 'id' attribute");
+        }
+    }
+    
+    // 递归验证子元素
+    const std::vector<XmlElement*>& children = element->getChildren();
+    for (size_t i = 0; i < children.size(); ++i) {
+        validateElementRecursiveInternal(children[i]);
+    }
 }
 
 } // namespace Xml

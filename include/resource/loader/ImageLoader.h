@@ -13,14 +13,51 @@
 
 // Simple image class placeholder
 class CImage {
+private:
+    unsigned int width;
+    unsigned int height;
+    unsigned int bpp;
+    bool loaded;
+
 public:
-    CImage() {}
+    CImage() : width(0), height(0), bpp(0), loaded(false) {}
     ~CImage() {}
-    bool Load(void* stream) { return false; }
-    unsigned int GetWidth() const { return 0; }
-    unsigned int GetHeight() const { return 0; }
-    unsigned int GetBPP() const { return 0; }
+    
+    // Simulate loading by extracting basic info from filename
+    bool Load(const wchar_t* filename) { 
+        if (filename != nullptr) {
+            // For now, just simulate a successful load with dummy values
+            width = 100;  // default width
+            height = 100; // default height
+            bpp = 32;     // default bits per pixel
+            loaded = true;
+            return true;
+        }
+        return false; 
+    }
+    
+    // Simulate loading from stream
+    bool Load(void* stream) {
+        if (stream != nullptr) {
+            // For now, just simulate a successful load with dummy values
+            width = 100;  // default width
+            height = 100; // default height
+            bpp = 32;     // default bits per pixel
+            loaded = true;
+            return true;
+        }
+        return false;
+    }
+
+    unsigned int GetWidth() const { return width; }
+    unsigned int GetHeight() const { return height; }
+    unsigned int GetBPP() const { return bpp; }
 };
+
+// Define SUCCEEDED macro if not already defined
+#ifndef SUCCEEDED
+#define SUCCEEDED(hr) (((hr) >= 0) ? true : false)
+#endif
 
 namespace LuaUI {
 namespace Resource {

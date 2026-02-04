@@ -173,6 +173,27 @@ public:
      */
     virtual const CWnd* getWindow() const = 0;
     
+    /**
+     * @brief 添加子控件
+     * @param child 子控件
+     * @return 成功返回true，失败返回false
+     */
+    virtual bool addChild(BaseControl* child);
+    
+    /**
+     * @brief 根据ID查找子控件
+     * @param id 控件ID
+     * @return 找到返回控件指针，否则返回nullptr
+     */
+    virtual BaseControl* findChildById(const std::string& id);
+    
+    /**
+     * @brief 调用Lua事件处理器
+     * @param handler Lua函数引用
+     * @return 成功返回true，失败返回false
+     */
+    bool callLuaHandler(const LuaFunctionRef& handler);
+    
 protected:
     std::string m_id;                                      ///< 控件ID
     std::map<std::string, std::string> m_properties;      ///< 属性映射表
@@ -195,13 +216,6 @@ protected:
      * @param xmlElement XML元素
      */
     void parseGeometry(Xml::XmlElement* xmlElement);
-    
-    /**
-     * @brief 调用Lua事件处理器
-     * @param handler Lua函数引用
-     * @return 成功返回true，失败返回false
-     */
-    bool callLuaHandler(const LuaFunctionRef& handler);
 };
 
 } // namespace UI

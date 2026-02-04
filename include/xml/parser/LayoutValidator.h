@@ -152,6 +152,12 @@ private:
      * @brief 初始化有效的控件类型列表
      */
     void initValidTypes();
+    
+    /**
+     * @brief 内部递归验证元素（用于修复编译问题）
+     * @param element 元素
+     */
+    void validateElementRecursiveInternal(XmlElement* element);
 };
 
 } // namespace Xml

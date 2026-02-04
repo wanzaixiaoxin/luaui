@@ -37,10 +37,7 @@
 #include "resource/style/StyleManager.h"
 #include "resource/theme/ThemeManager.h"
 
-// 工具模块
-#include "utils/Logger.h"
-#include "utils/Config.h"
-#include "utils/ErrorHandler.h"
+
 
 namespace LuaUI {
 
@@ -56,12 +53,6 @@ bool Initialize();
  * @details 清理所有资源，关闭Lua引擎
  */
 void Shutdown();
-
-/**
- * @brief 获取框架版本号
- * @return 版本字符串
- */
-const char* GetVersion();
 
 /**
  * @brief 获取框架构建信息

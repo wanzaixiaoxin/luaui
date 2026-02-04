@@ -148,6 +148,11 @@ public:
      * @return 脚本执行器指针
      */
     ScriptRunner* getScriptRunner();
+    
+    /**
+     * @brief 卸载所有脚本
+     */
+    void unloadAllScripts();
 
 private:
     Core::ScriptEngine* m_engine;                    ///< 脚本引擎

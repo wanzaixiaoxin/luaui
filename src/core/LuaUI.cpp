@@ -37,12 +37,8 @@ void Shutdown() {
     }
 }
 
-const char* GetVersion() {
-    return LUAUI_VERSION_STRING;
-}
 
-const char* GetBuildInfo() {
-    return LUAUI_VERSION_FULL;
-}
+
+
 
 } // namespace LuaUI

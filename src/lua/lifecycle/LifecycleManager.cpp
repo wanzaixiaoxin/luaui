@@ -60,6 +60,23 @@ void LifecycleManager::shutdown() {
     m_initialized = false;
 }
 
+void LifecycleManager::unloadAllScripts() {
+    // Get all script names from the stages map
+    std::vector<std::string> scriptNames;
+    for (std::map<std::string, LifecycleStage>::iterator it = m_scriptStages.begin();
+         it != m_scriptStages.end(); ++it) {
+        scriptNames.push_back(it->first);
+    }
+    
+    // Unload each script
+    for (size_t i = 0; i < scriptNames.size(); ++i) {
+        unloadScript(scriptNames[i]);
+    }
+    
+    // Clear the stages map
+    m_scriptStages.clear();
+}
+
 bool LifecycleManager::loadScript(const std::string& scriptName) {
     if (!m_initialized || !m_scriptLoader) {
         return false;
