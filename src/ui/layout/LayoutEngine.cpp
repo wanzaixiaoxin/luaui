@@ -8,6 +8,7 @@
 #include "ui/layout/PositionCalculator.h"
 #include "ui/factory/ControlFactory.h"
 #include <algorithm>
+#include <afxwin.h> // MFC support for ShowWindow and SW_SHOW
 
 namespace LuaUI {
 namespace Layout {
@@ -108,13 +109,33 @@ LayoutType LayoutEngine::getLayoutType(const std::string& containerId) {
     return LAYOUT_ABSOLUTE;
 }
 
-UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI::BaseControl* /*parent*/) {
+void LayoutEngine::showUI() {
+    if (m_rootControl) {
+        // 获取根控件的窗口
+        CWnd* window = m_rootControl->getWindow();
+        if (window) {
+            // 如果窗口尚未显示，则显示它
+            if (::IsWindow(window->m_hWnd)) {
+                window->ShowWindow(SW_SHOW);
+                window->UpdateWindow();
+            }
+        }
+    }
+}
+
+UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI::BaseControl* parent) {
     if (!xmlElement) {
         return nullptr;
     }
     
-    // 使用工厂创建控件
-    UI::BaseControl* control = UI::ControlFactory::instance().createFromXml(xmlElement);
+    // 获取父窗口（如果有的话）
+    CWnd* parentWnd = nullptr;
+    if (parent) {
+        parentWnd = parent->getWindow();
+    }
+    
+    // 使用工厂创建控件，传递父窗口
+    UI::BaseControl* control = UI::ControlFactory::instance().createFromXml(xmlElement, parentWnd);
     
     if (!control) {
         return nullptr;

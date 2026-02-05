@@ -5,6 +5,9 @@
 
 #include "ui/factory/ControlFactory.h"
 #include "ui/controls/GenericControl.h"
+#include "ui/controls/WindowControl.h"
+#include "ui/controls/ButtonControl.h"
+#include "ui/controls/LabelControl.h"
 
 namespace LuaUI {
 namespace UI {
@@ -74,17 +77,17 @@ bool ControlFactory::unregisterControl(const std::string& type) {
 }
 
 void ControlFactory::registerBuiltinControls() {
-    // 注册内置控件类型到通用控件实现
-    registerControl("window", &GenericControl::createInstance);
-    registerControl("button", &GenericControl::createInstance);
-    registerControl("label", &GenericControl::createInstance);
-    registerControl("edit", &GenericControl::createInstance);
-    registerControl("menu", &GenericControl::createInstance);
-    registerControl("menuitem", &GenericControl::createInstance);
-    registerControl("toolbar", &GenericControl::createInstance);
-    registerControl("toolbutton", &GenericControl::createInstance);
-    registerControl("statusbar", &GenericControl::createInstance);
-    registerControl("pane", &GenericControl::createInstance);
+    // 注册内置控件类型到具体实现
+    registerControl("window", &WindowControl::createInstance);
+    registerControl("button", &ButtonControl::createInstance);
+    registerControl("label", &LabelControl::createInstance);
+    registerControl("edit", &GenericControl::createInstance);  // 编辑框暂时使用通用控件
+    registerControl("menu", &GenericControl::createInstance);  // 菜单暂时使用通用控件
+    registerControl("menuitem", &GenericControl::createInstance);  // 菜单项暂时使用通用控件
+    registerControl("toolbar", &GenericControl::createInstance);  // 工具栏暂时使用通用控件
+    registerControl("toolbutton", &GenericControl::createInstance);  // 工具按钮暂时使用通用控件
+    registerControl("statusbar", &GenericControl::createInstance);  // 状态栏暂时使用通用控件
+    registerControl("pane", &GenericControl::createInstance);  // 面板暂时使用通用控件
 }
 
 } // namespace UI

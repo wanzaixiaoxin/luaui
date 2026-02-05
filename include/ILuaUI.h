@@ -77,9 +77,15 @@ public:
     /**
      * @brief 根据ID获取控件
      * @param id 控件ID
-     * @return 控件指针，如果不存在返回nullptr
+     * @return 控件智能指针
      */
     virtual std::shared_ptr<IControl> getControl(const std::string& id) = 0;
+    
+    /**
+     * @brief 显示UI
+     * @details 显示所有创建的控件
+     */
+    virtual void showUI() = 0;
 };
 
 /**

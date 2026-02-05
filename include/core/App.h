@@ -9,6 +9,7 @@
 #define LUAUI_APP_H
 
 #include "ILuaUI.h"
+#include "ScriptEngine.h"
 #include <string>
 
 namespace LuaUI {
@@ -76,7 +77,7 @@ private:
     std::string m_appTitle;  ///< 应用程序标题
     int m_exitCode;           ///< 退出码
     ILayoutEngine* m_layoutEngine;  ///< 布局引擎
-    IScriptEngine* m_scriptEngine;  ///< 脚本引擎
+    Core::ScriptEngine* m_scriptEngine;  ///< 脚本引擎
 };
 
 } // namespace LuaUI

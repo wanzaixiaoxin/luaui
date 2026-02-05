@@ -39,11 +39,18 @@ public:
      */
     std::string getTitle() const;
     
-    /**
-     * @brief 静态创建函数（供工厂使用）
+    /**/**
+     * @brief 静态创建函数
      * @return 窗口控件指针
      */
     static BaseControl* createInstance();
+
+    /**
+     * @brief 创建MFC窗口
+     * @param parent 父窗口
+     * @return 成功返回true，失败返回false
+     */
+    bool createWindow(CWnd* parent);
 
 private:
     class Impl;

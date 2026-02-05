@@ -42,11 +42,15 @@ int main(int /*argc*/, char* /*argv*/[]) {
     
     // 加载XML布局
     std::cout << "Loading XML layout..." << std::endl;
-    if (!layoutEngine->loadFromXml("helloworld_layout.xml")) {
+    if (!layoutEngine->loadFromXml("layout.xml")) {
         std::cerr << "Failed to load layout from XML!" << std::endl;
         LuaUI::Shutdown();
         return -1;
     }
+    
+    // 显示UI
+    std::cout << "Showing UI..." << std::endl;
+    layoutEngine->showUI();
     
     // 加载Lua脚本
     std::cout << "Loading Lua script..." << std::endl;

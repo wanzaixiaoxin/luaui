@@ -45,6 +45,13 @@ public:
      */
     static BaseControl* createInstance();
 
+    /**
+     * @brief 创建MFC标签
+     * @param parent 父窗口
+     * @return 成功返回true，失败返回false
+     */
+    bool createLabel(CWnd* parent);
+
 private:
     class Impl;
     Impl* m_impl;

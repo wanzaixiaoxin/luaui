@@ -5,9 +5,10 @@
 
 #include "core/App.h"
 #include "ui/layout/LayoutEngine.h"
-#include "core/ScriptEngine.h"
+#include <winsock2.h>  // Must come before windows.h when using MFC
 #include <windows.h>
 #include <winbase.h>
+#include <afxwin.h> // MFC support
 
 namespace LuaUI {
 
@@ -30,11 +31,23 @@ bool App::initialize(const std::string& appTitle) {
     
     m_appTitle = appTitle;
     
+    // 初始化MFC
+    if (!AfxWinInit(GetModuleHandle(NULL), NULL, ::GetCommandLine(), SW_SHOWDEFAULT)) {
+        return false;
+    }
+    
     // 创建布局引擎
     m_layoutEngine = new Layout::LayoutEngine();
     
     // 创建脚本引擎
     m_scriptEngine = new Core::ScriptEngine();
+    
+    // 初始化脚本引擎
+    if (!m_scriptEngine->initialize()) {
+        delete m_scriptEngine;
+        m_scriptEngine = nullptr;
+        return false;
+    }
     
     m_initialized = true;
     
@@ -69,23 +82,17 @@ int App::run() {
         return -1;
     }
     
-    // 在真实应用中，这里应该启动MFC消息循环
-    // 但现在我们只是等待一段时间或直到用户关闭应用
-    // 这里暂时使用一个简单的循环来避免立即退出
-    
+    // 使用MFC的消息循环
     MSG msg;
-    while (true) {
-        // 检查消息队列
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-            if (msg.message == WM_QUIT) {
-                break;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        } else {
-            // 没有消息时短暂休眠，避免CPU占用过高
-            Sleep(10);
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        // 检查是否是退出消息
+        if (msg.message == WM_QUIT) {
+            break;
         }
+        
+        // 处理消息
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
     }
     
     return static_cast<int>(msg.wParam);
@@ -101,7 +108,7 @@ ILayoutEngine* App::getLayoutEngine() {
 }
 
 IScriptEngine* App::getScriptEngine() {
-    return m_scriptEngine;
+    return static_cast<IScriptEngine*>(m_scriptEngine);
 }
 
 } // namespace LuaUI

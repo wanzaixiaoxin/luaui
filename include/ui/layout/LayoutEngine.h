@@ -215,6 +215,12 @@ public:
      */
     LayoutType getLayoutType(const std::string& containerId);
     
+    /**
+     * @brief 显示UI
+     * @details 显示所有创建的控件
+     */
+    void showUI();
+    
     // ILayoutEngine 接口实现
     virtual bool loadFromXml(const std::string& xmlFile) override;
     virtual bool loadFromXmlString(const std::string& xmlContent) override;
