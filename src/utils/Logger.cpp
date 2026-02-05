@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <windows.h>
+#include <fstream>
 
 namespace LuaUI {
 namespace Utils {
@@ -155,6 +156,14 @@ void Logger::fatal(const std::string& message) {
 
 void Logger::log(LogLevel level, const std::string& message) {
     if (!m_initialized.load()) {
+        // Logger 未初始化时，直接输出到控制台
+        if (level == LogLevel::LevelError || level == LogLevel::LevelFatal) {
+            std::cerr << "[Logger-not-initialized] " << levelToString(level) 
+                      << " [" << m_category << "] " << message << std::endl;
+        } else if (level >= LogLevel::LevelInfo) {
+            std::cout << "[Logger-not-initialized] " << levelToString(level) 
+                      << " [" << m_category << "] " << message << std::endl;
+        }
         return;
     }
 

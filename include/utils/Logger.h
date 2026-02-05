@@ -123,11 +123,109 @@ inline Logger& logger() {
     return Logger::getInstance();
 }
 
-#define LOG_DEBUG(msg)    Logger::getInstance().debug(msg)
-#define LOG_INFO(msg)     Logger::getInstance().info(msg)
-#define LOG_WARN(msg)     Logger::getInstance().warn(msg)
-#define LOG_ERROR(msg)    Logger::getInstance().error(msg)
-#define LOG_FATAL(msg)    Logger::getInstance().fatal(msg)
+/**
+ * @brief 流式日志辅助类
+ * @details 支持使用 << 运算符构建日志消息
+ */
+class LogStream {
+public:
+    LogStream(LogLevel level, const std::string& category = "App")
+        : m_level(level), m_category(category) {}
+
+    ~LogStream() {
+        Logger::getInstance().log(m_level, m_oss.str());
+    }
+
+    template<typename T>
+    LogStream& operator<<(const T& val) {
+        m_oss << val;
+        return *this;
+    }
+
+private:
+    LogLevel m_level;
+    std::string m_category;
+    std::ostringstream m_oss;
+};
+
+#define LOG_DEBUG(msg)    ::LuaUI::Utils::Logger::getInstance().debug(msg)
+#define LOG_INFO(msg)     ::LuaUI::Utils::Logger::getInstance().info(msg)
+#define LOG_WARN(msg)     ::LuaUI::Utils::Logger::getInstance().warn(msg)
+#define LOG_ERROR(msg)    ::LuaUI::Utils::Logger::getInstance().error(msg)
+#define LOG_FATAL(msg)    ::LuaUI::Utils::Logger::getInstance().fatal(msg)
+
+// 流式日志宏（推荐使用）
+#define LOG_S_DEBUG()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, ::LuaUI::Utils::Logger::getInstance().getCategory())
+#define LOG_S_INFO()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, ::LuaUI::Utils::Logger::getInstance().getCategory())
+#define LOG_S_WARN()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, ::LuaUI::Utils::Logger::getInstance().getCategory())
+#define LOG_S_ERROR()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, ::LuaUI::Utils::Logger::getInstance().getCategory())
+#define LOG_S_FATAL()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, ::LuaUI::Utils::Logger::getInstance().getCategory())
+
+// 便捷宏定义
+#define LOG_DEBUG_CAT(category, msg) do { \
+    auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
+    logger.setCategory(category); \
+    logger.debug(msg); \
+} while(0)
+
+#define LOG_INFO_CAT(category, msg) do { \
+    auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
+    logger.setCategory(category); \
+    logger.info(msg); \
+} while(0)
+
+#define LOG_WARN_CAT(category, msg) do { \
+    auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
+    logger.setCategory(category); \
+    logger.warn(msg); \
+} while(0)
+
+#define LOG_ERROR_CAT(category, msg) do { \
+    auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
+    logger.setCategory(category); \
+    logger.error(msg); \
+} while(0)
+
+// 流式分类日志宏（推荐使用）
+#define LOG_S_DEBUG_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, category)
+#define LOG_S_INFO_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, category)
+#define LOG_S_WARN_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, category)
+#define LOG_S_ERROR_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, category)
+#define LOG_S_FATAL_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, category)
+
+// 格式化日志宏
+#define LOG_FMT_DEBUG(fmt, ...) do { \
+    char buf[512]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    LOG_DEBUG(buf); \
+} while(0)
+
+#define LOG_FMT_INFO(fmt, ...) do { \
+    char buf[512]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    LOG_INFO(buf); \
+} while(0)
+
+#define LOG_FMT_WARN(fmt, ...) do { \
+    char buf[512]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    LOG_WARN(buf); \
+} while(0)
+
+#define LOG_FMT_ERROR(fmt, ...) do { \
+    char buf[512]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    LOG_ERROR(buf); \
+} while(0)
+
+// 临时调试宏（可通过定义 LUAU_DEBUG 启用）
+#ifdef LUAU_DEBUG
+#define DBG_OUT(msg) LOG_DEBUG(msg)
+#define DBG_FMT(fmt, ...) LOG_FMT_DEBUG(fmt, ##__VA_ARGS__)
+#else
+#define DBG_OUT(msg) 
+#define DBG_FMT(fmt, ...) 
+#endif
 
 } // namespace Utils
 } // namespace LuaUI

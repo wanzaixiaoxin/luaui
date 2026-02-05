@@ -4,7 +4,9 @@
  */
 
 #include "lua/binding/LuaBinder.h"
+#include "utils/Logger.h"
 #include <iostream>
+#include <sstream>
 
 namespace LuaUI {
 namespace Lua {
@@ -215,7 +217,7 @@ bool LuaBinder::callFunction(const std::string& funcName, int nargs, int nresult
     if (result != LUA_OK) {
         // 错误处理
         const char* error = lua_tostring(m_lua, -1);
-        std::cerr << "Lua error: " << error << std::endl;
+        LOG_S_ERROR_CAT("LuaBinder") << "Lua error: " << error;
         lua_pop(m_lua, 1);
         return false;
     }
@@ -232,7 +234,7 @@ bool LuaBinder::doString(const std::string& script) {
     
     if (result != LUA_OK) {
         const char* error = lua_tostring(m_lua, -1);
-        std::cerr << "Lua error: " << error << std::endl;
+        LOG_S_ERROR_CAT("LuaBinder") << "Lua error: " << error;
         lua_pop(m_lua, 1);
         return false;
     }
@@ -249,7 +251,7 @@ bool LuaBinder::doFile(const std::string& filename) {
     
     if (result != LUA_OK) {
         const char* error = lua_tostring(m_lua, -1);
-        std::cerr << "Lua error: " << error << std::endl;
+        LOG_S_ERROR_CAT("LuaBinder") << "Lua error: " << error;
         lua_pop(m_lua, 1);
         return false;
     }
@@ -368,28 +370,29 @@ void LuaBinder::printStack() {
     }
     
     int top = lua_gettop(m_lua);
-    std::cout << "=== Lua Stack ===" << std::endl;
+    LOG_DEBUG_CAT("LuaBinder", "=== Lua Stack ===");
     
     for (int i = 1; i <= top; ++i) {
         int type = lua_type(m_lua, i);
-        std::cout << i << ": " << lua_typename(m_lua, type);
+        std::stringstream ss;
+        ss << i << ": " << lua_typename(m_lua, type);
         
         switch (type) {
             case LUA_TSTRING:
-                std::cout << " (" << lua_tostring(m_lua, i) << ")";
+                ss << " (" << lua_tostring(m_lua, i) << ")";
                 break;
             case LUA_TNUMBER:
-                std::cout << " (" << lua_tonumber(m_lua, i) << ")";
+                ss << " (" << lua_tonumber(m_lua, i) << ")";
                 break;
             case LUA_TBOOLEAN:
-                std::cout << " (" << (lua_toboolean(m_lua, i) ? "true" : "false") << ")";
+                ss << " (" << (lua_toboolean(m_lua, i) ? "true" : "false") << ")";
                 break;
         }
         
-        std::cout << std::endl;
+        LOG_DEBUG_CAT("LuaBinder", ss.str());
     }
     
-    std::cout << "==================" << std::endl;
+    LOG_DEBUG_CAT("LuaBinder", "==================");
 }
 
 void LuaBinder::ensureTable(const std::string& tableName) {

@@ -7,6 +7,7 @@
 #include "ui/controls/ButtonControl.h"
 #include "ui/controls/LabelControl.h"
 #include "xml/parser/XmlParser.h"
+#include "utils/Logger.h"
 #include <afxwin.h> // MFC support
 #include <iostream>
 
@@ -139,16 +140,16 @@ BaseControl* WindowControl::findChildById(const std::string& id) {
 
 void WindowControl::createChildWindows() {
     if (!m_impl->window) {
-        std::cout << "WindowControl::createChildWindows: No window available!" << std::endl;
+        LOG_ERROR("WindowControl::createChildWindows: No window available!");
         return;
     }
     
     // 获取客户区矩形，用于计算子控件相对位置
     CRect clientRect;
     m_impl->window->GetClientRect(&clientRect);
-    std::cout << "WindowControl::createChildWindows: Client rect = " 
+    LOG_S_DEBUG_CAT("WindowControl") << "Client rect = " 
               << clientRect.left << "," << clientRect.top << " - " 
-              << clientRect.Width() << "x" << clientRect.Height() << std::endl;
+              << clientRect.Width() << "x" << clientRect.Height();
     
     // 递归创建所有子控件的MFC窗口
     for (std::vector<BaseControl*>::iterator it = m_children.begin();
@@ -156,7 +157,7 @@ void WindowControl::createChildWindows() {
         BaseControl* child = *it;
         std::string type = child->getType();
         
-        std::cout << "Creating child window: " << type << " (id: " << child->getId() << ")" << std::endl;
+        LOG_S_DEBUG_CAT("WindowControl") << "Creating child window: " << type << " (id: " << child->getId() << ")";
         
         // 根据控件类型创建MFC控件
         if (type == "button") {
@@ -226,11 +227,11 @@ bool WindowControl::createWindow(CWnd* parent) {
             NULL)) {
         delete m_impl->window;
         m_impl->window = nullptr;
-        std::cout << "WindowControl::createWindow: Failed to create window!" << std::endl;
+        LOG_ERROR("WindowControl::createWindow: Failed to create window!");
         return false;
     }
 
-    std::cout << "WindowControl::createWindow: Window created successfully" << std::endl;
+    LOG_INFO_CAT("WindowControl", "Window created successfully");
     
     // 不在这里显示窗口，等待所有子控件创建完成后再显示
     // m_impl->window->ShowWindow(SW_SHOW);

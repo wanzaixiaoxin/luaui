@@ -5,6 +5,7 @@
 
 #include "ui/controls/LabelControl.h"
 #include "ui/controls/BaseControl.h"
+#include "utils/Logger.h"
 #include <iostream>
 #include <afxwin.h> // MFC support
 
@@ -89,11 +90,11 @@ BaseControl* LabelControl::createInstance() {
 }
 
 bool LabelControl::createLabel(CWnd* parent) {
-    std::cout << "LabelControl::createLabel: parent=" << parent 
-              << ", existing label=" << m_impl->label << std::endl;
+    LOG_S_DEBUG_CAT("LabelControl") << "parent=" << parent 
+              << ", existing label=" << m_impl->label;
     if (!parent || m_impl->label) {
-        std::cout << "LabelControl::createLabel: Failed - "
-                  << (!parent ? "no parent" : "label already exists") << std::endl;
+        LOG_S_WARN_CAT("LabelControl") << "Failed - "
+                  << (!parent ? "no parent" : "label already exists");
         return false; // 父窗口不存在或标签已存在
     }
 
@@ -103,7 +104,7 @@ bool LabelControl::createLabel(CWnd* parent) {
     // 创建标签，使用唯一 ID
     CString text = CString(m_impl->text.c_str());
     int controlId = m_impl->getNextId();
-    std::cout << "LabelControl::createLabel: Creating with ID=" << controlId << std::endl;
+    LOG_S_DEBUG_CAT("LabelControl") << "Creating with ID=" << controlId;
     // 使用 SS_NOTIFY 接收鼠标事件，添加 WS_BORDER 便于调试查看边界
     if (!m_impl->label->Create(text, WS_CHILD | WS_VISIBLE | WS_BORDER | SS_LEFT | SS_NOTIFY,
                                CRect(m_x, m_y, m_x + m_width, m_y + m_height),
@@ -120,7 +121,7 @@ bool LabelControl::createLabel(CWnd* parent) {
     m_impl->label->ShowWindow(SW_SHOW);
     m_impl->label->UpdateWindow();
 
-    std::cout << "LabelControl::createLabel: Success!" << std::endl;
+    LOG_INFO_CAT("LabelControl", "Success!");
     return true;
 }
 

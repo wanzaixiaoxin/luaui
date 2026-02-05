@@ -6,6 +6,7 @@
 #include "ui/controls/ButtonControl.h"
 #include "xml/parser/XmlParser.h"
 #include "ui/controls/BaseControl.h"
+#include "utils/Logger.h"
 #include <afxwin.h> // MFC support
 #include <iostream>
 
@@ -42,7 +43,7 @@ END_MESSAGE_MAP()
 void LuaUIButton::OnClicked()
 {
     if (m_owner) {
-        std::cout << "Button clicked: " << m_owner->getId() << std::endl;
+        LOG_S_DEBUG_CAT("ButtonControl") << "Button clicked: " << m_owner->getId();
         // 触发按钮的点击事件
         m_owner->fireEvent("onClick");
     }
@@ -127,11 +128,11 @@ BaseControl* ButtonControl::createInstance() {
 }
 
 bool ButtonControl::createButton(CWnd* parent) {
-    std::cout << "ButtonControl::createButton: parent=" << parent 
-              << ", existing button=" << m_impl->button << std::endl;
+    LOG_S_DEBUG_CAT("ButtonControl") << "parent=" << parent 
+              << ", existing button=" << m_impl->button;
     if (!parent || m_impl->button) {
-        std::cout << "ButtonControl::createButton: Failed - "
-                  << (!parent ? "no parent" : "button already exists") << std::endl;
+        LOG_S_WARN_CAT("ButtonControl") << "Failed - "
+                  << (!parent ? "no parent" : "button already exists");
         return false; // 父窗口不存在或按钮已存在
     }
 
@@ -143,7 +144,7 @@ bool ButtonControl::createButton(CWnd* parent) {
     // 创建按钮，使用唯一 ID
     CString text = CString(m_impl->text.c_str());
     int controlId = m_impl->getNextId();
-    std::cout << "ButtonControl::createButton: Creating with ID=" << controlId << std::endl;
+    LOG_S_DEBUG_CAT("ButtonControl") << "Creating with ID=" << controlId;
     
     if (!luaButton->Create(text, WS_CHILD | WS_VISIBLE | WS_BORDER | BS_PUSHBUTTON,
                          CRect(m_x, m_y, m_x + m_width, m_y + m_height),
@@ -160,7 +161,7 @@ bool ButtonControl::createButton(CWnd* parent) {
     m_impl->button->ShowWindow(SW_SHOW);
     m_impl->button->UpdateWindow();
 
-    std::cout << "ButtonControl::createButton: Success!" << std::endl;
+    LOG_INFO_CAT("ButtonControl", "Success!");
     return true;
 }
 
