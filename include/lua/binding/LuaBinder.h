@@ -98,7 +98,23 @@ public:
      * @param value 布尔值
      */
     void setGlobalBool(const std::string& name, bool value);
-    
+
+    /**
+     * @brief 向Lua表字段设置整数值
+     * @param tableName 表名
+     * @param fieldName 字段名
+     * @param value 整数值
+     */
+    void setTableInt(const std::string& tableName, const std::string& fieldName, int value);
+
+    /**
+     * @brief 向Lua表字段设置字符串值
+     * @param tableName 表名
+     * @param fieldName 字段名
+     * @param value 字符串值
+     */
+    void setTableString(const std::string& tableName, const std::string& fieldName, const std::string& value);
+
     /**
      * @brief 从Lua全局变量获取整数值
      * @param name 变量名

@@ -4,6 +4,8 @@
  */
 
 #include "core/LuaState.h"
+#include "lua/binding/LuaBinder.h"
+#include "lua/binding/LoggerBinder.h"
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -38,7 +40,10 @@ bool LuaState::initialize() {
     
     // 打开标准库
     luaL_openlibs(m_luaState);
-    
+
+    Lua::Binding::LuaBinder binder(m_luaState);
+    Lua::Binding::registerLogger(&binder);
+
     m_initialized = true;
     return true;
 }

@@ -12,4 +12,5 @@ target_include_directories(LuaUI_Lua PUBLIC
 target_link_libraries(LuaUI_Lua
     lua
     LuaUI_Core
+    LuaUI_Utils
 )

@@ -108,6 +108,12 @@ public:
      * @return 成功返回true，失败返回false
      */
     bool callFunctionWithArgs(const std::string& funcName, const std::vector<std::string>& args);
+
+    /**
+     * @brief 获取最后一次错误信息
+     * @return 错误信息字符串
+     */
+    std::string getLastError() const;
     
     /**
      * @brief 注册C++函数到Lua全局命名空间

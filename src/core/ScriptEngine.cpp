@@ -252,5 +252,9 @@ void ScriptEngine::triggerUnloadCallback(const std::string& scriptName) {
     }
 }
 
+std::string ScriptEngine::getLastError() const {
+    return m_luaState.getLastError();
+}
+
 } // namespace Core
 } // namespace LuaUI

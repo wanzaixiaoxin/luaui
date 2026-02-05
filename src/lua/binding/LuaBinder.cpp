@@ -117,6 +117,38 @@ void LuaBinder::setGlobalBool(const std::string& name, bool value) {
     lua_setglobal(m_lua, name.c_str());
 }
 
+void LuaBinder::setTableInt(const std::string& tableName, const std::string& fieldName, int value) {
+    if (!m_lua) {
+        return;
+    }
+
+    lua_getglobal(m_lua, tableName.c_str());
+    if (!lua_istable(m_lua, -1)) {
+        lua_pop(m_lua, 1);
+        return;
+    }
+
+    lua_pushinteger(m_lua, value);
+    lua_setfield(m_lua, -2, fieldName.c_str());
+    lua_pop(m_lua, 1);
+}
+
+void LuaBinder::setTableString(const std::string& tableName, const std::string& fieldName, const std::string& value) {
+    if (!m_lua) {
+        return;
+    }
+
+    lua_getglobal(m_lua, tableName.c_str());
+    if (!lua_istable(m_lua, -1)) {
+        lua_pop(m_lua, 1);
+        return;
+    }
+
+    lua_pushstring(m_lua, value.c_str());
+    lua_setfield(m_lua, -2, fieldName.c_str());
+    lua_pop(m_lua, 1);
+}
+
 int LuaBinder::getGlobalInt(const std::string& name, int defaultValue) {
     if (!m_lua) {
         return defaultValue;

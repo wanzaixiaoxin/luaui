@@ -13,6 +13,10 @@
 
 namespace LuaUI {
 
+// 前向声明
+class IControl;
+class LuaState;
+
 /**
  * @brief 控件接口
  * @details 所有UI控件的基接口
@@ -126,6 +130,12 @@ public:
      * @return 成功返回true，失败返回false
      */
     virtual bool callFunction(const std::string& funcName) = 0;
+
+    /**
+     * @brief 获取最后一次错误信息
+     * @return 错误信息字符串
+     */
+    virtual std::string getLastError() const = 0;
 };
 
 /**

@@ -57,7 +57,8 @@ int main(int /*argc*/, char* /*argv*/[]) {
     std::string luaFile = "helloworld_main.lua";
     std::cout << "Loading Lua script from: " << luaFile << std::endl;
     if (!scriptEngine->loadScript(luaFile)) {
-        std::cerr << "Failed to load Lua script from: " << luaFile << std::endl;
+        std::cerr << "Failed to load Lua script." << std::endl;
+        std::cerr << "Lua error: " << scriptEngine->getLastError() << std::endl;
         LuaUI::Shutdown();
         return -1;
     }
