@@ -34,8 +34,18 @@ end
 
 -- 窗口初始化
 function onInit()
+    print("onInit called")
     Log.info("Hello World application initialized")
     Log.debug("Lua environment ready")
+
+    -- 绑定按钮事件
+    local result1 = Events.bind("btnHello", "onClick", onHelloClick)
+    local result2 = Events.bind("btnExit", "onClick", onExitClick)
+    
+    Log.info("Events.bind btnHello result: " .. tostring(result1))
+    Log.info("Events.bind btnExit result: " .. tostring(result2))
+
+    Log.info("Events bound successfully")
 end
 
 -- 窗口关闭

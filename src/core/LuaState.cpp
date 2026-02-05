@@ -6,6 +6,9 @@
 #include "core/LuaState.h"
 #include "lua/binding/LuaBinder.h"
 #include "lua/binding/LoggerBinder.h"
+#include "lua/binding/EventBinder.h"
+#include "lua/binding/ControlBinder.h"
+#include "ui/events/LuaEventHandler.h"
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -43,6 +46,20 @@ bool LuaState::initialize() {
 
     Lua::Binding::LuaBinder binder(m_luaState);
     Lua::Binding::registerLogger(&binder);
+
+    // 初始化事件绑定器
+    Lua::Binding::EventBinder eventBinder(m_luaState);
+    eventBinder.initialize();
+
+    // 初始化控件绑定器
+    Lua::Binding::ControlBinder controlBinder(m_luaState);
+    controlBinder.initialize();
+
+    // 初始化 Lua 事件处理器
+    Events::LuaEventHandler* eventHandler = Events::GetLuaEventHandler();
+    if (eventHandler) {
+        eventHandler->initialize(m_luaState);
+    }
 
     m_initialized = true;
     return true;

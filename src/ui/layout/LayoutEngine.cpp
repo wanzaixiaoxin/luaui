@@ -14,6 +14,7 @@
 #include "core/LuaState.h"
 #include "ui/controls/BaseControl.h"
 #include "utils/Logger.h"
+#include "lua/binding/ControlBinder.h"
 #include <iostream>
 #include <afxwin.h> // MFC support for ShowWindow and SW_SHOW
 
@@ -247,6 +248,8 @@ UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI
     std::string id = control->getId();
     if (!id.empty()) {
         m_controls[id] = control;
+        // 注册控件到 Lua
+        Lua::Binding::ControlBinder::registerControl(control, id);
     }
     
     // 递归创建子控件

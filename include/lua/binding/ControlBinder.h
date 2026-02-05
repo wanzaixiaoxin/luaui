@@ -47,7 +47,7 @@ public:
      * @param control 控件指针
      * @param name Lua中的名称
      */
-    void registerControl(UI::BaseControl* control, const std::string& name);
+    static void registerControl(UI::BaseControl* control, const std::string& name);
     
     /**
      * @brief 注销控件
@@ -141,6 +141,13 @@ private:
      * @return 返回值个数
      */
     static int luaGetText(lua_State* L);
+
+    /**
+     * @brief Lua函数：退出应用程序
+     * @param L Lua状态
+     * @return 返回值个数
+     */
+    static int luaExit(lua_State* L);
 };
 
 } // namespace Binding

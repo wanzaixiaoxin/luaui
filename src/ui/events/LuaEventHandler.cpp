@@ -53,21 +53,26 @@ void LuaEventHandler::registerGlobalFunctions(lua_State* lua) {
     if (!lua) {
         return;
     }
-    
-    // 注册UI全局表
-    lua_newtable(lua);
-    
-    // 注册函数
+
+    // 获取现有的 UI 全局表（如果存在）
+    lua_getglobal(lua, "UI");
+    if (!lua_istable(lua, -1)) {
+        // 如果不存在，创建新的表
+        lua_pop(lua, 1);  // 弹出 nil
+        lua_newtable(lua);
+    }
+
+    // 注册函数到 UI 表
     lua_pushcfunction(lua, luaBindEvent);
     lua_setfield(lua, -2, "bindEvent");
-    
+
     lua_pushcfunction(lua, luaUnbindEvent);
     lua_setfield(lua, -2, "unbindEvent");
-    
+
     lua_pushcfunction(lua, luaFireEvent);
     lua_setfield(lua, -2, "fireEvent");
-    
-    // 设置为全局变量
+
+    // 设置回全局变量（更新现有表）
     lua_setglobal(lua, "UI");
 }
 
@@ -77,20 +82,20 @@ bool LuaEventHandler::bindControlEvent(const std::string& controlId,
     if (!lua || funcRef < 0) {
         return false;
     }
-    
+
     // 解析事件类型
     EventType eventType = EventManager::parseEventType(eventName);
-    
-    // 获取Lua函数引用
-    int ref = getLuaFunctionRef(lua, funcRef);
-    
-    // 注册到事件管理器
-    int handlerId = m_eventManager->registerLuaHandler(controlId, eventType, lua, ref);
-    
+
+    // funcRef 已经是有效的 registry 引用，直接使用
+    int handlerId = m_eventManager->registerLuaHandler(controlId, eventType, lua, funcRef);
+    if (handlerId < 0) {
+        return false;
+    }
+
     // 保存绑定信息
-    LuaFunctionRef funcRefInfo(lua, ref, handlerId);
+    LuaFunctionRef funcRefInfo(lua, funcRef, handlerId);
     m_eventBindings[controlId][eventType] = funcRefInfo;
-    
+
     return true;
 }
 

@@ -6,6 +6,7 @@
 #include "lua/binding/ControlBinder.h"
 #include "lua/binding/LuaBinder.h"
 #include <iostream>
+#include <windows.h>
 
 namespace LuaUI {
 namespace Lua {
@@ -63,7 +64,10 @@ void ControlBinder::initialize() {
     
     lua_pushcfunction(m_lua, luaGetText);
     lua_setfield(m_lua, -2, "getText");
-    
+
+    lua_pushcfunction(m_lua, luaExit);
+    lua_setfield(m_lua, -2, "exit");
+
     // 设置为全局变量
     lua_setglobal(m_lua, "UI");
 }
@@ -347,8 +351,14 @@ int ControlBinder::luaGetText(lua_State* L) {
     } else {
         lua_pushnil(L);
     }
-    
+
     return 1;
+}
+
+int ControlBinder::luaExit(lua_State* /*L*/) {
+    // 发送 WM_QUIT 消息退出应用程序
+    PostQuitMessage(0);
+    return 0;
 }
 
 } // namespace Binding
