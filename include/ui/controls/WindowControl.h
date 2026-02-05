@@ -9,9 +9,43 @@
 #define LUAUI_WINDOWCONTROL_H
 
 #include "ui/controls/BaseControl.h"
+#include <afxwin.h>
+#include <vector>
 
 namespace LuaUI {
 namespace UI {
+
+// 前向声明
+class WindowControl;
+
+/**
+ * @brief MFC 窗口类，用于处理消息
+ */
+class LuaUIWindow : public CFrameWnd {
+    DECLARE_DYNCREATE(LuaUIWindow)
+
+public:
+    LuaUIWindow();
+    virtual ~LuaUIWindow();
+
+    /**
+     * @brief 设置所有者控件
+     * @param owner 所有者控件
+     */
+    void setOwnerControl(WindowControl* owner) { m_owner = owner; }
+
+    /**
+     * @brief 获取所有者控件
+     * @return 所有者控件
+     */
+    WindowControl* getOwnerControl() const { return m_owner; }
+
+protected:
+    DECLARE_MESSAGE_MAP()
+
+private:
+    WindowControl* m_owner; ///< 所有者控件
+};
 
 /**
  * @brief 窗口控件类
@@ -39,7 +73,8 @@ public:
      */
     std::string getTitle() const;
     
-    /**/**
+    /**
+/**
      * @brief 静态创建函数
      * @return 窗口控件指针
      */
@@ -52,9 +87,32 @@ public:
      */
     bool createWindow(CWnd* parent);
 
+    /**
+     * @brief 添加子控件
+     * @param child 子控件
+     * @return 成功返回true，失败返回false
+     */
+    bool addChild(BaseControl* child) override;
+
+    /**
+     * @brief 根据ID查找子控件
+     * @param id 控件ID
+     * @return 找到返回控件指针，否则返回nullptr
+     */
+    BaseControl* findChildById(const std::string& id) override;
+
+    /**
+     * @brief 创建所有子控件的MFC窗口
+     * @details 在主窗口创建后，递归创建所有子控件的MFC窗口
+     */
+    void createChildWindows();
+
 private:
     class Impl;
     Impl* m_impl;
+    std::vector<BaseControl*> m_children; ///< 子控件列表
+
+    friend class LuaUIWindow; // 允许窗口类访问私有成员
 };
 
 } // namespace UI

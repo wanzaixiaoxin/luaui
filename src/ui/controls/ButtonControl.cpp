@@ -4,23 +4,61 @@
  */
 
 #include "ui/controls/ButtonControl.h"
-#include <iostream>
+#include "xml/parser/XmlParser.h"
 #include <afxwin.h> // MFC support
+#include <iostream>
 
 namespace LuaUI {
+
 namespace UI {
+
+// LuaUIButton - MFC按钮类，用于处理消息
+class LuaUIButton : public CButton {
+    DECLARE_DYNCREATE(LuaUIButton)
+
+public:
+    LuaUIButton() : m_owner(nullptr) {}
+    virtual ~LuaUIButton() {}
+
+    void setOwnerControl(ButtonControl* owner) { m_owner = owner; }
+    ButtonControl* getOwnerControl() const { return m_owner; }
+
+protected:
+    DECLARE_MESSAGE_MAP()
+    afx_msg void OnClicked();
+
+private:
+    ButtonControl* m_owner;
+};
+
+// LuaUIButton 的消息映射实现
+IMPLEMENT_DYNCREATE(LuaUIButton, CButton)
+
+BEGIN_MESSAGE_MAP(LuaUIButton, CButton)
+    ON_CONTROL_REFLECT(BN_CLICKED, OnClicked)
+END_MESSAGE_MAP()
+
+void LuaUIButton::OnClicked()
+{
+    if (m_owner) {
+        std::cout << "Button clicked: " << m_owner->getId() << std::endl;
+        // 触发按钮的点击事件
+        m_owner->fireEvent("onClick");
+    }
+}
 
 class ButtonControl::Impl {
 public:
-    CButton* button; ///< MFC按钮控件指针
-    std::string text; ///< 按钮文本
-    static int s_nextId; ///< 下一个控件ID
+    LuaUIButton* button;
+    std::string text;
+    static int s_nextId;
 
     Impl() : button(nullptr), text("Button") { }
     
     static int getNextId() {
         return s_nextId++;
     }
+    
     ~Impl() {
         if (button) {
             button->DestroyWindow();
@@ -100,15 +138,18 @@ bool ButtonControl::createButton(CWnd* parent) {
     }
 
     // 创建MFC按钮控件
-    m_impl->button = new CButton();
-    
+    m_impl->button = new LuaUIButton();
+    LuaUIButton* luaButton = static_cast<LuaUIButton*>(m_impl->button);
+    luaButton->setOwnerControl(this);
+
     // 创建按钮，使用唯一 ID
     CString text = CString(m_impl->text.c_str());
     int controlId = m_impl->getNextId();
     std::cout << "ButtonControl::createButton: Creating with ID=" << controlId << std::endl;
-    if (!m_impl->button->Create(text, WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
-                               CRect(m_x, m_y, m_x + m_width, m_y + m_height),
-                               parent, controlId)) {
+    
+    if (!luaButton->Create(text, WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+                         CRect(m_x, m_y, m_x + m_width, m_y + m_height),
+                         parent, controlId)) {
         delete m_impl->button;
         m_impl->button = nullptr;
         return false;

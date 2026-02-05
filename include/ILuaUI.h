@@ -52,6 +52,9 @@ public:
     virtual void hide() = 0;
 };
 
+// 前向声明
+class IScriptEngine;
+
 /**
  * @brief 布局引擎接口
  * @details XML布局解析和UI创建的接口
@@ -86,6 +89,13 @@ public:
      * @details 显示所有创建的控件
      */
     virtual void showUI() = 0;
+    
+    /**
+     * @brief 绑定Lua事件处理函数
+     * @param scriptEngine 脚本引擎
+     * @details 将Lua脚本中的事件函数绑定到控件
+     */
+    virtual void bindLuaEvents(IScriptEngine* scriptEngine) = 0;
 };
 
 /**

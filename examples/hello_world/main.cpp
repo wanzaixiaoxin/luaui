@@ -62,6 +62,15 @@ int main(int /*argc*/, char* /*argv*/[]) {
         return -1;
     }
     
+    // 绑定Lua事件处理函数
+    std::cout << "Binding Lua events..." << std::endl;
+    layoutEngine->bindLuaEvents(scriptEngine);
+    
+    // 调用初始化函数（如果存在）
+    if (scriptEngine->callFunction("onInit")) {
+        std::cout << "onInit() called successfully" << std::endl;
+    }
+    
     std::cout << "UI and script loaded successfully. Running main loop..." << std::endl;
     
     // 运行应用程序主循环

@@ -10,9 +10,24 @@
 #include "ui/controls/WindowControl.h"
 #include "ui/controls/ButtonControl.h"
 #include "ui/controls/LabelControl.h"
-#include <algorithm>
+#include "core/ScriptEngine.h"
+#include "core/LuaState.h"
+#include "ui/controls/BaseControl.h"
 #include <iostream>
 #include <afxwin.h> // MFC support for ShowWindow and SW_SHOW
+
+// 前向声明
+namespace LuaUI {
+namespace UI {
+class WindowControl;
+}
+}
+
+extern "C" {
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
+}
 
 namespace LuaUI {
 namespace Layout {
@@ -120,19 +135,51 @@ void LayoutEngine::showUI() {
     
     // 如果是窗口，确保窗口已创建
     if (m_rootControl->getType() == "window") {
-        LuaUI::UI::WindowControl* windowControl = dynamic_cast<LuaUI::UI::WindowControl*>(m_rootControl);
+        UI::WindowControl* windowControl = dynamic_cast<UI::WindowControl*>(m_rootControl);
         if (windowControl && !windowControl->getWindow()) {
             std::cout << "Creating main window..." << std::endl;
             windowControl->createWindow(nullptr);
+            
+            // 创建所有子控件的MFC窗口
+            std::cout << "Creating child windows..." << std::endl;
+            windowControl->createChildWindows();
         }
     }
     
-    // 显示窗口
+    // 显示所有控件
+    showAllControls(m_rootControl);
+    
+    // 显示主窗口
     CWnd* window = m_rootControl->getWindow();
     if (window && ::IsWindow(window->m_hWnd)) {
         std::cout << "Showing window..." << std::endl;
         window->ShowWindow(SW_SHOW);
         window->UpdateWindow();
+    }
+}
+
+void LayoutEngine::showAllControls(UI::BaseControl* control) {
+    if (!control) {
+        return;
+    }
+    
+    // 显示当前控件
+    CWnd* wnd = control->getWindow();
+    if (wnd && ::IsWindow(wnd->m_hWnd)) {
+        std::cout << "Showing control: " << control->getId() << std::endl;
+        wnd->ShowWindow(SW_SHOW);
+        wnd->UpdateWindow();
+    }
+    
+    // 递归显示子控件
+    UI::WindowControl* window = dynamic_cast<UI::WindowControl*>(control);
+    if (window) {
+        std::vector<UI::BaseControl*> children = getAllControls();
+        for (size_t i = 0; i < children.size(); ++i) {
+            if (children[i] != control) { // 避免重复显示
+                showAllControls(children[i]);
+            }
+        }
     }
 }
 
@@ -297,6 +344,11 @@ std::shared_ptr<IControl> LayoutEngine::getControl(const std::string& id) {
     }
     
     return nullptr;
+}
+
+void LayoutEngine::bindLuaEvents(IScriptEngine* scriptEngine) {
+    // 空实现 - 事件绑定在main.cpp中直接调用
+    (void)scriptEngine;
 }
 
 } // namespace Layout

@@ -11,11 +11,13 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "LuaState.h"
+#include "ILuaUI.h"
 extern "C" {
 #include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 }
-#include "LuaState.h"
-#include "ILuaUI.h"  // 包含接口定义
 
 namespace LuaUI {
 namespace Core {
@@ -27,16 +29,7 @@ typedef void (*ScriptLifecycleCallback)(const std::string& scriptName);
 
 /**
  * @brief 脚本引擎类
- * @details 管理Lua脚本的加载、执行和生命周期
- * 
- * 使用示例：
- * @code
- * ScriptEngine engine;
- * engine.initialize();
- * engine.loadScript("main.lua");
- * engine.callFunction("onInit");
- * engine.shutdown();
- * @endcode
+ * @details 殡理Lua脚本的加载、执行和生命周期
  */
 class ScriptEngine : public IScriptEngine {
 public:
@@ -75,7 +68,7 @@ public:
     
     /**
      * @brief 加载脚本文件
-     * @param scriptFile 脚本文件路径
+     * @param scriptFile Lua文件路径
      * @return 成功返回true，失败返回false
      */
     bool loadScript(const std::string& scriptFile);
@@ -88,8 +81,8 @@ public:
     bool loadScriptString(const std::string& scriptContent);
     
     /**
-     * @brief 执行脚本
-     * @param scriptFile 脚本文件路径
+     * @brief 执行脚本文件
+     * @param scriptFile Lua文件路径
      * @return 成功返回true，失败返回false
      */
     bool executeScript(const std::string& scriptFile);
@@ -114,8 +107,7 @@ public:
      * @param args 参数列表
      * @return 成功返回true，失败返回false
      */
-    bool callFunctionWithArgs(const std::string& funcName, 
-                              const std::vector<std::string>& args);
+    bool callFunctionWithArgs(const std::string& funcName, const std::vector<std::string>& args);
     
     /**
      * @brief 注册C++函数到Lua全局命名空间
@@ -123,6 +115,14 @@ public:
      * @param func C++函数指针
      */
     void registerFunction(const std::string& name, lua_CFunction func);
+    
+    /**
+     * @brief 注册C++函数到Lua模块
+     * @param tableName 模块名
+     * @param funcName 函数名称
+     * @param func C++函数指针
+     */
+    void registerFunctionToTable(const std::string& tableName, const std::string& funcName, lua_CFunction func);
     
     /**
      * @brief 设置脚本路径搜索路径
@@ -179,12 +179,7 @@ public:
      * @return 成功返回true，失败返回false
      */
     bool reloadScript(const std::string& scriptName);
-    
-    // IScriptEngine 接口实现 - 这些方法已在类中定义，无需重复声明
-    // virtual bool loadScript(const std::string& luaFile) override;
-    // virtual bool executeString(const std::string& script) override;
-    // virtual bool callFunction(const std::string& funcName) override;
-    
+
 private:
     LuaState m_luaState;                          ///< Lua状态管理器
     bool m_initialized;                           ///< 是否已初始化标志

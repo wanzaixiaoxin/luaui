@@ -9,9 +9,13 @@
 #define LUAUI_BUTTONCONTROL_H
 
 #include "ui/controls/BaseControl.h"
+#include <afxwin.h>
 
 namespace LuaUI {
 namespace UI {
+
+// 前向声明
+class ButtonControl;
 
 /**
  * @brief 按钮控件类
@@ -27,29 +31,10 @@ public:
     virtual CWnd* getWindow() override;
     virtual const CWnd* getWindow() const override;
     
-    /**
-     * @brief 设置按钮文本
-     * @param text 文本
-     */
     void setText(const std::string& text);
-    
-    /**
-     * @brief 获取按钮文本
-     * @return 文本
-     */
     std::string getText() const;
     
-    /**
-     * @brief 静态创建函数
-     * @return 按钮控件指针
-     */
     static BaseControl* createInstance();
-
-    /**
-     * @brief 创建MFC按钮
-     * @param parent 父窗口
-     * @return 成功返回true，失败返回false
-     */
     bool createButton(CWnd* parent);
 
 private:

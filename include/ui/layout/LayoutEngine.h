@@ -221,6 +221,27 @@ public:
      */
     void showUI();
     
+    /**
+     * @brief 绑定Lua事件处理函数
+     * @param scriptEngine 脚本引擎
+     * @details 将Lua脚本中的事件函数绑定到控件
+     */
+    void bindLuaEvents(IScriptEngine* scriptEngine) override;
+    
+private:
+    /**
+     * @brief 递归绑定控件事件
+     * @param control 控件
+     * @param L Lua状态
+     */
+    void bindControlEvents(UI::BaseControl* control, struct lua_State* L);
+    
+    /**
+     * @brief 递归显示所有控件
+     * @param control 控件
+     */
+    void showAllControls(UI::BaseControl* control);
+    
     // ILayoutEngine 接口实现
     virtual bool loadFromXml(const std::string& xmlFile) override;
     virtual bool loadFromXmlString(const std::string& xmlContent) override;
