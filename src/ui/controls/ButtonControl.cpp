@@ -4,6 +4,7 @@
  */
 
 #include "ui/controls/ButtonControl.h"
+#include <iostream>
 #include <afxwin.h> // MFC support
 
 namespace LuaUI {
@@ -13,8 +14,13 @@ class ButtonControl::Impl {
 public:
     CButton* button; ///< MFC按钮控件指针
     std::string text; ///< 按钮文本
+    static int s_nextId; ///< 下一个控件ID
 
     Impl() : button(nullptr), text("Button") { }
+    
+    static int getNextId() {
+        return s_nextId++;
+    }
     ~Impl() {
         if (button) {
             button->DestroyWindow();
@@ -47,8 +53,11 @@ bool ButtonControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* parent) {
             setText(text);
         }
 
-        // 创建MFC按钮
-        createButton(parent);
+        // 延迟创建 MFC 按钮，等到父窗口创建后再创建
+        // createButton 会在 LayoutEngine::showUI 中被调用
+        if (parent) {
+            createButton(parent);
+        }
     }
 
     return result;
@@ -82,29 +91,42 @@ BaseControl* ButtonControl::createInstance() {
 }
 
 bool ButtonControl::createButton(CWnd* parent) {
+    std::cout << "ButtonControl::createButton: parent=" << parent 
+              << ", existing button=" << m_impl->button << std::endl;
     if (!parent || m_impl->button) {
+        std::cout << "ButtonControl::createButton: Failed - "
+                  << (!parent ? "no parent" : "button already exists") << std::endl;
         return false; // 父窗口不存在或按钮已存在
     }
 
     // 创建MFC按钮控件
     m_impl->button = new CButton();
     
-    // 创建按钮
+    // 创建按钮，使用唯一 ID
     CString text = CString(m_impl->text.c_str());
+    int controlId = m_impl->getNextId();
+    std::cout << "ButtonControl::createButton: Creating with ID=" << controlId << std::endl;
     if (!m_impl->button->Create(text, WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
                                CRect(m_x, m_y, m_x + m_width, m_y + m_height),
-                               parent, AFX_IDW_PANE_FIRST + 2)) {  // 使用唯一ID
+                               parent, controlId)) {
         delete m_impl->button;
         m_impl->button = nullptr;
         return false;
     }
 
+    // 把按钮带到最前面
+    m_impl->button->SetWindowPos(&CWnd::wndTop, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    
     // 显示按钮
     m_impl->button->ShowWindow(SW_SHOW);
     m_impl->button->UpdateWindow();
 
+    std::cout << "ButtonControl::createButton: Success!" << std::endl;
     return true;
 }
+
+// 初始化静态成员
+int ButtonControl::Impl::s_nextId = 1000;
 
 } // namespace UI
 } // namespace LuaUI

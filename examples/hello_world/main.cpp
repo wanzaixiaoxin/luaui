@@ -41,9 +41,10 @@ int main(int /*argc*/, char* /*argv*/[]) {
     }
     
     // 加载XML布局
-    std::cout << "Loading XML layout..." << std::endl;
-    if (!layoutEngine->loadFromXml("layout.xml")) {
-        std::cerr << "Failed to load layout from XML!" << std::endl;
+    std::string xmlFile = "helloworld_layout.xml";
+    std::cout << "Loading XML layout from: " << xmlFile << std::endl;
+    if (!layoutEngine->loadFromXml(xmlFile)) {
+        std::cerr << "Failed to load layout from: " << xmlFile << std::endl;
         LuaUI::Shutdown();
         return -1;
     }
@@ -53,9 +54,10 @@ int main(int /*argc*/, char* /*argv*/[]) {
     layoutEngine->showUI();
     
     // 加载Lua脚本
-    std::cout << "Loading Lua script..." << std::endl;
-    if (!scriptEngine->loadScript("helloworld_main.lua")) {
-        std::cerr << "Failed to load Lua script!" << std::endl;
+    std::string luaFile = "helloworld_main.lua";
+    std::cout << "Loading Lua script from: " << luaFile << std::endl;
+    if (!scriptEngine->loadScript(luaFile)) {
+        std::cerr << "Failed to load Lua script from: " << luaFile << std::endl;
         LuaUI::Shutdown();
         return -1;
     }

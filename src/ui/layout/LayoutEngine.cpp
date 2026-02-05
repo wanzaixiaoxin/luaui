@@ -7,7 +7,11 @@
 #include "ui/layout/ContainerLayout.h"
 #include "ui/layout/PositionCalculator.h"
 #include "ui/factory/ControlFactory.h"
+#include "ui/controls/WindowControl.h"
+#include "ui/controls/ButtonControl.h"
+#include "ui/controls/LabelControl.h"
 #include <algorithm>
+#include <iostream>
 #include <afxwin.h> // MFC support for ShowWindow and SW_SHOW
 
 namespace LuaUI {
@@ -110,16 +114,25 @@ LayoutType LayoutEngine::getLayoutType(const std::string& containerId) {
 }
 
 void LayoutEngine::showUI() {
-    if (m_rootControl) {
-        // 获取根控件的窗口
-        CWnd* window = m_rootControl->getWindow();
-        if (window) {
-            // 如果窗口尚未显示，则显示它
-            if (::IsWindow(window->m_hWnd)) {
-                window->ShowWindow(SW_SHOW);
-                window->UpdateWindow();
-            }
+    if (!m_rootControl) return;
+    
+    std::cout << "showUI: Starting..." << std::endl;
+    
+    // 如果是窗口，确保窗口已创建
+    if (m_rootControl->getType() == "window") {
+        LuaUI::UI::WindowControl* windowControl = dynamic_cast<LuaUI::UI::WindowControl*>(m_rootControl);
+        if (windowControl && !windowControl->getWindow()) {
+            std::cout << "Creating main window..." << std::endl;
+            windowControl->createWindow(nullptr);
         }
+    }
+    
+    // 显示窗口
+    CWnd* window = m_rootControl->getWindow();
+    if (window && ::IsWindow(window->m_hWnd)) {
+        std::cout << "Showing window..." << std::endl;
+        window->ShowWindow(SW_SHOW);
+        window->UpdateWindow();
     }
 }
 
@@ -128,14 +141,13 @@ UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI
         return nullptr;
     }
     
-    // 获取父窗口（如果有的话）
-    CWnd* parentWnd = nullptr;
-    if (parent) {
-        parentWnd = parent->getWindow();
+    // 如果是窗口，先创建窗口
+    if (std::string(xmlElement->getType()) == "window") {
+        std::cout << "Creating window control..." << std::endl;
     }
     
-    // 使用工厂创建控件，传递父窗口
-    UI::BaseControl* control = UI::ControlFactory::instance().createFromXml(xmlElement, parentWnd);
+    // 使用工厂创建控件
+    UI::BaseControl* control = UI::ControlFactory::instance().createFromXml(xmlElement, nullptr);
     
     if (!control) {
         return nullptr;
