@@ -5,6 +5,7 @@
 
 #include "ui/controls/ButtonControl.h"
 #include "xml/parser/XmlParser.h"
+#include "ui/controls/BaseControl.h"
 #include <afxwin.h> // MFC support
 #include <iostream>
 
@@ -91,11 +92,8 @@ bool ButtonControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* parent) {
             setText(text);
         }
 
-        // 延迟创建 MFC 按钮，等到父窗口创建后再创建
-        // createButton 会在 LayoutEngine::showUI 中被调用
-        if (parent) {
-            createButton(parent);
-        }
+        // 不在XML解析时创建MFC按钮，延迟到LayoutEngine::showUI中统一创建
+        // 这样可以确保父窗口完全初始化后再创建子控件
     }
 
     return result;
@@ -147,7 +145,7 @@ bool ButtonControl::createButton(CWnd* parent) {
     int controlId = m_impl->getNextId();
     std::cout << "ButtonControl::createButton: Creating with ID=" << controlId << std::endl;
     
-    if (!luaButton->Create(text, WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+    if (!luaButton->Create(text, WS_CHILD | WS_VISIBLE | WS_BORDER | BS_PUSHBUTTON,
                          CRect(m_x, m_y, m_x + m_width, m_y + m_height),
                          parent, controlId)) {
         delete m_impl->button;

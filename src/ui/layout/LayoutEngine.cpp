@@ -129,32 +129,74 @@ LayoutType LayoutEngine::getLayoutType(const std::string& containerId) {
 }
 
 void LayoutEngine::showUI() {
-    if (!m_rootControl) return;
-    
-    std::cout << "showUI: Starting..." << std::endl;
-    
-    // 如果是窗口，确保窗口已创建
-    if (m_rootControl->getType() == "window") {
-        UI::WindowControl* windowControl = dynamic_cast<UI::WindowControl*>(m_rootControl);
-        if (windowControl && !windowControl->getWindow()) {
-            std::cout << "Creating main window..." << std::endl;
-            windowControl->createWindow(nullptr);
-            
-            // 创建所有子控件的MFC窗口
-            std::cout << "Creating child windows..." << std::endl;
-            windowControl->createChildWindows();
-        }
+    if (!m_rootControl) {
+        std::cout << "ERROR: showUI - No root control!" << std::endl;
+        return;
     }
     
-    // 显示所有控件
-    showAllControls(m_rootControl);
+    std::cout << "showUI: Starting... Root control type: " << m_rootControl->getType() << std::endl;
     
-    // 显示主窗口
-    CWnd* window = m_rootControl->getWindow();
-    if (window && ::IsWindow(window->m_hWnd)) {
+    // 打印所有控件信息用于调试
+    std::vector<UI::BaseControl*> allControls = getAllControls();
+    std::cout << "Total controls in layout: " << allControls.size() << std::endl;
+    for (size_t i = 0; i < allControls.size(); ++i) {
+        std::cout << "  Control " << i << ": " << allControls[i]->getType() 
+                  << " (id: " << allControls[i]->getId() << ", pos: "
+                  << allControls[i]->getX() << "," << allControls[i]->getY() 
+                  << ", size: " << allControls[i]->getWidth() << "x" << allControls[i]->getHeight() << ")" << std::endl;
+    }
+    
+    // 如果是窗口，确保窗口已创建并且子控件也已创建
+    if (m_rootControl->getType() == "window") {
+        UI::WindowControl* windowControl = dynamic_cast<UI::WindowControl*>(m_rootControl);
+        if (!windowControl) {
+            std::cout << "ERROR: showUI - Root control is not a WindowControl!" << std::endl;
+            return;
+        }
+        
+        std::cout << "Found WindowControl, title: " << windowControl->getTitle() << std::endl;
+        
+        // 如果窗口还没有创建，先创建窗口
+        if (!windowControl->getWindow()) {
+            std::cout << "Creating main window..." << std::endl;
+            if (!windowControl->createWindow(nullptr)) {
+                std::cerr << "ERROR: Failed to create main window!" << std::endl;
+                return;
+            }
+            std::cout << "Main window created successfully" << std::endl;
+        } else {
+            std::cout << "Main window already exists" << std::endl;
+        }
+        
+        CWnd* window = windowControl->getWindow();
+        if (!window || !::IsWindow(window->m_hWnd)) {
+            std::cout << "ERROR: Window handle is invalid!" << std::endl;
+            return;
+        }
+        
+        std::cout << "Window handle: " << window->m_hWnd << std::endl;
+        
+        // 创建所有子控件的MFC窗口（无论窗口是否已存在）
+        std::cout << "Creating child windows..." << std::endl;
+        windowControl->createChildWindows();
+        
+        // 显示主窗口
         std::cout << "Showing window..." << std::endl;
         window->ShowWindow(SW_SHOW);
         window->UpdateWindow();
+        
+        // 强制处理消息以确保窗口立即显示
+        MSG msg;
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        
+        std::cout << "showUI completed successfully" << std::endl;
+    } else {
+        std::cout << "Root control is not a window, type: " << m_rootControl->getType() << std::endl;
+        // 非窗口根控件，直接显示所有控件
+        showAllControls(m_rootControl);
     }
 }
 

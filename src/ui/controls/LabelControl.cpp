@@ -4,6 +4,7 @@
  */
 
 #include "ui/controls/LabelControl.h"
+#include "ui/controls/BaseControl.h"
 #include <iostream>
 #include <afxwin.h> // MFC support
 
@@ -53,11 +54,8 @@ bool LabelControl::createFromXml(Xml::XmlElement* xmlElement, CWnd* parent) {
             setText(text);
         }
 
-        // 延迟创建 MFC 标签，等到父窗口创建后再创建
-        // createLabel 会在 LayoutEngine::showUI 中被调用
-        if (parent) {
-            createLabel(parent);
-        }
+        // 不在XML解析时创建MFC标签，延迟到LayoutEngine::showUI中统一创建
+        // 这样可以确保父窗口完全初始化后再创建子控件
     }
 
     return result;
@@ -106,7 +104,8 @@ bool LabelControl::createLabel(CWnd* parent) {
     CString text = CString(m_impl->text.c_str());
     int controlId = m_impl->getNextId();
     std::cout << "LabelControl::createLabel: Creating with ID=" << controlId << std::endl;
-    if (!m_impl->label->Create(text, WS_CHILD | WS_VISIBLE | SS_LEFT,
+    // 使用 SS_NOTIFY 接收鼠标事件，添加 WS_BORDER 便于调试查看边界
+    if (!m_impl->label->Create(text, WS_CHILD | WS_VISIBLE | WS_BORDER | SS_LEFT | SS_NOTIFY,
                                CRect(m_x, m_y, m_x + m_width, m_y + m_height),
                                parent, controlId)) {
         delete m_impl->label;

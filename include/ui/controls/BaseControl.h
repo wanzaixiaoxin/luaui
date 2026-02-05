@@ -153,14 +153,38 @@ public:
      * @brief 禁用控件
      */
     virtual void disable();
-    
+
+    /**
+     * @brief 获取X坐标
+     * @return X坐标
+     */
+    int getX() const { return m_x; }
+
+    /**
+     * @brief 获取Y坐标
+     * @return Y坐标
+     */
+    int getY() const { return m_y; }
+
+    /**
+     * @brief 获取宽度
+     * @return 宽度
+     */
+    int getWidth() const { return m_width; }
+
+    /**
+     * @brief 获取高度
+     * @return 高度
+     */
+    int getHeight() const { return m_height; }
+
     /**
      * @brief 设置位置
      * @param x X坐标
      * @param y Y坐标
      */
     virtual void setPosition(int x, int y);
-    
+
     /**
      * @brief 设置大小
      * @param width 宽度

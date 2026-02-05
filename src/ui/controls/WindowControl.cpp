@@ -15,9 +15,9 @@ namespace LuaUI {
 namespace UI {
 
 // LuaUIWindow 的消息映射实现
-IMPLEMENT_DYNCREATE(LuaUIWindow, CFrameWnd)
+IMPLEMENT_DYNCREATE(LuaUIWindow, CWnd)
 
-BEGIN_MESSAGE_MAP(LuaUIWindow, CFrameWnd)
+BEGIN_MESSAGE_MAP(LuaUIWindow, CWnd)
     ON_WM_CLOSE()
     ON_WM_DESTROY()
 END_MESSAGE_MAP()
@@ -139,8 +139,16 @@ BaseControl* WindowControl::findChildById(const std::string& id) {
 
 void WindowControl::createChildWindows() {
     if (!m_impl->window) {
+        std::cout << "WindowControl::createChildWindows: No window available!" << std::endl;
         return;
     }
+    
+    // 获取客户区矩形，用于计算子控件相对位置
+    CRect clientRect;
+    m_impl->window->GetClientRect(&clientRect);
+    std::cout << "WindowControl::createChildWindows: Client rect = " 
+              << clientRect.left << "," << clientRect.top << " - " 
+              << clientRect.Width() << "x" << clientRect.Height() << std::endl;
     
     // 递归创建所有子控件的MFC窗口
     for (std::vector<BaseControl*>::iterator it = m_children.begin();
@@ -173,6 +181,20 @@ void WindowControl::createChildWindows() {
             }
         }
     }
+    
+    // 强制重绘窗口以显示所有子控件
+    m_impl->window->Invalidate();
+    m_impl->window->UpdateWindow();
+    
+    // 确保所有子控件都被正确显示（某些情况下需要额外处理）
+    for (std::vector<BaseControl*>::iterator it = m_children.begin();
+         it != m_children.end(); ++it) {
+        CWnd* childWnd = (*it)->getWindow();
+        if (childWnd && ::IsWindow(childWnd->m_hWnd)) {
+            childWnd->Invalidate();
+            childWnd->UpdateWindow();
+        }
+    }
 }
 
 bool WindowControl::createWindow(CWnd* parent) {
@@ -184,16 +206,35 @@ bool WindowControl::createWindow(CWnd* parent) {
     m_impl->window->setOwnerControl(this);
 
     CString title = CString(m_impl->title.c_str());
-    if (!m_impl->window->Create(NULL, title, WS_OVERLAPPEDWINDOW,
-                               CRect(m_x, m_y, m_x + m_width, m_y + m_height),
-                               parent, NULL)) {
+    
+    // 注册自定义窗口类
+    static LPCTSTR className = AfxRegisterWndClass(
+        CS_HREDRAW | CS_VREDRAW,
+        ::LoadCursor(NULL, IDC_ARROW),
+        (HBRUSH)(COLOR_WINDOW + 1),
+        NULL);
+    
+    // 使用 WS_CLIPCHILDREN 确保子控件正确显示
+    // 父窗口为 NULL 表示顶级窗口
+    if (!m_impl->window->CreateEx(
+            0,
+            className,
+            title,
+            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+            m_x, m_y, m_width, m_height,
+            parent ? parent->m_hWnd : NULL,
+            NULL)) {
         delete m_impl->window;
         m_impl->window = nullptr;
+        std::cout << "WindowControl::createWindow: Failed to create window!" << std::endl;
         return false;
     }
 
-    m_impl->window->ShowWindow(SW_SHOW);
-    m_impl->window->UpdateWindow();
+    std::cout << "WindowControl::createWindow: Window created successfully" << std::endl;
+    
+    // 不在这里显示窗口，等待所有子控件创建完成后再显示
+    // m_impl->window->ShowWindow(SW_SHOW);
+    // m_impl->window->UpdateWindow();
 
     return true;
 }
