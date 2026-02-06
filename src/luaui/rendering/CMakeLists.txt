@@ -51,6 +51,11 @@ target_include_directories(${MODULE_NAME}
 
 target_compile_features(${MODULE_NAME} PUBLIC cxx_std_17)
 
+# Dependencies
+target_link_libraries(${MODULE_NAME} PUBLIC
+    LuaUI_Utils
+)
+
 # Windows SDK dependencies
 if(WIN32)
     target_link_libraries(${MODULE_NAME} PUBLIC

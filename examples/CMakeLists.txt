@@ -14,5 +14,6 @@ if(TARGET LuaUI_Rendering)
     target_link_libraries(03_rendering_demo PRIVATE LuaUI_Rendering)
     target_include_directories(03_rendering_demo PRIVATE
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils/include
     )
 endif()

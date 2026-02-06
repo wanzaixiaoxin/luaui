@@ -2,19 +2,31 @@
 #include <windows.h>
 #include "luaui/rendering/IRenderEngine.h"
 #include "luaui/rendering/IRenderContext.h"
+#include "Logger.h"
 #include <iostream>
+#include <fstream>
 
 using namespace luaui::rendering;
+using namespace luaui::utils;
 
 class RenderingDemo {
 public:
     bool Initialize(HWND hwnd) {
+        Logger::Info("Initializing rendering demo...");
+        
         // Create render engine
         m_engine = CreateRenderEngine();
-        if (!m_engine->Initialize(RenderAPI::Direct2D)) {
-            std::cerr << "Failed to initialize render engine" << std::endl;
+        if (!m_engine) {
+            Logger::Error("Failed to create render engine");
             return false;
         }
+        Logger::Info("Render engine created");
+        
+        if (!m_engine->Initialize(RenderAPI::Direct2D)) {
+            Logger::Error("Failed to initialize render engine");
+            return false;
+        }
+        Logger::Info("Render engine initialized");
         
         // Create render target
         RenderTargetDesc desc;
@@ -24,12 +36,19 @@ public:
         desc.height = 600;
         
         if (!m_engine->CreateRenderTarget(desc)) {
-            std::cerr << "Failed to create render target" << std::endl;
+            Logger::Error("Failed to create render target");
             return false;
         }
+        Logger::Info("Render target created");
         
         // Create resources
         auto context = m_engine->GetContext();
+        if (!context) {
+            Logger::Error("Failed to get render context");
+            return false;
+        }
+        Logger::Info("Got render context");
+        
         m_redBrush = context->CreateSolidColorBrush(Color(0.8f, 0.2f, 0.2f));
         m_greenBrush = context->CreateSolidColorBrush(Color(0.2f, 0.8f, 0.2f));
         m_blueBrush = context->CreateSolidColorBrush(Color(0.2f, 0.2f, 0.8f));
@@ -42,14 +61,18 @@ public:
             }
         );
         
+        Logger::Info("Resources created successfully");
         return true;
     }
     
     void Shutdown() {
+        Logger::Info("Shutting down demo...");
         m_engine->Shutdown();
+        Logger::Info("Demo shutdown complete");
     }
     
     void OnResize(int width, int height) {
+        Logger::InfoF("Window resized to %dx%d", width, height);
         m_engine->ResizeRenderTarget(width, height);
     }
     
@@ -102,11 +125,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
     switch (message) {
     case WM_CREATE:
         if (!g_demo.Initialize(hwnd)) {
+            Logger::Error("Failed to initialize demo in WM_CREATE");
             return -1;
         }
         return 0;
         
     case WM_DESTROY:
+        Logger::Info("WM_DESTROY received");
         g_demo.Shutdown();
         PostQuitMessage(0);
         return 0;
@@ -131,6 +156,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
+    // Initialize COM for WIC
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(hr)) {
+        MessageBoxA(nullptr, "Failed to initialize COM", "Error", MB_OK);
+        return 1;
+    }
+    
+    // Initialize logger with file output
+    Logger::Initialize("rendering_demo.log");
+    Logger::Info("=== Rendering Demo Starting ===");
+    
     // Register window class
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -141,9 +177,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     wc.hbrBackground = nullptr; // We handle background in render
     
     if (!RegisterClassEx(&wc)) {
-        std::cerr << "Failed to register window class" << std::endl;
+        Logger::Error("Failed to register window class");
+        CoUninitialize();
         return 1;
     }
+    Logger::Info("Window class registered");
     
     // Create window
     HWND hwnd = CreateWindowEx(
@@ -154,19 +192,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     );
     
     if (!hwnd) {
-        std::cerr << "Failed to create window" << std::endl;
+        DWORD error = GetLastError();
+        Logger::ErrorF("Failed to create window, error: %lu", error);
+        CoUninitialize();
         return 1;
     }
+    Logger::Info("Window created successfully");
     
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
+    SetForegroundWindow(hwnd);
+    SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    Logger::Info("Window shown");
     
     // Message loop
+    Logger::Info("Entering message loop");
     MSG msg = {};
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    Logger::Info("Message loop ended");
+    
+    // Shutdown
+    Logger::Shutdown();
+    CoUninitialize();
     
     return (int)msg.wParam;
 }
