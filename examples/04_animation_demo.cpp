@@ -30,12 +30,19 @@ public:
             return false;
         }
         
-        // Create resources
+        // Create animation timeline
+        m_timeline = CreateAnimationTimeline();
+        
+        // Create brushes
         auto context = m_engine->GetContext();
         m_redBrush = context->CreateSolidColorBrush(Color(0.9f, 0.2f, 0.2f));
         m_greenBrush = context->CreateSolidColorBrush(Color(0.2f, 0.9f, 0.2f));
         m_blueBrush = context->CreateSolidColorBrush(Color(0.2f, 0.2f, 0.9f));
         m_yellowBrush = context->CreateSolidColorBrush(Color(0.9f, 0.9f, 0.2f));
+        m_whiteBrush = context->CreateSolidColorBrush(Color::White());
+        
+        // Setup animations
+        SetupAnimations();
         
         Logger::Info("Animation demo initialized successfully");
         return true;
@@ -43,24 +50,14 @@ public:
     
     void Shutdown() {
         Logger::Info("Shutting down animation demo...");
+        m_timeline.reset();
         m_engine->Shutdown();
     }
     
     void Update(float deltaTimeMs) {
-        // Update animation values manually
-        m_time += deltaTimeMs / 1000.0f; // Convert to seconds
-        
-        // Bounce animation (sine wave)
-        m_bounceX = 375.0f + std::sin(m_time * 2.0f) * 300.0f;
-        
-        // Pulse animation
-        m_pulseScale = 1.0f + std::sin(m_time * 4.0f) * 0.3f;
-        
-        // Fade animation
-        m_fadeAlpha = 0.5f + std::sin(m_time * 3.0f) * 0.5f;
-        
-        // Rotate animation (using position)
-        m_rotateOffset = std::sin(m_time * 2.5f) * 100.0f;
+        if (m_timeline) {
+            m_timeline->Update(deltaTimeMs);
+        }
     }
     
     void Render() {
@@ -72,16 +69,16 @@ public:
         // Draw animated rectangles
         float boxSize = 60.0f;
         
-        // Bouncing red box (horizontal movement)
+        // Bouncing red box
         context->FillRectangle(
             Rect(m_bounceX - boxSize/2, 100.0f, boxSize, boxSize), 
             m_redBrush.get()
         );
         
-        // Rotating green box (simulated with position)
-        float rotateX = 400.0f + m_rotateOffset;
+        // Oscillating green box
+        float oscillateX = 400.0f + m_oscillateOffset;
         context->FillRectangle(
-            Rect(rotateX - boxSize/2, 200.0f, boxSize, boxSize),
+            Rect(oscillateX - boxSize/2, 200.0f, boxSize, boxSize),
             m_greenBrush.get()
         );
         
@@ -99,18 +96,20 @@ public:
             Color(0.9f, 0.9f, 0.2f, m_fadeAlpha)
         );
         context->FillRectangle(
-            Rect(350.0f, 400.0f, boxSize * 2.0f, boxSize),
+            Rect(350.0f - boxSize, 400.0f, boxSize * 2.0f, boxSize),
             fadeBrush.get()
         );
         
         // Draw labels
         auto textFormat = context->CreateTextFormat(L"Arial", 16.0f);
-        auto whiteBrush = context->CreateSolidColorBrush(Color::White());
         
-        context->DrawTextString(L"Bounce (Sine)", textFormat.get(), Point(50.0f, 170.0f), whiteBrush.get());
-        context->DrawTextString(L"Oscillate", textFormat.get(), Point(370.0f, 170.0f), whiteBrush.get());
-        context->DrawTextString(L"Pulse (Sine)", textFormat.get(), Point(620.0f, 170.0f), whiteBrush.get());
-        context->DrawTextString(L"Fade", textFormat.get(), Point(380.0f, 470.0f), whiteBrush.get());
+        context->DrawTextString(L"Bounce (Quad)", textFormat.get(), Point(50.0f, 170.0f), m_whiteBrush.get());
+        context->DrawTextString(L"Elastic", textFormat.get(), Point(370.0f, 170.0f), m_whiteBrush.get());
+        context->DrawTextString(L"Pulse (Sine)", textFormat.get(), Point(620.0f, 170.0f), m_whiteBrush.get());
+        context->DrawTextString(L"Fade (Loop)", textFormat.get(), Point(360.0f, 470.0f), m_whiteBrush.get());
+        
+        // Draw instructions
+        context->DrawTextString(L"Press SPACE to pause/resume, R to restart", textFormat.get(), Point(250.0f, 550.0f), m_whiteBrush.get());
         
         m_engine->Present();
     }
@@ -119,18 +118,97 @@ public:
         m_engine->ResizeRenderTarget(width, height);
     }
     
+    void TogglePause() {
+        static bool paused = false;
+        paused = !paused;
+        if (paused) {
+            m_timeline->PauseAll();
+            Logger::Info("Animations paused");
+        } else {
+            m_timeline->ResumeAll();
+            Logger::Info("Animations resumed");
+        }
+    }
+    
+    void Restart() {
+        SetupAnimations();
+        Logger::Info("Animations restarted");
+    }
+    
 private:
+    void SetupAnimations() {
+        // Clear existing animations
+        m_timeline = CreateAnimationTimeline();
+        
+        // Bounce animation (left to right)
+        auto bounceAnim = m_timeline->CreateAnimation();
+        bounceAnim->SetDuration(2000.0f);  // 2 seconds
+        bounceAnim->SetEasing(Easing::QuadInOut);
+        bounceAnim->SetIterations(-1);  // Infinite
+        bounceAnim->SetDirection(AnimationDirection::Alternate);
+        bounceAnim->SetStartValue(AnimationValue(50.0f));
+        bounceAnim->SetEndValue(AnimationValue(750.0f));
+        bounceAnim->SetUpdateCallback([this](const AnimationValue& v) {
+            m_bounceX = v.AsFloat();
+        });
+        bounceAnim->Play();
+        m_timeline->Add(std::move(bounceAnim));
+        
+        // Oscillate animation (elastic)
+        auto oscillateAnim = m_timeline->CreateAnimation();
+        oscillateAnim->SetDuration(1500.0f);
+        oscillateAnim->SetEasing(Easing::ElasticOut);
+        oscillateAnim->SetIterations(-1);
+        oscillateAnim->SetDirection(AnimationDirection::Alternate);
+        oscillateAnim->SetStartValue(AnimationValue(-100.0f));
+        oscillateAnim->SetEndValue(AnimationValue(100.0f));
+        oscillateAnim->SetUpdateCallback([this](const AnimationValue& v) {
+            m_oscillateOffset = v.AsFloat();
+        });
+        oscillateAnim->Play();
+        m_timeline->Add(std::move(oscillateAnim));
+        
+        // Pulse animation (sine wave)
+        auto pulseAnim = m_timeline->CreateAnimation();
+        pulseAnim->SetDuration(1000.0f);
+        pulseAnim->SetEasing(Easing::SineInOut);
+        pulseAnim->SetIterations(-1);
+        pulseAnim->SetDirection(AnimationDirection::Alternate);
+        pulseAnim->SetStartValue(AnimationValue(0.5f));
+        pulseAnim->SetEndValue(AnimationValue(1.5f));
+        pulseAnim->SetUpdateCallback([this](const AnimationValue& v) {
+            m_pulseScale = v.AsFloat();
+        });
+        pulseAnim->Play();
+        m_timeline->Add(std::move(pulseAnim));
+        
+        // Fade animation (loop)
+        auto fadeAnim = m_timeline->CreateAnimation();
+        fadeAnim->SetDuration(2000.0f);
+        fadeAnim->SetEasing(Easing::QuadInOut);
+        fadeAnim->SetIterations(-1);
+        fadeAnim->SetDirection(AnimationDirection::Alternate);
+        fadeAnim->SetStartValue(AnimationValue(0.2f));
+        fadeAnim->SetEndValue(AnimationValue(1.0f));
+        fadeAnim->SetUpdateCallback([this](const AnimationValue& v) {
+            m_fadeAlpha = v.AsFloat();
+        });
+        fadeAnim->Play();
+        m_timeline->Add(std::move(fadeAnim));
+    }
+    
     std::unique_ptr<IRenderEngine> m_engine;
+    IAnimationTimelinePtr m_timeline;
     
     ISolidColorBrushPtr m_redBrush;
     ISolidColorBrushPtr m_greenBrush;
     ISolidColorBrushPtr m_blueBrush;
     ISolidColorBrushPtr m_yellowBrush;
+    ISolidColorBrushPtr m_whiteBrush;
     
-    // Animation state
-    float m_time = 0.0f;
-    float m_bounceX = 375.0f;
-    float m_rotateOffset = 0.0f;
+    // Animated values
+    float m_bounceX = 50.0f;
+    float m_oscillateOffset = 0.0f;
     float m_pulseScale = 1.0f;
     float m_fadeAlpha = 1.0f;
 };
@@ -152,6 +230,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
         
     case WM_SIZE:
         g_demo.OnResize(LOWORD(lParam), HIWORD(lParam));
+        return 0;
+        
+    case WM_KEYDOWN:
+        if (wParam == VK_SPACE) {
+            g_demo.TogglePause();
+        } else if (wParam == 'R') {
+            g_demo.Restart();
+        }
         return 0;
         
     case WM_PAINT: {
@@ -180,6 +266,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     config.consoleWindowTitle = "Animation Demo - Debug Console";
     Logger::Initialize(config);
     Logger::Info("=== Animation Demo Starting ===");
+    Logger::Info("Controls: SPACE = pause/resume, R = restart");
     
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -195,7 +282,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     }
     
     HWND hwnd = CreateWindowEx(
-        0, L"AnimationDemo", L"Animation Demo - Sine Wave Animations",
+        0, L"AnimationDemo", L"Animation Demo - Press SPACE to pause/resume, R to restart",
         WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,
         CW_USEDEFAULT, CW_USEDEFAULT, 800, 600,
         nullptr, nullptr, hInstance, nullptr
@@ -232,6 +319,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
             
             // Render
             InvalidateRect(hwnd, nullptr, FALSE);
+            UpdateWindow(hwnd);
             
             // Cap at ~60 FPS
             Sleep(16);

@@ -124,6 +124,10 @@ public:
     virtual void SetFillMode(FillMode mode) = 0;
     virtual FillMode GetFillMode() const = 0;
     
+    // Animation values
+    virtual void SetStartValue(const AnimationValue& value) = 0;
+    virtual void SetEndValue(const AnimationValue& value) = 0;
+    
     // Control
     virtual void Play() = 0;
     virtual void Pause() = 0;

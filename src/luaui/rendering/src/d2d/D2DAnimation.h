@@ -1,6 +1,7 @@
 #pragma once
 
 #include "luaui/rendering/IAnimation.h"
+#include <vector>
 
 namespace luaui {
 namespace rendering {
@@ -65,7 +66,7 @@ private:
     
     // State
     AnimationState m_state = AnimationState::Idle;
-    float m_currentTime = 0;
+    float m_currentTime = 0.0f;
     int m_currentIteration = 0;
     bool m_isReversed = false;
     
@@ -76,6 +77,53 @@ private:
     // Callbacks
     AnimationCallback m_updateCallback;
     AnimationCompleteCallback m_completeCallback;
+};
+
+// Animation group implementation
+class D2DAnimationGroup : public IAnimationGroup {
+public:
+    void AddAnimation(IAnimationPtr animation) override;
+    void RemoveAnimation(IAnimation* animation) override;
+    void Clear() override;
+    
+    void Play() override;
+    void Pause() override;
+    void Stop() override;
+    
+    void Update(float deltaTimeMs) override;
+    bool IsComplete() const override;
+    
+private:
+    std::vector<IAnimationPtr> m_animations;
+};
+
+// Animation timeline implementation
+class D2DAnimationTimeline : public IAnimationTimeline {
+public:
+    // Create animations
+    IAnimationPtr CreateAnimation() override;
+    IAnimationGroupPtr CreateParallelGroup() override;
+    IAnimationGroupPtr CreateSequentialGroup() override;
+    
+    // Managed animations
+    void Add(IAnimationPtr animation) override;
+    void Remove(IAnimation* animation) override;
+    
+    // Global control
+    void PauseAll() override;
+    void ResumeAll() override;
+    void StopAll() override;
+    
+    // Update all animations
+    void Update(float deltaTimeMs) override;
+    
+    // Time scale (1.0 = normal speed)
+    void SetTimeScale(float scale) override;
+    float GetTimeScale() const override;
+    
+private:
+    std::vector<IAnimationPtr> m_animations;
+    float m_timeScale = 1.0f;
 };
 
 // Factory helpers
