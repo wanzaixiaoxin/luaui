@@ -12,6 +12,9 @@ namespace utils {
 // Static members
 ILoggerPtr Logger::s_instance = nullptr;
 std::mutex Logger::s_mutex;
+LoggerConfig Logger::s_config;
+ILoggerPtr Logger::s_consoleLogger = nullptr;
+ILoggerPtr Logger::s_fileLogger = nullptr;
 
 // FileLogger implementation
 FileLogger::FileLogger(const std::string& filename) 
@@ -29,7 +32,7 @@ FileLogger::~FileLogger() {
 }
 
 void FileLogger::Log(LogLevel level, const std::string& message) {
-    if (level < m_minLevel) return;
+    if (!m_enabled || level < m_minLevel) return;
     
     std::lock_guard<std::mutex> lock(m_mutex);
     CheckRotation();
@@ -73,6 +76,94 @@ std::string FileLogger::GetTimestamp() {
     return ss.str();
 }
 
+// ConsoleWindow implementation
+#ifdef _WIN32
+static HWND g_consoleHwnd = nullptr;
+#endif
+
+bool ConsoleWindow::Create(const std::string& title) {
+#ifdef _WIN32
+    // Check if already has console
+    if (GetConsoleWindow() != nullptr) {
+        return true;  // Already has a console
+    }
+    
+    // Allocate new console
+    if (!AllocConsole()) {
+        return false;
+    }
+    
+    // Set console title
+    SetTitle(title);
+    
+    // Redirect standard IO
+    RedirectStdIO();
+    
+    g_consoleHwnd = GetConsoleWindow();
+    
+    // Disable close button to prevent accidental closing
+    HMENU hMenu = GetSystemMenu(g_consoleHwnd, FALSE);
+    if (hMenu) {
+        DeleteMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);
+        DrawMenuBar(g_consoleHwnd);
+    }
+    
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool ConsoleWindow::Attach() {
+#ifdef _WIN32
+    return AttachConsole(ATTACH_PARENT_PROCESS) != 0;
+#else
+    return false;
+#endif
+}
+
+void ConsoleWindow::Close() {
+#ifdef _WIN32
+    if (g_consoleHwnd) {
+        FreeConsole();
+        g_consoleHwnd = nullptr;
+    }
+#endif
+}
+
+bool ConsoleWindow::IsActive() {
+#ifdef _WIN32
+    return GetConsoleWindow() != nullptr;
+#else
+    return true;
+#endif
+}
+
+void ConsoleWindow::SetTitle(const std::string& title) {
+#ifdef _WIN32
+    SetConsoleTitleA(title.c_str());
+#endif
+}
+
+void ConsoleWindow::RedirectStdIO() {
+#ifdef _WIN32
+    // Redirect stdout
+    FILE* fp;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    
+    // Redirect stderr
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    
+    // Redirect stdin
+    freopen_s(&fp, "CONIN$", "r", stdin);
+    
+    // Sync C++ streams with C streams
+    std::cout.clear();
+    std::cerr.clear();
+    std::cin.clear();
+#endif
+}
+
 // ConsoleLogger implementation
 ConsoleLogger::ConsoleLogger(bool useStderr) 
     : m_useStderr(useStderr) {
@@ -89,8 +180,43 @@ ConsoleLogger::ConsoleLogger(bool useStderr)
 #endif
 }
 
+ConsoleLogger::~ConsoleLogger() {
+    if (m_ownsConsole) {
+        CloseConsoleWindow();
+    }
+}
+
+void ConsoleLogger::CreateConsoleWindow(const std::string& title) {
+#ifdef _WIN32
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_ownsConsole && ConsoleWindow::Create(title)) {
+        m_ownsConsole = true;
+        
+        // Re-enable ANSI colors for new console
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE) {
+            DWORD mode = 0;
+            if (GetConsoleMode(hOut, &mode)) {
+                mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(hOut, mode);
+            }
+        }
+    }
+#endif
+}
+
+void ConsoleLogger::CloseConsoleWindow() {
+#ifdef _WIN32
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_ownsConsole) {
+        ConsoleWindow::Close();
+        m_ownsConsole = false;
+    }
+#endif
+}
+
 void ConsoleLogger::Log(LogLevel level, const std::string& message) {
-    if (level < m_minLevel) return;
+    if (!m_enabled || level < m_minLevel) return;
     
     std::lock_guard<std::mutex> lock(m_mutex);
     
@@ -204,14 +330,52 @@ void MultiLogger::SetLevel(LogLevel level) {
 void Logger::Initialize() {
     std::lock_guard<std::mutex> lock(s_mutex);
     if (!s_instance) {
-        s_instance = std::make_shared<ConsoleLogger>();
+        s_consoleLogger = std::make_shared<ConsoleLogger>();
+        s_instance = s_consoleLogger;
+    }
+}
+
+void Logger::Initialize(const LoggerConfig& config) {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    if (s_instance) return; // Already initialized
+    
+    s_config = config;
+    
+    auto multi = std::make_shared<MultiLogger>();
+    
+    // Console logger
+    if (config.consoleEnabled) {
+        auto console = std::make_shared<ConsoleLogger>(config.useStderr);
+        console->SetLevel(config.consoleLevel);
+        console->SetColored(config.consoleColored);
+        
+        // For GUI apps: create a new console window
+        if (config.createConsoleWindow) {
+            console->CreateConsoleWindow(config.consoleWindowTitle);
+        }
+        
+        s_consoleLogger = console;
+        multi->AddLogger(console);
+    }
+    
+    // File logger
+    if (config.fileEnabled) {
+        auto file = std::make_shared<FileLogger>(config.logFilePath);
+        file->SetLevel(config.fileLevel);
+        s_fileLogger = file;
+        multi->AddLogger(file);
+    }
+    
+    if (multi->GetLevel() != LogLevel::Debug || config.consoleEnabled || config.fileEnabled) {
+        s_instance = multi;
     }
 }
 
 void Logger::Initialize(const std::string& logFile) {
     std::lock_guard<std::mutex> lock(s_mutex);
     if (!s_instance) {
-        s_instance = std::make_shared<FileLogger>(logFile);
+        s_fileLogger = std::make_shared<FileLogger>(logFile);
+        s_instance = s_fileLogger;
     }
 }
 
@@ -219,6 +383,42 @@ void Logger::Initialize(ILoggerPtr logger) {
     std::lock_guard<std::mutex> lock(s_mutex);
     if (!s_instance && logger) {
         s_instance = logger;
+    }
+}
+
+void Logger::EnableConsole(bool enable) {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_config.consoleEnabled = enable;
+    if (s_consoleLogger) {
+        if (auto console = std::dynamic_pointer_cast<ConsoleLogger>(s_consoleLogger)) {
+            console->SetEnabled(enable);
+        }
+    }
+}
+
+void Logger::EnableFile(bool enable) {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_config.fileEnabled = enable;
+    if (s_fileLogger) {
+        if (auto file = std::dynamic_pointer_cast<FileLogger>(s_fileLogger)) {
+            file->SetEnabled(enable);
+        }
+    }
+}
+
+void Logger::SetConsoleLevel(LogLevel level) {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_config.consoleLevel = level;
+    if (s_consoleLogger) {
+        s_consoleLogger->SetLevel(level);
+    }
+}
+
+void Logger::SetFileLevel(LogLevel level) {
+    std::lock_guard<std::mutex> lock(s_mutex);
+    s_config.fileLevel = level;
+    if (s_fileLogger) {
+        s_fileLogger->SetLevel(level);
     }
 }
 

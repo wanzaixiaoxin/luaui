@@ -163,9 +163,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
         return 1;
     }
     
-    // Initialize logger with file output
-    Logger::Initialize("rendering_demo.log");
+    // Initialize logger with both console and file output
+    LoggerConfig config;
+    config.consoleEnabled = true;       // Enable console output
+    config.fileEnabled = true;          // Enable file output
+    config.consoleLevel = LogLevel::Debug;   // Console shows all messages
+    config.fileLevel = LogLevel::Info;       // File only shows Info and above
+    config.logFilePath = "rendering_demo.log";
+    config.consoleColored = true;       // Enable colored console output
+    config.useStderr = false;           // Use stdout for console
+    
+    // For GUI applications: create a separate console window for debug output
+    // This allows seeing logs even in GUI mode (WIN32 subsystem)
+    config.createConsoleWindow = true;
+    config.consoleWindowTitle = "LuaUI Rendering Demo - Debug Console";
+    
+    Logger::Initialize(config);
     Logger::Info("=== Rendering Demo Starting ===");
+    
+    // Demonstrate different log levels with colors
+    Logger::Debug("This is a DEBUG message (gray)");
+    Logger::Info("This is an INFO message (white)");
+    Logger::Warning("This is a WARNING message (yellow)");
+    Logger::Error("This is an ERROR message (red)");
+    
+    // Demonstrate formatted logging
+    Logger::InfoF("Application started with PID: %d", GetCurrentProcessId());
+    
+    // The console window will automatically close when the main process exits
+    // because ConsoleLogger owns it and will close it in its destructor
     
     // Register window class
     WNDCLASSEX wc = {};

@@ -10,6 +10,10 @@
 #include <iomanip>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace luaui {
 namespace utils {
 
@@ -100,6 +104,10 @@ public:
     void SetLevel(LogLevel level) override { m_minLevel = level; }
     LogLevel GetLevel() const override { return m_minLevel; }
     
+    // Enable/disable
+    void SetEnabled(bool enabled) { m_enabled = enabled; }
+    bool IsEnabled() const { return m_enabled; }
+    
     // Set max file size in MB (will rotate)
     void SetMaxFileSize(size_t mb) { m_maxFileSize = mb * 1024 * 1024; }
     
@@ -113,21 +121,59 @@ private:
     std::ofstream m_file;
     std::string m_filename;
     LogLevel m_minLevel = LogLevel::Debug;
+    bool m_enabled = true;
     std::mutex m_mutex;
     size_t m_maxFileSize = 10 * 1024 * 1024; // 10MB default
+};
+
+// Console window management for GUI apps
+class ConsoleWindow {
+public:
+    // Create a new console window (for GUI applications)
+    static bool Create(const std::string& title = "Debug Console");
+    
+    // Attach to parent console if available
+    static bool Attach();
+    
+    // Close console window
+    static void Close();
+    
+    // Check if console is active
+    static bool IsActive();
+    
+    // Set console title
+    static void SetTitle(const std::string& title);
+    
+    // Redirect stdout/stderr to console
+    static void RedirectStdIO();
 };
 
 // Console logger implementation
 class ConsoleLogger : public ILogger {
 public:
     ConsoleLogger(bool useStderr = false);
+    ~ConsoleLogger() override;
     
     void Log(LogLevel level, const std::string& message) override;
     void SetLevel(LogLevel level) override { m_minLevel = level; }
     LogLevel GetLevel() const override { return m_minLevel; }
     
-    // Enable colored output (Windows only)
+    // Enable/disable
+    void SetEnabled(bool enabled) { m_enabled = enabled; }
+    bool IsEnabled() const { return m_enabled; }
+    
+    // Enable colored output
     void SetColored(bool colored) { m_colored = colored; }
+    bool IsColored() const { return m_colored; }
+    
+    // Create new console window (for GUI apps)
+    void CreateConsoleWindow(const std::string& title = "Debug Console");
+    
+    // Close console window
+    void CloseConsoleWindow();
+    
+    // Check if owns the console (needs to close on exit)
+    bool OwnsConsole() const { return m_ownsConsole; }
     
 private:
     std::string GetTimestamp();
@@ -136,8 +182,10 @@ private:
     
     bool m_useStderr = false;
     LogLevel m_minLevel = LogLevel::Debug;
-    std::mutex m_mutex;
+    bool m_enabled = true;
     bool m_colored = true;
+    bool m_ownsConsole = false;  // True if we created the console
+    std::mutex m_mutex;
 };
 
 // Multi-logger (sends to multiple outputs)
@@ -157,11 +205,29 @@ private:
     std::mutex m_mutex;
 };
 
+// Logger configuration
+struct LoggerConfig {
+    bool consoleEnabled = true;
+    bool fileEnabled = false;
+    LogLevel consoleLevel = LogLevel::Debug;
+    LogLevel fileLevel = LogLevel::Debug;
+    std::string logFilePath = "app.log";
+    bool consoleColored = true;
+    bool useStderr = false;
+    
+    // For GUI applications: create a new console window
+    bool createConsoleWindow = false;
+    std::string consoleWindowTitle = "Debug Console";
+};
+
 // Global logger accessor
 class Logger {
 public:
     // Initialize with default console logger
     static void Initialize();
+    
+    // Initialize with config (console + file toggle)
+    static void Initialize(const LoggerConfig& config);
     
     // Initialize with file logger
     static void Initialize(const std::string& logFile);
@@ -177,6 +243,16 @@ public:
     
     // Check if initialized
     static bool IsInitialized();
+    
+    // Get/set config
+    static const LoggerConfig& GetConfig() { return s_config; }
+    static void SetConfig(const LoggerConfig& config) { s_config = config; }
+    
+    // Quick enable/disable
+    static void EnableConsole(bool enable);
+    static void EnableFile(bool enable);
+    static void SetConsoleLevel(LogLevel level);
+    static void SetFileLevel(LogLevel level);
     
     // Convenience methods (redirect to global instance)
     static void Debug(const std::string& msg);
@@ -218,6 +294,9 @@ public:
 private:
     static ILoggerPtr s_instance;
     static std::mutex s_mutex;
+    static LoggerConfig s_config;
+    static ILoggerPtr s_consoleLogger;
+    static ILoggerPtr s_fileLogger;
 };
 
 // RAII log initializer for scope-based logging
