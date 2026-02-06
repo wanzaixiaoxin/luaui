@@ -1,96 +1,149 @@
 cmake_minimum_required(VERSION 3.15)
-project(LuaUI VERSION 1.0.0 LANGUAGES CXX)
 
-# 设置C++11标准
-set(CMAKE_CXX_STANDARD 11)
+project(LuaUI
+    VERSION 1.0.0
+    DESCRIPTION "A commercial-grade Windows UI framework with Lua scripting"
+    LANGUAGES CXX
+)
+
+# C++ Standard
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 编译选项
-if(MSVC)
-    add_compile_options(/W4 /MT /wd4819)  # 禁用C4819警告
-    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /RTC1")
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /DNDEBUG")
-else()
-    add_compile_options(-Wall -Wextra -pedantic)
-endif()
+# Options
+option(BUILD_TESTS "Build tests" ON)
+option(BUILD_SAMPLES "Build sample applications" ON)
+option(BUILD_TOOLS "Build development tools" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-# 输出目录
+# Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# 查找第三方库
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
-# Lua 静态库，头文件和源码在 third_party/lua
-set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/lua")
-
-# 检查Lua头文件
-if(NOT EXISTS "${LUA_INCLUDE_DIR}/lua.h")
-    message(FATAL_ERROR "Lua headers not found in ${LUA_INCLUDE_DIR}. Please place Lua headers there.")
+# Compiler options
+if(MSVC)
+    add_compile_options(/W4 /MP)
+    # Disable specific warnings
+    add_compile_options(/wd4819)  # Code page warning
+    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /RTC1")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /DNDEBUG")
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# 包含目录
-include_directories(
-    ${CMAKE_SOURCE_DIR}/include
-    ${LUA_INCLUDE_DIR}
-    ${CMAKE_SOURCE_DIR}/third_party/tinyxml2
-)
+# Find packages
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
 
-# 第三方库 - TinyXML2（源码编译）
+# Third-party libraries
+set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/lua")
+
+# Check Lua headers
+if(NOT EXISTS "${LUA_INCLUDE_DIR}/lua.h")
+    message(WARNING "Lua headers not found in ${LUA_INCLUDE_DIR}")
+endif()
+
+# External dependencies
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
-# Lua 静态库（导入预编译库）
+# Import Lua library
 add_library(lua STATIC IMPORTED)
 set_target_properties(lua PROPERTIES
     IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/libs/lua54.lib"
-    IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/libs/lua54.lib"
+    INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
 )
 
+# Core modules
+add_subdirectory(src/luaui/core)
+add_subdirectory(src/luaui/utils)
+add_subdirectory(src/luaui/platform)
+add_subdirectory(src/luaui/rendering)
+add_subdirectory(src/luaui/resources)
+add_subdirectory(src/luaui/xml)
+add_subdirectory(src/luaui/input)
+add_subdirectory(src/luaui/binding)
+add_subdirectory(src/luaui/styling)
+add_subdirectory(src/luaui/animation)
+add_subdirectory(src/luaui/layout)
+add_subdirectory(src/luaui/ui)
+add_subdirectory(src/luaui/scripting)
 
-# 核心库
-add_subdirectory(src/core)
-
-# XML模块
-add_subdirectory(src/xml)
-
-# UI模块
-add_subdirectory(src/ui)
-
-# Lua模块
-add_subdirectory(src/lua)
-
-# 资源模块
-add_subdirectory(src/resource)
-
-# 工具模块
-add_subdirectory(src/utils)
-
-# 创建统一的LuaUI接口库
+# LuaUI main interface library
 add_library(LuaUI INTERFACE)
+add_library(LuaUI::LuaUI ALIAS LuaUI)
+
 target_link_libraries(LuaUI INTERFACE
     LuaUI_Core
-    LuaUI_XML
-    LuaUI_UI
-    LuaUI_Lua
-    LuaUI_Resource
     LuaUI_Utils
+    LuaUI_Platform
+    LuaUI_Rendering
+    LuaUI_Resources
+    LuaUI_XML
+    LuaUI_Input
+    LuaUI_Binding
+    LuaUI_Styling
+    LuaUI_Animation
+    LuaUI_Layout
+    LuaUI_UI
+    LuaUI_Scripting
     lua
     tinyxml2
 )
 
-# 示例应用
-add_subdirectory(examples/hello_world)
-add_subdirectory(examples/notepad)
+# Note: External dependencies (lua, tinyxml2) are not exported
 
-# 安装配置
-install(DIRECTORY include/ DESTINATION include)
-install(DIRECTORY docs/ DESTINATION docs/share/luaui)
-
-# 安装所有库目标
-install(TARGETS 
-    LuaUI LuaUI_Core LuaUI_XML LuaUI_UI LuaUI_Lua LuaUI_Resource LuaUI_Utils
-    tinyxml2
-    DESTINATION lib
+target_include_directories(LuaUI INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/platform/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/resources/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/xml/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/input/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/binding/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/styling/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/animation/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/layout/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/ui/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/scripting/include>
+    $<INSTALL_INTERFACE:include>
 )
+
+# Samples
+if(BUILD_SAMPLES)
+    add_subdirectory(samples/01_hello_world)
+    add_subdirectory(samples/02_notepad)
+endif()
+
+# Tools
+if(BUILD_TOOLS)
+    add_subdirectory(tools)
+endif()
+
+# Tests
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
+# Install configuration (disabled for development)
+# TODO: Re-enable when install targets are properly configured
+# include(GNUInstallDirs)
+# install(EXPORT LuaUITargets
+#     FILE LuaUITargets.cmake
+#     NAMESPACE LuaUI::
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LuaUI
+# )
+
+# Print configuration summary
+message(STATUS "")
+message(STATUS "LuaUI Configuration:")
+message(STATUS "  Version: ${PROJECT_VERSION}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Build tests: ${BUILD_TESTS}")
+message(STATUS "  Build samples: ${BUILD_SAMPLES}")
+message(STATUS "  Build tools: ${BUILD_TOOLS}")
+message(STATUS "")
