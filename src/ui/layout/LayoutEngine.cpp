@@ -229,27 +229,33 @@ void LayoutEngine::showAllControls(UI::BaseControl* control) {
 
 UI::BaseControl* LayoutEngine::createControlTree(Xml::XmlElement* xmlElement, UI::BaseControl* parent) {
     if (!xmlElement) {
+        LOG_S_WARN_CAT("LayoutEngine") << "createControlTree: xmlElement is null";
         return nullptr;
     }
     
-    // 如果是窗口，先创建窗口
-    if (std::string(xmlElement->getType()) == "window") {
-        LOG_DEBUG_CAT("LayoutEngine", "Creating window control...");
-    }
+    std::string elementType = xmlElement->getType();
+    std::string elementId = xmlElement->getAttribute("id");
+    LOG_S_DEBUG_CAT("LayoutEngine") << "Creating control: type=" << elementType << ", id=" << elementId;
     
     // 使用工厂创建控件
     UI::BaseControl* control = UI::ControlFactory::instance().createFromXml(xmlElement, nullptr);
     
     if (!control) {
+        LOG_S_ERROR_CAT("LayoutEngine") << "Failed to create control: type=" << elementType;
         return nullptr;
     }
     
     // 记录控件
     std::string id = control->getId();
+    LOG_S_DEBUG_CAT("LayoutEngine") << "Control created: type=" << control->getType() << ", id=" << id;
+    
     if (!id.empty()) {
         m_controls[id] = control;
         // 注册控件到 Lua
         Lua::Binding::ControlBinder::registerControl(control, id);
+        LOG_S_INFO_CAT("LayoutEngine") << "Registered control: " << id << " (type: " << control->getType() << ")";
+    } else {
+        LOG_S_WARN_CAT("LayoutEngine") << "Control ID is empty, skipping registration (type: " << control->getType() << ")";
     }
     
     // 递归创建子控件

@@ -89,6 +89,26 @@ BaseControl* LabelControl::createInstance() {
     return new LabelControl();
 }
 
+void LabelControl::setProperty(const std::string& name, const std::string& value) {
+    // Call base class implementation
+    BaseControl::setProperty(name, value);
+    
+    // Handle text property
+    if (name == "text") {
+        setText(value);
+    }
+}
+
+std::string LabelControl::getProperty(const std::string& name) const {
+    // Handle text property
+    if (name == "text") {
+        return getText();
+    }
+    
+    // Call base class implementation
+    return BaseControl::getProperty(name);
+}
+
 bool LabelControl::createLabel(CWnd* parent) {
     LOG_S_DEBUG_CAT("LabelControl") << "parent=" << parent 
               << ", existing label=" << m_impl->label;

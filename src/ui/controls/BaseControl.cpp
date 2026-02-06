@@ -9,6 +9,7 @@
 #include "utils/Logger.h"
 
 #include "core/LuaState.h"
+#include <cstring>
 
 extern "C" {
 #include <lua.h>
@@ -176,8 +177,8 @@ void BaseControl::parseCommonAttributes(Xml::XmlElement* xmlElement) {
         return;
     }
     
-    // 设置ID
-    std::string id = xmlElement->getId();
+    // 设置ID - 从XML属性中获取id属性
+    std::string id = xmlElement->getAttribute("id");
     if (!id.empty()) {
         m_id = id;
     }

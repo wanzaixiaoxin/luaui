@@ -52,6 +52,20 @@ public:
      */
     bool createLabel(CWnd* parent);
 
+    /**
+     * @brief 设置属性
+     * @param name 属性名
+     * @param value 属性值
+     */
+    virtual void setProperty(const std::string& name, const std::string& value) override;
+
+    /**
+     * @brief 获取属性
+     * @param name 属性名
+     * @return 属性值
+     */
+    virtual std::string getProperty(const std::string& name) const override;
+
 private:
     class Impl;
     Impl* m_impl;
