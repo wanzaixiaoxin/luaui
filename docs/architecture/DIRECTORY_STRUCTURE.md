@@ -28,11 +28,9 @@ luaui/
 │   ├── guides/                  # 开发指南
 │   └── samples/                 # 示例教程
 │
-├── external/                     # 外部依赖（git submodule或vcpkg）
+├── third_party/                 # 外部依赖（git submodule或vcpkg）
 │   ├── lua/                     # Lua源码
-│   ├── sol2/                    # sol2绑定库
 │   ├── tinyxml2/                # XML解析
-│   └── spdlog/                  # 日志库
 │
 ├── src/                         # 源代码（核心）
 │   └── luaui/                   # 主命名空间目录
@@ -116,7 +114,7 @@ luaui/
 │   ├── benchmarks/
 │   └── fixtures/
 │
-├── samples/                     # 示例项目
+├── examples/                    # 示例项目
 │
 ├── resources/                   # 框架资源
 │   └── themes/
