@@ -33,7 +33,6 @@ docs/
 
 ### 📁 项目相关
 - [DIRECTORY_STRUCTURE.md](../DIRECTORY_STRUCTURE.md) - 目录结构说明
-- [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) - 迁移指南
 - [Sample_Project_Structure.md](architecture/Sample_Project_Structure.md) - 示例项目结构
 
 ### 🚀 开始使用
