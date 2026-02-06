@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(LuaUI
     VERSION 1.0.0
-    DESCRIPTION "A commercial-grade Windows UI framework with Lua scripting"
+    DESCRIPTION "A Windows UI framework with Lua scripting and Direct2D rendering"
     LANGUAGES CXX
 )
 
@@ -11,139 +11,110 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Options
-option(BUILD_TESTS "Build tests" ON)
-option(BUILD_SAMPLES "Build sample applications" ON)
-option(BUILD_TOOLS "Build development tools" OFF)
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-
 # Output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Compiler options
+# Options
+option(LUAUI_BUILD_EXAMPLES "Build example applications" ON)
+option(LUAUI_BUILD_TESTS "Build tests" OFF)
+
+# Platform check
+if(NOT WIN32)
+    message(FATAL_ERROR "LuaUI currently only supports Windows")
+endif()
+
+# Compiler options for MSVC
 if(MSVC)
     add_compile_options(/W4 /MP)
-    # Disable specific warnings
     add_compile_options(/wd4819)  # Code page warning
-    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /RTC1")
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /DNDEBUG")
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_definitions(UNICODE _UNICODE)
+
+    # Static runtime linking
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
-# Find packages
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-
+# ============================================
 # Third-party libraries
-set(LUA_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/third_party/lua")
+# ============================================
 
-# Check Lua headers
-if(NOT EXISTS "${LUA_INCLUDE_DIR}/lua.h")
-    message(WARNING "Lua headers not found in ${LUA_INCLUDE_DIR}")
-endif()
+# Lua (header-only interface)
+set(LUA_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/third_party/lua)
+add_library(lua INTERFACE)
+target_include_directories(lua INTERFACE ${LUA_INCLUDE_DIR})
 
-# External dependencies
+# TinyXML2
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
-# Import Lua library
-add_library(lua STATIC IMPORTED)
-set_target_properties(lua PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/libs/lua54.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
+# ============================================
+# LuaUI Library
+# ============================================
+
+# Collect source files when they exist
+file(GLOB_RECURSE LUAUI_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/*.cpp
 )
 
-# Core modules
-add_subdirectory(src/luaui/core)
-add_subdirectory(src/luaui/utils)
-add_subdirectory(src/luaui/platform)
-add_subdirectory(src/luaui/rendering)
-add_subdirectory(src/luaui/resources)
-add_subdirectory(src/luaui/xml)
-add_subdirectory(src/luaui/input)
-add_subdirectory(src/luaui/binding)
-add_subdirectory(src/luaui/styling)
-add_subdirectory(src/luaui/animation)
-add_subdirectory(src/luaui/layout)
-add_subdirectory(src/luaui/ui)
-add_subdirectory(src/luaui/scripting)
-
-# LuaUI main interface library
-add_library(LuaUI INTERFACE)
-add_library(LuaUI::LuaUI ALIAS LuaUI)
-
-target_link_libraries(LuaUI INTERFACE
-    LuaUI_Core
-    LuaUI_Utils
-    LuaUI_Platform
-    LuaUI_Rendering
-    LuaUI_Resources
-    LuaUI_XML
-    LuaUI_Input
-    LuaUI_Binding
-    LuaUI_Styling
-    LuaUI_Animation
-    LuaUI_Layout
-    LuaUI_UI
-    LuaUI_Scripting
-    lua
-    tinyxml2
+file(GLOB_RECURSE LUAUI_HEADERS
+    ${CMAKE_SOURCE_DIR}/src/*.h
+    ${CMAKE_SOURCE_DIR}/src/*.hpp
 )
 
-# Note: External dependencies (lua, tinyxml2) are not exported
+if(LUAUI_SOURCES)
+    add_library(LuaUI STATIC ${LUAUI_SOURCES} ${LUAUI_HEADERS})
 
-target_include_directories(LuaUI INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/platform/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/resources/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/xml/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/input/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/binding/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/styling/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/animation/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/layout/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/ui/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/scripting/include>
-    $<INSTALL_INTERFACE:include>
-)
+    target_include_directories(LuaUI
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+            $<INSTALL_INTERFACE:include>
+    )
 
-# Samples
-if(BUILD_SAMPLES)
-    add_subdirectory(samples/01_hello_world)
-    add_subdirectory(samples/02_notepad)
+    target_link_libraries(LuaUI
+        PUBLIC
+            lua
+            tinyxml2
+            d2d1
+            dwrite
+            windowscodecs
+            winmm
+            ws2_32
+    )
+
+    target_compile_definitions(LuaUI PRIVATE LUAUI_BUILD)
+
+    message(STATUS "LuaUI library created with ${LUAUI_SOURCES}")
+else()
+    message(STATUS "No source files found in src/, skipping LuaUI library creation")
+    add_library(LuaUI INTERFACE)
 endif()
 
-# Tools
-if(BUILD_TOOLS)
-    add_subdirectory(tools)
+# ============================================
+# Examples
+# ============================================
+if(LUAUI_BUILD_EXAMPLES AND EXISTS ${CMAKE_SOURCE_DIR}/examples)
+    add_subdirectory(examples)
 endif()
 
+# ============================================
 # Tests
-if(BUILD_TESTS)
+# ============================================
+if(LUAUI_BUILD_TESTS AND EXISTS ${CMAKE_SOURCE_DIR}/tests)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-# Install configuration (disabled for development)
-# TODO: Re-enable when install targets are properly configured
-# include(GNUInstallDirs)
-# install(EXPORT LuaUITargets
-#     FILE LuaUITargets.cmake
-#     NAMESPACE LuaUI::
-#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LuaUI
-# )
-
-# Print configuration summary
+# ============================================
+# Configuration Summary
+# ============================================
 message(STATUS "")
-message(STATUS "LuaUI Configuration:")
-message(STATUS "  Version: ${PROJECT_VERSION}")
-message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Build tests: ${BUILD_TESTS}")
-message(STATUS "  Build samples: ${BUILD_SAMPLES}")
-message(STATUS "  Build tools: ${BUILD_TOOLS}")
+message(STATUS "========== LuaUI Configuration ==========")
+message(STATUS "Version:        ${PROJECT_VERSION}")
+message(STATUS "Build Type:     ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ Standard:   ${CMAKE_CXX_STANDARD}")
+message(STATUS "Build Examples: ${LUAUI_BUILD_EXAMPLES}")
+message(STATUS "Build Tests:    ${LUAUI_BUILD_TESTS}")
+message(STATUS "Source Files:   ${LUAUI_SOURCES}")
+message(STATUS "========================================")
 message(STATUS "")
