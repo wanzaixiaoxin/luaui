@@ -134,35 +134,39 @@ bool Logger::isFileEnabled() const {
     return m_fileEnabled.load();
 }
 
-void Logger::debug(const std::string& message) {
-    log(LogLevel::LevelDebug, message);
+void Logger::debug(const std::string& message, const char* file, int line) {
+    log(LogLevel::LevelDebug, message, file, line);
 }
 
-void Logger::info(const std::string& message) {
-    log(LogLevel::LevelInfo, message);
+void Logger::info(const std::string& message, const char* file, int line) {
+    log(LogLevel::LevelInfo, message, file, line);
 }
 
-void Logger::warn(const std::string& message) {
-    log(LogLevel::LevelWarn, message);
+void Logger::warn(const std::string& message, const char* file, int line) {
+    log(LogLevel::LevelWarn, message, file, line);
 }
 
-void Logger::error(const std::string& message) {
-    log(LogLevel::LevelError, message);
+void Logger::error(const std::string& message, const char* file, int line) {
+    log(LogLevel::LevelError, message, file, line);
 }
 
-void Logger::fatal(const std::string& message) {
-    log(LogLevel::LevelFatal, message);
+void Logger::fatal(const std::string& message, const char* file, int line) {
+    log(LogLevel::LevelFatal, message, file, line);
 }
 
-void Logger::log(LogLevel level, const std::string& message) {
+void Logger::log(LogLevel level, const std::string& message, const char* file, int line) {
     if (!m_initialized.load()) {
         // Logger 未初始化时，直接输出到控制台
+        std::string fileInfo;
+        if (file) {
+            fileInfo = std::string("(") + file + ":" + std::to_string(line) + ") ";
+        }
         if (level == LogLevel::LevelError || level == LogLevel::LevelFatal) {
-            std::cerr << "[Logger-not-initialized] " << levelToString(level) 
-                      << " [" << m_category << "] " << message << std::endl;
+            std::cerr << "[Logger-not-initialized] " << levelToString(level)
+                      << " [" << m_category << "] " << fileInfo << message << std::endl;
         } else if (level >= LogLevel::LevelInfo) {
-            std::cout << "[Logger-not-initialized] " << levelToString(level) 
-                      << " [" << m_category << "] " << message << std::endl;
+            std::cout << "[Logger-not-initialized] " << levelToString(level)
+                      << " [" << m_category << "] " << fileInfo << message << std::endl;
         }
         return;
     }
@@ -171,7 +175,7 @@ void Logger::log(LogLevel level, const std::string& message) {
         return;
     }
 
-    std::string formatted = formatMessage(level, m_category, message);
+    std::string formatted = formatMessage(level, m_category, message, file, line);
 
     {
         std::unique_lock<std::mutex> lock(m_queueMutex);
@@ -194,7 +198,7 @@ void Logger::log(LogLevel level, const std::string& message) {
     m_queueCV.notify_one();
 }
 
-std::string Logger::formatMessage(LogLevel level, const std::string& category, const std::string& message) {
+std::string Logger::formatMessage(LogLevel level, const std::string& category, const std::string& message, const char* file, int line) {
     auto now = std::chrono::system_clock::now();
     auto time_t_now = std::chrono::system_clock::to_time_t(now);
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -211,7 +215,14 @@ std::string Logger::formatMessage(LogLevel level, const std::string& category, c
     oss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S")
         << "." << std::setfill('0') << std::setw(3) << ms.count()
         << " " << std::setfill(' ') << std::setw(5) << levelToString(level)
-        << " [" << category << "] " << message;
+        << " [" << category << "]";
+
+    // 添加文件名和行号
+    if (file) {
+        oss << " (" << file << ":" << line << ")";
+    }
+
+    oss << " " << message;
 
     return oss.str();
 }

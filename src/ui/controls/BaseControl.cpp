@@ -4,6 +4,12 @@
  */
 
 #include "ui/controls/BaseControl.h"
+#include "ui/events/EventManager.h"
+#include "ui/events/LuaEventHandler.h"
+#include "utils/Logger.h"
+
+#include "core/LuaState.h"
+
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -98,11 +104,45 @@ void BaseControl::setEventHandler(const std::string& eventName, const LuaFunctio
 }
 
 bool BaseControl::fireEvent(const std::string& eventName) {
-    std::map<std::string, LuaFunctionRef>::iterator it = m_eventHandlers.find(eventName);
-    if (it != m_eventHandlers.end()) {
-        return callLuaHandler(it->second);
+    bool result = false;
+    
+    try {
+        // 首先尝试使用旧的事件系统（为了向后兼容）
+        std::map<std::string, LuaFunctionRef>::iterator it = m_eventHandlers.find(eventName);
+        if (it != m_eventHandlers.end()) {
+            result = callLuaHandler(it->second);
+            
+            // 如果旧系统处理成功，直接返回
+            if (result) {
+                return true;
+            }
+        }
+        
+        // 使用新的 EventManager 系统
+        Events::EventArgs args;
+        args.eventSource = this;
+        args.eventType = Events::EventManager::parseEventType(eventName);
+        
+        Events::LuaEventHandler* luaEventHandler = Events::GetLuaEventHandler();
+        if (luaEventHandler) {
+            result = luaEventHandler->handleEvent(getId(), args.eventType, &args);
+            
+            // 记录事件处理结果
+            LOG_S_DEBUG_CAT("BaseControl") << "Event " << eventName 
+                                           << " fired for control " << getId() 
+                                           << ", result: " << (result ? "success" : "failed");
+        }
     }
-    return false;
+    catch (const std::exception& e) {
+        LOG_S_ERROR_CAT("BaseControl") << "Exception in fireEvent: " << e.what();
+        result = false;
+    }
+    catch (...) {
+        LOG_S_ERROR_CAT("BaseControl") << "Unknown exception in fireEvent";
+        result = false;
+    }
+    
+    return result;
 }
 
 void BaseControl::show() {

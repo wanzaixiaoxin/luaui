@@ -4,6 +4,7 @@
  */
 
 #include "ui/events/LuaEventHandler.h"
+#include "utils/Logger.h"
 #include <cstring>
 
 namespace LuaUI {
@@ -80,15 +81,28 @@ bool LuaEventHandler::bindControlEvent(const std::string& controlId,
                                      const std::string& eventName,
                                      lua_State* lua, int funcRef) {
     if (!lua || funcRef < 0) {
+        LOG_S_ERROR_CAT("LuaEventHandler") << "Invalid parameters for bindControlEvent";
+        return false;
+    }
+
+    if (!m_eventManager) {
+        LOG_S_ERROR_CAT("LuaEventHandler") << "EventManager not initialized";
         return false;
     }
 
     // 解析事件类型
     EventType eventType = EventManager::parseEventType(eventName);
 
+    // 添加调试信息
+    LOG_S_DEBUG_CAT("LuaEventHandler") << "Binding event: control=" << controlId 
+                                        << ", event=" << eventName 
+                                        << ", type=" << EventManager::getEventTypeName(eventType)
+                                        << ", funcRef=" << funcRef;
+
     // funcRef 已经是有效的 registry 引用，直接使用
     int handlerId = m_eventManager->registerLuaHandler(controlId, eventType, lua, funcRef);
     if (handlerId < 0) {
+        LOG_S_ERROR_CAT("LuaEventHandler") << "Failed to register Lua handler";
         return false;
     }
 
@@ -96,6 +110,7 @@ bool LuaEventHandler::bindControlEvent(const std::string& controlId,
     LuaFunctionRef funcRefInfo(lua, funcRef, handlerId);
     m_eventBindings[controlId][eventType] = funcRefInfo;
 
+    LOG_S_DEBUG_CAT("LuaEventHandler") << "Event binding successful, handlerId=" << handlerId;
     return true;
 }
 
@@ -167,32 +182,66 @@ void LuaEventHandler::clearAllEvents() {
 int LuaEventHandler::luaBindEvent(lua_State* L) {
     LuaEventHandler* handler = GetLuaEventHandler();
     if (!handler) {
-        return 0;
+        LOG_S_ERROR_CAT("LUA") << "LuaEventHandler not available";
+        lua_pushboolean(L, 0);
+        return 1;
     }
     
-    // 参数检查
-    if (lua_gettop(L) < 3) {
+    // 参数检查 - 考虑 : 操作符会传递 self 参数
+    int numArgs = lua_gettop(L);
+    LOG_S_DEBUG_CAT("LUA") << "Number of arguments received: " << numArgs;
+    
+    // 确定参数索引
+    int controlIdIndex = 1;
+    int eventNameIndex = 2;
+    int functionIndex = 3;
+    
+    // 如果使用 : 操作符，第一个参数是 self，需要调整索引
+    if (numArgs == 4) {
+        controlIdIndex = 2;
+        eventNameIndex = 3;
+        functionIndex = 4;
+        LOG_S_DEBUG_CAT("LUA") << "Using : operator syntax, adjusting parameter indices";
+    }
+    
+    if (numArgs < 3 || (numArgs == 4 && numArgs < 4)) {
+        LOG_S_ERROR_CAT("LUA") << "bindEvent requires 3 arguments (got " << numArgs << ")";
         lua_pushstring(L, "bindEvent requires controlId, eventName, and function");
         lua_error(L);
         return 0;
     }
     
     // 获取参数
-    const char* controlId = lua_tostring(L, 1);
-    const char* eventName = lua_tostring(L, 2);
+    const char* controlId = lua_tostring(L, controlIdIndex);
+    const char* eventName = lua_tostring(L, eventNameIndex);
     
-    if (!lua_isfunction(L, 3)) {
+    LOG_S_DEBUG_CAT("LUA") << "Parameters received - controlId: " << (controlId ? controlId : "NULL") 
+                            << ", eventName: " << (eventName ? eventName : "NULL");
+    
+    if (!controlId || !eventName) {
+        LOG_S_ERROR_CAT("LUA") << "Invalid controlId or eventName";
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+    
+    if (!lua_isfunction(L, functionIndex)) {
+        LOG_S_ERROR_CAT("LUA") << "Third argument must be a function";
         lua_pushstring(L, "Third argument must be a function");
         lua_error(L);
         return 0;
     }
     
+    LOG_S_DEBUG_CAT("LUA") << "Binding event: control=" << controlId 
+                            << ", event=" << eventName;
+    
     // 获取函数引用
-    lua_pushvalue(L, 3);
+    lua_pushvalue(L, functionIndex);
     int funcRef = luaL_ref(L, LUA_REGISTRYINDEX);
     
     // 绑定事件
     bool result = handler->bindControlEvent(controlId, eventName, L, funcRef);
+    
+    LOG_S_DEBUG_CAT("LUA") << "bindEvent result: " << (result ? "success" : "failed");
     
     lua_pushboolean(L, result ? 1 : 0);
     return 1;

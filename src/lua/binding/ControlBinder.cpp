@@ -5,6 +5,7 @@
 
 #include "lua/binding/ControlBinder.h"
 #include "lua/binding/LuaBinder.h"
+#include "ui/controls/BaseControl.h"
 #include <iostream>
 #include <windows.h>
 

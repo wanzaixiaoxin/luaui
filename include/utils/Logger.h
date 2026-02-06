@@ -71,13 +71,13 @@ public:
     void disableFile();
     bool isFileEnabled() const;
 
-    void debug(const std::string& message);
-    void info(const std::string& message);
-    void warn(const std::string& message);
-    void error(const std::string& message);
-    void fatal(const std::string& message);
+    void debug(const std::string& message, const char* file = nullptr, int line = 0);
+    void info(const std::string& message, const char* file = nullptr, int line = 0);
+    void warn(const std::string& message, const char* file = nullptr, int line = 0);
+    void error(const std::string& message, const char* file = nullptr, int line = 0);
+    void fatal(const std::string& message, const char* file = nullptr, int line = 0);
 
-    void log(LogLevel level, const std::string& message);
+    void log(LogLevel level, const std::string& message, const char* file = nullptr, int line = 0);
 
     static std::string levelToString(LogLevel level);
     static LogLevel stringToLevel(const std::string& str);
@@ -96,7 +96,7 @@ private:
     void writeToConsole(const LogMessage& msg);
     void writeToFile(const LogMessage& msg);
     void rotateFile();
-    std::string formatMessage(LogLevel level, const std::string& category, const std::string& message);
+    std::string formatMessage(LogLevel level, const std::string& category, const std::string& message, const char* file = nullptr, int line = 0);
 
     std::atomic<bool> m_initialized{false};
     std::atomic<bool> m_running{false};
@@ -129,11 +129,11 @@ inline Logger& logger() {
  */
 class LogStream {
 public:
-    LogStream(LogLevel level, const std::string& category = "App")
-        : m_level(level), m_category(category) {}
+    LogStream(LogLevel level, const std::string& category = "App", const char* file = nullptr, int line = 0)
+        : m_level(level), m_category(category), m_file(file), m_line(line) {}
 
     ~LogStream() {
-        Logger::getInstance().log(m_level, m_oss.str());
+        Logger::getInstance().log(m_level, m_oss.str(), m_file, m_line);
     }
 
     template<typename T>
@@ -145,53 +145,62 @@ public:
 private:
     LogLevel m_level;
     std::string m_category;
+    const char* m_file;
+    int m_line;
     std::ostringstream m_oss;
 };
 
-#define LOG_DEBUG(msg)    ::LuaUI::Utils::Logger::getInstance().debug(msg)
-#define LOG_INFO(msg)     ::LuaUI::Utils::Logger::getInstance().info(msg)
-#define LOG_WARN(msg)     ::LuaUI::Utils::Logger::getInstance().warn(msg)
-#define LOG_ERROR(msg)    ::LuaUI::Utils::Logger::getInstance().error(msg)
-#define LOG_FATAL(msg)    ::LuaUI::Utils::Logger::getInstance().fatal(msg)
+// 辅助宏：提取文件名（不包含路径）
+#ifdef _WIN32
+#define LOG_FILENAME_ONLY (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#else
+#define LOG_FILENAME_ONLY (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#endif
+
+#define LOG_DEBUG(msg)    ::LuaUI::Utils::Logger::getInstance().debug(msg, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_INFO(msg)     ::LuaUI::Utils::Logger::getInstance().info(msg, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_WARN(msg)     ::LuaUI::Utils::Logger::getInstance().warn(msg, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_ERROR(msg)    ::LuaUI::Utils::Logger::getInstance().error(msg, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_FATAL(msg)    ::LuaUI::Utils::Logger::getInstance().fatal(msg, LOG_FILENAME_ONLY, __LINE__)
 
 // 流式日志宏（推荐使用）
-#define LOG_S_DEBUG()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, ::LuaUI::Utils::Logger::getInstance().getCategory())
-#define LOG_S_INFO()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, ::LuaUI::Utils::Logger::getInstance().getCategory())
-#define LOG_S_WARN()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, ::LuaUI::Utils::Logger::getInstance().getCategory())
-#define LOG_S_ERROR()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, ::LuaUI::Utils::Logger::getInstance().getCategory())
-#define LOG_S_FATAL()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, ::LuaUI::Utils::Logger::getInstance().getCategory())
+#define LOG_S_DEBUG()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, ::LuaUI::Utils::Logger::getInstance().getCategory(), LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_INFO()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, ::LuaUI::Utils::Logger::getInstance().getCategory(), LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_WARN()     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, ::LuaUI::Utils::Logger::getInstance().getCategory(), LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_ERROR()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, ::LuaUI::Utils::Logger::getInstance().getCategory(), LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_FATAL()    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, ::LuaUI::Utils::Logger::getInstance().getCategory(), LOG_FILENAME_ONLY, __LINE__)
 
 // 便捷宏定义
 #define LOG_DEBUG_CAT(category, msg) do { \
     auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
     logger.setCategory(category); \
-    logger.debug(msg); \
+    logger.debug(msg, LOG_FILENAME_ONLY, __LINE__); \
 } while(0)
 
 #define LOG_INFO_CAT(category, msg) do { \
     auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
     logger.setCategory(category); \
-    logger.info(msg); \
+    logger.info(msg, LOG_FILENAME_ONLY, __LINE__); \
 } while(0)
 
 #define LOG_WARN_CAT(category, msg) do { \
     auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
     logger.setCategory(category); \
-    logger.warn(msg); \
+    logger.warn(msg, LOG_FILENAME_ONLY, __LINE__); \
 } while(0)
 
 #define LOG_ERROR_CAT(category, msg) do { \
     auto& logger = ::LuaUI::Utils::Logger::getInstance(); \
     logger.setCategory(category); \
-    logger.error(msg); \
+    logger.error(msg, LOG_FILENAME_ONLY, __LINE__); \
 } while(0)
 
 // 流式分类日志宏（推荐使用）
-#define LOG_S_DEBUG_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, category)
-#define LOG_S_INFO_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, category)
-#define LOG_S_WARN_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, category)
-#define LOG_S_ERROR_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, category)
-#define LOG_S_FATAL_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, category)
+#define LOG_S_DEBUG_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelDebug, category, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_INFO_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelInfo, category, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_WARN_CAT(category)     ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelWarn, category, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_ERROR_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelError, category, LOG_FILENAME_ONLY, __LINE__)
+#define LOG_S_FATAL_CAT(category)    ::LuaUI::Utils::LogStream(::LuaUI::Utils::LogLevel::LevelFatal, category, LOG_FILENAME_ONLY, __LINE__)
 
 // 格式化日志宏
 #define LOG_FMT_DEBUG(fmt, ...) do { \

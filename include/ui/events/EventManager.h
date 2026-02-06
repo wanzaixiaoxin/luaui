@@ -49,6 +49,16 @@ enum EventType {
 class EventArgs {
 public:
     /**
+     * @brief 默认构造函数
+     */
+    EventArgs()
+        : eventType(EVENT_CLICK)
+        , eventSource(nullptr)
+        , handled(false)
+    {
+    }
+
+    /**
      * @brief 构造函数
      * @param type 事件类型
      * @param source 事件源控件

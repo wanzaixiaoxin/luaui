@@ -9,6 +9,7 @@
 #include "lua/binding/EventBinder.h"
 #include "lua/binding/ControlBinder.h"
 #include "ui/events/LuaEventHandler.h"
+#include <iostream>
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
@@ -145,6 +146,8 @@ bool LuaState::callFunction(const std::string& funcName, int nargs, int nresults
         setLastError("Lua state is not initialized");
         return false;
     }
+    
+    std::cout << "[LuaState] Calling function: " << funcName << std::endl;
     
     // 查找函数
     int top = lua_gettop(m_luaState);

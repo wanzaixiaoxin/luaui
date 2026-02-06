@@ -12,7 +12,6 @@ function onHelloClick()
 
     Log.info("Button clicked, count: " .. clickCount)
 
-    local messageLabel = UI:getControl("lblMessage")
     local messages = {
         "Hello, LuaUI!",
         "Great job!",
@@ -21,9 +20,17 @@ function onHelloClick()
         "Lua is awesome!"
     }
 
-    messageLabel:setProperty("text", messages[math.min(clickCount, #messages)])
-
-    Log.debug("Updated message label text")
+    -- 使用基于控件ID的函数调用方式
+    local success = UI:setProperty("lblMessage", "text", messages[math.min(clickCount, #messages)])
+    
+    if success then
+        Log.debug("Updated message label text successfully")
+    else
+        Log.warn("Failed to update message label text")
+    end
+    
+    -- 返回true表示事件已处理，防止程序退出
+    return true
 end
 
 -- 退出按钮点击事件
@@ -39,11 +46,11 @@ function onInit()
     Log.debug("Lua environment ready")
 
     -- 绑定按钮事件
-    local result1 = Events.bind("btnHello", "onClick", onHelloClick)
-    local result2 = Events.bind("btnExit", "onClick", onExitClick)
+    local result1 = UI:bindEvent("btnHello", "onClick", onHelloClick)
+    local result2 = UI:bindEvent("btnExit", "onClick", onExitClick)
     
-    Log.info("Events.bind btnHello result: " .. tostring(result1))
-    Log.info("Events.bind btnExit result: " .. tostring(result2))
+    Log.info("UI:bindEvent btnHello result: " .. tostring(result1))
+    Log.info("UI:bindEvent btnExit result: " .. tostring(result2))
 
     Log.info("Events bound successfully")
 end
