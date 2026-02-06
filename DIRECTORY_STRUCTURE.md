@@ -38,179 +38,69 @@ luaui/
 │   └── luaui/                   # 主命名空间目录
 │       ├── core/                # 核心基础
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── core/
-│       │   │           ├── Application.h
-│       │   │           ├── Object.h
-│       │   │           ├── RefCounted.h
-│       │   │           ├── String.h
-│       │   │           └── Types.h
 │       │   ├── src/
-│       │   │   ├── Application.cpp
-│       │   │   └── Object.cpp
 │       │   └── tests/
 │       │       └── test_core.cpp
 │       │
 │       ├── platform/            # 平台抽象层
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── platform/
-│       │   │           ├── Window.h
-│       │   │           ├── FileSystem.h
-│       │   │           └── Thread.h
 │       │   ├── src/
 │       │   │   ├── windows/     # Windows实现
-│       │   │   │   ├── WindowImpl.cpp
-│       │   │   │   └── FileSystemImpl.cpp
 │       │   │   └── posix/       # POSIX实现(未来)
 │       │   └── tests/
 │       │
 │       ├── rendering/           # 渲染引擎
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── rendering/
-│       │   │           ├── RenderEngine.h
-│       │   │           ├── RenderContext.h
-│       │   │           ├── Brush.h
-│       │   │           ├── Path.h
-│       │   │           ├── TextFormat.h
-│       │   │           └── Effect.h
 │       │   ├── src/
-│       │   │   ├── d2d/         # Direct2D实现
-│       │   │   │   ├── D2DRenderEngine.cpp
-│       │   │   │   ├── D2DBrush.cpp
-│       │   │   │   └── D2DTextFormat.cpp
-│       │   │   └── fallback/    # 软件渲染备选
 │       │   └── tests/
 │       │
 │       ├── ui/                  # UI系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── ui/
-│       │   │           ├── UIElement.h
-│       │   │           ├── FrameworkElement.h
-│       │   │           ├── Control.h
-│       │   │           ├── Window.h
-│       │   │           ├── Button.h
-│       │   │           ├── TextBox.h
-│       │   │           ├── Label.h
-│       │   │           └── Panel.h
 │       │   ├── src/
-│       │   │   ├── elements/
-│       │   │   │   ├── UIElement.cpp
-│       │   │   │   ├── FrameworkElement.cpp
-│       │   │   │   └── Control.cpp
-│       │   │   ├── controls/
-│       │   │   │   ├── Window.cpp
-│       │   │   │   ├── Button.cpp
-│       │   │   │   ├── TextBox.cpp
-│       │   │   │   └── Label.cpp
-│       │   │   └── panels/
-│       │   │       ├── Panel.cpp
-│       │   │       ├── StackPanel.cpp
-│       │   │       └── Grid.cpp
 │       │   └── tests/
 │       │
 │       ├── layout/              # 布局系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── layout/
-│       │   │           ├── LayoutEngine.h
-│       │   │           ├── LayoutPanel.h
-│       │   │           ├── StackLayout.h
-│       │   │           └── GridLayout.h
 │       │   ├── src/
-│       │   │   └── LayoutEngine.cpp
 │       │   └── tests/
 │       │
 │       ├── input/               # 输入系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── input/
-│       │   │           ├── InputManager.h
-│       │   │           ├── Keyboard.h
-│       │   │           └── Mouse.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       ├── animation/           # 动画系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── animation/
-│       │   │           ├── AnimationEngine.h
-│       │   │           ├── Timeline.h
-│       │   │           ├── Storyboard.h
-│       │   │           └── EasingFunctions.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       ├── styling/             # 样式系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── styling/
-│       │   │           ├── Style.h
-│       │   │           ├── Theme.h
-│       │   │           ├── ResourceDictionary.h
-│       │   │           └── Trigger.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       ├── binding/             # 数据绑定
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── binding/
-│       │   │           ├── BindingEngine.h
-│       │   │           ├── Binding.h
-│       │   │           └── DependencyProperty.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       ├── scripting/           # 脚本系统
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── scripting/
-│       │   │           ├── LuaEngine.h
-│       │   │           ├── LuaSandbox.h
-│       │   │           ├── LuaBinder.h
-│       │   │           └── ViewModel.h
 │       │   ├── src/
-│       │   │   ├── LuaEngine.cpp
-│       │   │   ├── LuaSandbox.cpp
-│       │   │   └── bindings/
-│       │   │       ├── UIElementBinding.cpp
-│       │   │       ├── ControlBinding.cpp
-│       │   │       └── GlobalBinding.cpp
 │       │   └── tests/
 │       │
 │       ├── resources/           # 资源管理
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── resources/
-│       │   │           ├── ResourceManager.h
-│       │   │           ├── Image.h
-│       │   │           ├── Font.h
-│       │   │           └── AssetLoader.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       ├── xml/                 # XML解析
 │       │   ├── include/
-│       │   │   └── luaui/
-│       │   │       └── xml/
-│       │   │           ├── XmlParser.h
-│       │   │           ├── XamlReader.h
-│       │   │           └── LayoutInflater.h
 │       │   ├── src/
 │       │   └── tests/
 │       │
 │       └── utils/               # 工具库
 │           ├── include/
-│           │   └── luaui/
-│           │       └── utils/
-│           │           ├── Logger.h
-│           │           ├── StringUtils.h
-│           │           ├── MathUtils.h
-│           │           └── Event.h
 │           ├── src/
 │           └── tests/
 │
@@ -227,11 +117,6 @@ luaui/
 │   └── fixtures/
 │
 ├── samples/                     # 示例项目
-│   ├── 01_hello_world/
-│   ├── 02_layout_basics/
-│   ├── 03_data_binding/
-│   ├── 04_mvvm_app/
-│   └── 05_custom_controls/
 │
 ├── resources/                   # 框架资源
 │   └── themes/
