@@ -130,24 +130,7 @@ luaui/
 ├── LICENSE
 ├── README.md
 └── CONTRIBUTING.md
-```
-
-## 迁移说明
-
-### 原结构 → 新结构
-
-| 原位置 | 新位置 | 说明 |
-|--------|--------|------|
-| `include/core/*.h` | `src/luaui/core/include/luaui/core/*.h` | 核心头文件 |
-| `src/core/*.cpp` | `src/luaui/core/src/*.cpp` | 核心实现 |
-| `include/ui/controls/*.h` | `src/luaui/ui/include/luaui/ui/*.h` | UI控件头文件 |
-| `src/ui/controls/*.cpp` | `src/luaui/ui/src/controls/*.cpp` | UI控件实现 |
-| `include/lua/binding/*.h` | `src/luaui/scripting/include/luaui/scripting/*.h` | 脚本绑定 |
-| `src/lua/binding/*.cpp` | `src/luaui/scripting/src/bindings/*.cpp` | 绑定实现 |
-| `include/xml/parser/*.h` | `src/luaui/xml/include/luaui/xml/*.h` | XML解析 |
-| `src/xml/parser/*.cpp` | `src/luaui/xml/src/*.cpp` | XML实现 |
-| `examples/*` | `samples/*` | 示例项目 |
-
+``
 ## 构建系统
 
 ```cmake

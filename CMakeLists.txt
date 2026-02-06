@@ -49,6 +49,11 @@ target_include_directories(lua INTERFACE ${LUA_INCLUDE_DIR})
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
 # ============================================
+# LuaUI Modules
+# ============================================
+add_subdirectory(src/luaui/rendering)
+
+# ============================================
 # LuaUI Library
 # ============================================
 
@@ -68,6 +73,7 @@ if(LUAUI_SOURCES)
     target_include_directories(LuaUI
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
             $<INSTALL_INTERFACE:include>
     )
 
