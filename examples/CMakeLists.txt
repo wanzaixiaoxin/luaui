@@ -17,3 +17,28 @@ if(TARGET LuaUI_Rendering)
         ${CMAKE_SOURCE_DIR}/src/luaui/utils/include
     )
 endif()
+
+# 04_animation_demo - Animation system demo
+if(TARGET LuaUI_Rendering)
+    add_executable(04_animation_demo WIN32 04_animation_demo.cpp)
+    target_link_libraries(04_animation_demo PRIVATE LuaUI_Rendering)
+    target_include_directories(04_animation_demo PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils/include
+    )
+endif()
+
+# 05_offscreen_demo - Offscreen rendering demo
+if(TARGET LuaUI_Rendering)
+    add_executable(05_offscreen_demo WIN32 05_offscreen_demo.cpp)
+    target_link_libraries(05_offscreen_demo PRIVATE LuaUI_Rendering)
+    target_include_directories(05_offscreen_demo PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils/include
+    )
+endif()
+
+# Copy resources to output directory
+if(EXISTS ${CMAKE_SOURCE_DIR}/resources)
+    file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+endif()

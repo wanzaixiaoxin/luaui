@@ -27,6 +27,43 @@ struct Color {
     static Color Green() { return Color(0, 1, 0); }
     static Color Blue() { return Color(0, 0, 1); }
     
+    // Create from RGBA bytes
+    static Color FromRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
+        return Color(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+    }
+    
+    // Create from hex (0xRRGGBB or 0xAARRGGBB)
+    static Color FromHex(uint32_t hex) {
+        float r, g, b, a;
+        
+        // Check if alpha is present (high byte non-zero or full 32-bit)
+        if (hex > 0xFFFFFF) {
+            // 0xAARRGGBB format
+            a = ((hex >> 24) & 0xFF) / 255.0f;
+            r = ((hex >> 16) & 0xFF) / 255.0f;
+            g = ((hex >> 8) & 0xFF) / 255.0f;
+            b = (hex & 0xFF) / 255.0f;
+        } else {
+            // 0xRRGGBB format (no alpha)
+            r = ((hex >> 16) & 0xFF) / 255.0f;
+            g = ((hex >> 8) & 0xFF) / 255.0f;
+            b = (hex & 0xFF) / 255.0f;
+            a = 1.0f;
+        }
+        return Color(r, g, b, a);
+    }
+    
+    // Linear interpolation
+    Color Lerp(const Color& other, float t) const {
+        t = std::clamp(t, 0.0f, 1.0f);
+        return Color(
+            r + (other.r - r) * t,
+            g + (other.g - g) * t,
+            b + (other.b - b) * t,
+            a + (other.a - a) * t
+        );
+    }
+    
     // Premultiply alpha for Direct2D
     Color Premultiply() const {
         return Color(r * a, g * a, b * a, a);
@@ -167,6 +204,7 @@ public:
     }
     
     const float* GetMatrix() const { return m; }
+    const float* GetElements() const { return m; }
     
 private:
     float m[6]; // [sx, shy, shx, sy, tx, ty]
