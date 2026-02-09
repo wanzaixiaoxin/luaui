@@ -9,6 +9,7 @@
 #include "luaui/rendering/IRenderEngine.h"
 #include <windows.h>
 #include <windowsx.h>
+#include <objbase.h>  // For CoInitializeEx, CoUninitialize
 #include <string>
 #include <sstream>
 
@@ -73,8 +74,7 @@ public:
         // 处理 Slider - 调用 OnMouseDown 开始拖拽
         if (auto slider = dynamic_cast<Slider*>(m_hoveredControl.get())) {
             m_draggingSlider = slider;
-            MouseEventArgs args(pt.x, pt.y);
-            slider->OnMouseDown(args);
+            slider->OnMouseDown(pt);
         }
     }
     
@@ -85,8 +85,7 @@ public:
         
         // 通知 Slider 鼠标释放
         if (m_draggingSlider) {
-            MouseEventArgs args(pt.x, pt.y);
-            m_draggingSlider->OnMouseUp(args);
+            m_draggingSlider->OnMouseUp(pt);
         }
         
         m_draggingSlider = nullptr;
@@ -95,9 +94,8 @@ public:
     
     void HandleMouseMoveDrag(const Point& pt, Control* root) {
         if (m_draggingSlider) {
-            // 创建鼠标事件参数
-            MouseEventArgs args(pt.x, pt.y);
-            m_draggingSlider->OnMouseMove(args);
+            // 直接传递 Point 给 Slider
+            m_draggingSlider->OnMouseMove(pt);
         } else {
             // 处理普通鼠标移动
             HandleMouseMove(pt, root);
@@ -290,6 +288,13 @@ private:
         auto slider1 = std::make_shared<Slider>();
         slider1->SetWidth(300);
         slider1->SetValue(50);
+        
+        // 设置重绘回调，实现拖拽时实时更新
+        HWND hwnd = m_hWnd;
+        slider1->SetRedrawCallback([hwnd]() {
+            InvalidateRect(hwnd, nullptr, FALSE);
+        });
+        
         slider1->SetValueChangedHandler([this](Slider* sender, double value) {
             // 更新进度条
             if (m_progressBar) {
@@ -473,12 +478,9 @@ private:
                 case WM_MOUSEMOVE: {
                     float x = static_cast<float>(GET_X_LPARAM(lParam));
                     float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    bool wasDragging = pThis->m_inputTracker.IsDragging();
                     pThis->m_inputTracker.HandleMouseMoveDrag(Point(x, y), pThis->m_rootPanel.get());
-                    // 如果在拖拽 Slider，需要实时重绘
-                    if (wasDragging || pThis->m_inputTracker.IsDragging()) {
-                        InvalidateRect(hWnd, nullptr, FALSE);
-                    }
+                    // Slider 会通过回调自动触发重绘，但悬停效果需要这里重绘
+                    InvalidateRect(hWnd, nullptr, FALSE);
                     return 0;
                 }
                 case WM_LBUTTONDOWN: {

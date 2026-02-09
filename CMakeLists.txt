@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 
+# Windows 头文件优化 - 必须在任何项目定义之前
+if(WIN32)
+    add_compile_options(/DNOMINMAX /DWIN32_LEAN_AND_MEAN)
+endif()
+
 project(LuaUI
     VERSION 1.0.0
     DESCRIPTION "A Windows UI framework with Lua scripting and Direct2D rendering"

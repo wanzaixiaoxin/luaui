@@ -38,9 +38,13 @@ public:
     void Render(IRenderContext* context) override;
     
     // Public for external event handling
-    void OnMouseDown(MouseEventArgs& args) override;
-    void OnMouseMove(MouseEventArgs& args) override;
-    void OnMouseUp(MouseEventArgs& args) override;
+    void OnMouseDown(const Point& pt);
+    void OnMouseMove(const Point& pt);
+    void OnMouseUp(const Point& pt);
+    
+    // Set the redraw callback for real-time updates during dragging
+    using RedrawCallback = std::function<void()>;
+    void SetRedrawCallback(RedrawCallback callback) { m_redrawCallback = callback; }
 
 protected:
     Size MeasureOverride(const Size& availableSize) override;
@@ -52,6 +56,7 @@ private:
     double m_step = 1.0;
     Orientation m_orientation = Orientation::Horizontal;
     ValueChangedHandler m_valueChangedHandler;
+    RedrawCallback m_redrawCallback;
     
     // 拖拽状态
     bool m_isDragging = false;
@@ -63,6 +68,12 @@ private:
     // 计算 thumb 位置
     float CalculateThumbPosition() const;
     double ValueFromPosition(float position, float trackLength);
+    
+    // 触发重绘
+    void RequestRedraw() {
+        Invalidate();
+        if (m_redrawCallback) m_redrawCallback();
+    }
 };
 
 // ==================== ProgressBar ====================

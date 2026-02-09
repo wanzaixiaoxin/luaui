@@ -1,3 +1,10 @@
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "luaui/controls/RangeControls.h"
 #include <algorithm>
 #include <sstream>
@@ -31,7 +38,7 @@ void Slider::SetMaximum(double maximum) {
 
 void Slider::SetValue(double value) {
     // 约束值在范围内
-    value = std::max(m_minimum, std::min(value, m_maxumum));
+    value = (std::max)(m_minimum, (std::min)(value, m_maxumum));
     
     // 应用步长
     if (m_step > 0) {
@@ -41,7 +48,7 @@ void Slider::SetValue(double value) {
     
     if (m_value != value) {
         m_value = value;
-        Invalidate();
+        RequestRedraw();  // 使用 RequestRedraw 触发重绘
         if (m_valueChangedHandler) {
             m_valueChangedHandler(this, m_value);
         }
@@ -137,26 +144,25 @@ double Slider::ValueFromPosition(float position, float trackLength) {
     return value;
 }
 
-void Slider::OnMouseDown(MouseEventArgs& args) {
+void Slider::OnMouseDown(const Point& pt) {
     m_isDragging = true;
     
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
-    float pos = isHorizontal ? args.Position.X - m_renderRect.x 
-                            : m_actualHeight - (args.Position.Y - m_renderRect.y);
+    float pos = isHorizontal ? pt.x - m_renderRect.x 
+                            : m_actualHeight - (pt.y - m_renderRect.y);
     float trackLength = isHorizontal ? m_actualWidth : m_actualHeight;
     
     // 约束位置在有效范围内
     pos = (std::max)(0.0f, (std::min)(pos, trackLength));
     
     SetValue(ValueFromPosition(pos, trackLength));
-    args.Handled = true;
 }
 
-void Slider::OnMouseMove(MouseEventArgs& args) {
+void Slider::OnMouseMove(const Point& pt) {
     if (m_isDragging) {
         bool isHorizontal = (m_orientation == Orientation::Horizontal);
-        float pos = isHorizontal ? args.Position.X - m_renderRect.x 
-                                : m_actualHeight - (args.Position.Y - m_renderRect.y);
+        float pos = isHorizontal ? pt.x - m_renderRect.x 
+                                : m_actualHeight - (pt.y - m_renderRect.y);
         float trackLength = isHorizontal ? m_actualWidth : m_actualHeight;
         
         // 约束位置在有效范围内
@@ -166,7 +172,7 @@ void Slider::OnMouseMove(MouseEventArgs& args) {
     }
 }
 
-void Slider::OnMouseUp(MouseEventArgs& /*args*/) {
+void Slider::OnMouseUp(const Point& /*pt*/) {
     m_isDragging = false;
 }
 
@@ -177,7 +183,7 @@ ProgressBar::ProgressBar() {
 }
 
 void ProgressBar::SetValue(double value) {
-    value = std::max(0.0, std::min(value, 100.0));
+    value = (std::max)(0.0, (std::min)(value, 100.0));
     if (m_value != value) {
         m_value = value;
         Invalidate();
