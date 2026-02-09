@@ -38,6 +38,11 @@ if(TARGET LuaUI_Rendering)
     )
 endif()
 
+# 06_controls_demo - Control system demo
+if(TARGET LuaUI)
+    add_subdirectory(06_controls_demo)
+endif()
+
 # Copy resources to output directory
 if(EXISTS ${CMAKE_SOURCE_DIR}/resources)
     file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

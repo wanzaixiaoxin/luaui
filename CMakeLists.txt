@@ -76,6 +76,7 @@ if(LUAUI_SOURCES)
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/include>
             $<INSTALL_INTERFACE:include>
     )
 
