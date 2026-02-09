@@ -89,6 +89,10 @@ Size WrapPanel::ArrangeOverride(const Size& finalSize) {
     }
     lineSizes.push_back(curLineCross);
     
+    // Get our position from render rect
+    float baseX = m_renderRect.x;
+    float baseY = m_renderRect.y;
+    
     // Arrange children
     size_t currentLine = 0;
     x = 0; y = 0;
@@ -111,7 +115,7 @@ Size WrapPanel::ArrangeOverride(const Size& finalSize) {
                 lineSize = 0;
             }
             
-            child->Arrange(Rect(x, y, childSize.width, childSize.height));
+            child->Arrange(Rect(baseX + x, baseY + y, childSize.width, childSize.height));
             x += childSize.width;
             lineSize += childSize.width;
         } else {
@@ -123,7 +127,7 @@ Size WrapPanel::ArrangeOverride(const Size& finalSize) {
                 lineSize = 0;
             }
             
-            child->Arrange(Rect(x, y, childSize.width, childSize.height));
+            child->Arrange(Rect(baseX + x, baseY + y, childSize.width, childSize.height));
             y += childSize.height;
             lineSize += childSize.height;
         }

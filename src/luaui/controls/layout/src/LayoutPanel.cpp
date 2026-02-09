@@ -75,7 +75,7 @@ void Panel::Render(IRenderContext* context) {
     // Render background
     RenderOverride(context);
     
-    // Render children
+    // Render children (they have absolute coordinates in m_renderRect)
     for (auto& child : m_children) {
         if (child->GetIsVisible()) {
             child->Render(context);

@@ -80,6 +80,10 @@ Size Canvas::MeasureOverride(const Size& availableSize) {
 }
 
 Size Canvas::ArrangeOverride(const Size& finalSize) {
+    // Get our position from render rect
+    float baseX = m_renderRect.x;
+    float baseY = m_renderRect.y;
+    
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -97,7 +101,7 @@ Size Canvas::ArrangeOverride(const Size& finalSize) {
             top = finalSize.height - bottom - childSize.height;
         }
         
-        child->Arrange(Rect(left, top, childSize.width, childSize.height));
+        child->Arrange(Rect(baseX + left, baseY + top, childSize.width, childSize.height));
     }
     
     return finalSize;

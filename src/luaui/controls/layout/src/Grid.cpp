@@ -218,6 +218,10 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
     CalculateRowHeights(finalSize.height);
     CalculateColumnWidths(finalSize.width);
     
+    // Get our position from render rect
+    float baseX = m_renderRect.x;
+    float baseY = m_renderRect.y;
+    
     // Calculate positions
     std::vector<float> rowTops(m_rows.size());
     std::vector<float> colLefts(m_columns.size());
@@ -234,7 +238,7 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
         x += m_columns[i].ActualWidth;
     }
     
-    // Arrange children
+    // Arrange children with absolute coordinates
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -243,8 +247,8 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
         int rowSpan = std::min(GetRowSpan(child.get()), (int)m_rows.size() - row);
         int colSpan = std::min(GetColumnSpan(child.get()), (int)m_columns.size() - col);
         
-        float cellX = colLefts[col];
-        float cellY = rowTops[row];
+        float cellX = baseX + colLefts[col];
+        float cellY = baseY + rowTops[row];
         float cellW = 0, cellH = 0;
         
         for (int i = 0; i < colSpan; ++i) cellW += m_columns[col + i].ActualWidth;

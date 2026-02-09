@@ -41,6 +41,10 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
     bool isVertical = (m_orientation == Orientation::Vertical);
     float position = 0;
     
+    // Get our position from render rect
+    float baseX = m_renderRect.x;
+    float baseY = m_renderRect.y;
+    
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -48,10 +52,10 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
         Rect childRect;
         
         if (isVertical) {
-            childRect = Rect(0, position, finalSize.width, childSize.height);
+            childRect = Rect(baseX, baseY + position, finalSize.width, childSize.height);
             position += childSize.height + m_spacing;
         } else {
-            childRect = Rect(position, 0, childSize.width, finalSize.height);
+            childRect = Rect(baseX + position, baseY, childSize.width, finalSize.height);
             position += childSize.width + m_spacing;
         }
         

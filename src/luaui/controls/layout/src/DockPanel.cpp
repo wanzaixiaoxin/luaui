@@ -70,6 +70,10 @@ Size DockPanel::MeasureOverride(const Size& availableSize) {
 }
 
 Size DockPanel::ArrangeOverride(const Size& finalSize) {
+    // Get our position from render rect
+    float baseX = m_renderRect.x;
+    float baseY = m_renderRect.y;
+    
     float left = 0, top = 0;
     float right = finalSize.width;
     float bottom = finalSize.height;
@@ -82,26 +86,26 @@ Size DockPanel::ArrangeOverride(const Size& finalSize) {
         Rect childRect;
         
         if (isLastChild && m_lastChildFill) {
-            childRect = Rect(left, top, right - left, bottom - top);
+            childRect = Rect(baseX + left, baseY + top, right - left, bottom - top);
         } else {
             Dock dock = GetDock(child.get());
             Size childSize = child->GetDesiredSize();
             
             switch (dock) {
                 case Dock::Left:
-                    childRect = Rect(left, top, childSize.width, bottom - top);
+                    childRect = Rect(baseX + left, baseY + top, childSize.width, bottom - top);
                     left += childSize.width;
                     break;
                 case Dock::Top:
-                    childRect = Rect(left, top, right - left, childSize.height);
+                    childRect = Rect(baseX + left, baseY + top, right - left, childSize.height);
                     top += childSize.height;
                     break;
                 case Dock::Right:
-                    childRect = Rect(right - childSize.width, top, childSize.width, bottom - top);
+                    childRect = Rect(baseX + right - childSize.width, baseY + top, childSize.width, bottom - top);
                     right -= childSize.width;
                     break;
                 case Dock::Bottom:
-                    childRect = Rect(left, bottom - childSize.height, right - left, childSize.height);
+                    childRect = Rect(baseX + left, baseY + bottom - childSize.height, right - left, childSize.height);
                     bottom -= childSize.height;
                     break;
             }
