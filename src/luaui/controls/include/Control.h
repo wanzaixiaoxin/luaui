@@ -2,6 +2,7 @@
 
 #include "luaui/rendering/Types.h"
 #include "luaui/rendering/IRenderContext.h"
+#include "luaui/controls/Event.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -170,9 +171,43 @@ public:
     void RaiseMouseLeave() { for (auto& h : m_mouseLeaveHandlers) h(this); }
     void RaiseMouseMove(const Point& p) { for (auto& h : m_mouseMoveHandlers) h(this, p); }
     
+    // ==================== 路由事件系统 ====================
+    // Event handler function type
+    using RoutedEventHandler = std::function<void(Control* sender, RoutedEventArgs& args)>;
+    
+    // Add event handler for routed events
+    void AddHandler(const RoutedEvent& routedEvent, RoutedEventHandler handler);
+    
+    // Remove event handler
+    void RemoveHandler(const RoutedEvent& routedEvent);
+    
+    // Raise routed event
+    void RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args);
+    
+    // Virtual event handlers (override in derived classes)
+    virtual void OnPreviewMouseDown(MouseEventArgs& /*args*/) {}
+    virtual void OnMouseDown(MouseEventArgs& /*args*/) {}
+    virtual void OnPreviewMouseUp(MouseEventArgs& /*args*/) {}
+    virtual void OnMouseUp(MouseEventArgs& /*args*/) {}
+    virtual void OnPreviewMouseMove(MouseEventArgs& /*args*/) {}
+    virtual void OnMouseMove(MouseEventArgs& /*args*/) {}
+    virtual void OnMouseEnter() {}
+    virtual void OnMouseLeave() {}
+    virtual void OnMouseWheel(MouseEventArgs& /*args*/) {}
+    
+    virtual void OnPreviewKeyDown(KeyEventArgs& /*args*/) {}
+    virtual void OnKeyDown(KeyEventArgs& /*args*/) {}
+    virtual void OnPreviewKeyUp(KeyEventArgs& /*args*/) {}
+    virtual void OnKeyUp(KeyEventArgs& /*args*/) {}
+    
+    virtual void OnPreviewGotFocus(FocusEventArgs& /*args*/) {}
+    virtual void OnGotFocus() {}
+    virtual void OnPreviewLostFocus(FocusEventArgs& /*args*/) {}
+    virtual void OnLostFocus() {}
+    
     // Focus
     virtual bool GetIsFocusable() const { return m_isFocusable; }
-    virtual void SetIsFocusable(bool focusable) { m_isFocusable = focusable; }
+    virtual void SetIsFocusable(bool focusable);
     virtual bool GetIsFocused() const { return m_isFocused; }
     virtual bool Focus();
     virtual void KillFocus();
@@ -253,6 +288,9 @@ protected:
     std::any m_dataContext;
     
 private:
+    // Allow FocusManager to access private members
+    friend class FocusManager;
+    
     // Effective values storage
     std::map<DependencyProperty::Id, std::any> m_effectiveValues;
     
@@ -261,6 +299,9 @@ private:
     std::vector<EventHandler> m_mouseEnterHandlers;
     std::vector<EventHandler> m_mouseLeaveHandlers;
     std::vector<std::function<void(Control*, Point)>> m_mouseMoveHandlers;
+    
+    // Routed event handlers storage
+    std::map<size_t, std::vector<RoutedEventHandler>> m_routedEventHandlers;
     
     // Attached properties storage
     std::map<std::string, std::any> m_attachedProperties;
@@ -281,6 +322,9 @@ public:
     virtual void ClearChildren();
     
     void Render(IRenderContext* context) override;
+    
+    // Hit testing - search children first (Z-order: last child on top)
+    ControlPtr HitTestPoint(const Point& point) override;
     
 protected:
     std::vector<ControlPtr> m_children;

@@ -1,4 +1,5 @@
 #include "Control.h"
+#include "luaui/controls/FocusManager.h"
 #include <algorithm>
 #include <limits>
 
@@ -163,7 +164,7 @@ void Control::Arrange(const Rect& finalRect) {
     Invalidate();
 }
 
-Size Control::MeasureOverride(const Size& availableSize) {
+Size Control::MeasureOverride(const Size& /*availableSize*/) {
     // Default: return available size or 0,0
     return Size(0, 0);
 }
@@ -220,9 +221,11 @@ void Control::Render(IRenderContext* context) {
     
     context->PushState();
     
-    // Apply transform
-    if (!m_renderTransform.GetMatrix()[0] == 1.0f && m_renderTransform.GetMatrix()[1] == 0.0f) {
-        // Transform is not identity
+    // Apply transform if not identity
+    const float* matrix = m_renderTransform.GetMatrix();
+    bool isIdentity = (matrix[0] == 1.0f && matrix[1] == 0.0f && matrix[2] == 0.0f &&
+                       matrix[3] == 0.0f && matrix[4] == 1.0f && matrix[5] == 0.0f);
+    if (!isIdentity) {
         context->MultiplyTransform(m_renderTransform);
     }
     
@@ -250,7 +253,7 @@ void Control::Render(IRenderContext* context) {
     ClearDirty();
 }
 
-void Control::RenderOverride(IRenderContext* context) {
+void Control::RenderOverride(IRenderContext* /*context*/) {
     // Override in derived classes
 }
 
@@ -271,6 +274,19 @@ void Control::SetIsVisible(bool visible) {
         m_isVisible = visible;
         InvalidateMeasure();
         Invalidate();
+    }
+}
+
+void Control::SetIsFocusable(bool focusable) {
+    if (m_isFocusable != focusable) {
+        m_isFocusable = focusable;
+        
+        // 注册/注销到 FocusManager
+        if (m_isFocusable) {
+            FocusManager::GetInstance().RegisterFocusable(this);
+        } else {
+            FocusManager::GetInstance().UnregisterFocusable(this);
+        }
     }
 }
 
@@ -350,16 +366,63 @@ void Control::RaiseClick() {
     }
 }
 
+// ==================== 路由事件系统 ====================
+void Control::RemoveHandler(const RoutedEvent& routedEvent) {
+    size_t key = routedEvent.GetId();
+    m_routedEventHandlers.erase(key);
+}
+
+void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) {
+    // 调用注册的处理器
+    size_t key = routedEvent.GetId();
+    auto it = m_routedEventHandlers.find(key);
+    if (it != m_routedEventHandlers.end()) {
+        for (auto& handler : it->second) {
+            if (args.Handled) break;
+            handler(this, args);
+        }
+    }
+    
+    // 调用虚拟函数
+    if (!args.Handled) {
+        const std::string& name = routedEvent.GetName();
+        
+        // 鼠标事件
+        if (name == "PreviewMouseDown" || name == "MouseDown") {
+            OnMouseDown(static_cast<MouseEventArgs&>(args));
+        } else if (name == "PreviewMouseUp" || name == "MouseUp") {
+            OnMouseUp(static_cast<MouseEventArgs&>(args));
+        } else if (name == "PreviewMouseMove" || name == "MouseMove") {
+            OnMouseMove(static_cast<MouseEventArgs&>(args));
+        }
+        // 键盘事件
+        else if (name == "PreviewKeyDown" || name == "KeyDown") {
+            OnKeyDown(static_cast<KeyEventArgs&>(args));
+        } else if (name == "PreviewKeyUp" || name == "KeyUp") {
+            OnKeyUp(static_cast<KeyEventArgs&>(args));
+        }
+        // 焦点事件
+        else if (name == "GotFocus") {
+            OnGotFocus();
+        } else if (name == "LostFocus") {
+            OnLostFocus();
+        }
+    }
+}
+
 // ==================== Focus ====================
 
 bool Control::Focus() {
     if (!m_isFocusable) return false;
     
-    // Remove focus from previous
-    auto parent = GetParent();
-    if (parent) {
-        // TODO: Implement focus manager
+    // 避免递归：如果已经是焦点，直接返回
+    if (FocusManager::GetInstance().GetFocusedControl() == this) {
+        m_isFocused = true;
+        return true;
     }
+    
+    // 使用 FocusManager 设置焦点
+    FocusManager::GetInstance().SetFocusedControl(this);
     
     m_isFocused = true;
     Invalidate();
@@ -367,13 +430,19 @@ bool Control::Focus() {
 }
 
 void Control::KillFocus() {
-    m_isFocused = false;
+    if (m_isFocused) {
+        m_isFocused = false;
+        // 只有当前焦点是本控件时才清除焦点
+        if (FocusManager::GetInstance().GetFocusedControl() == this) {
+            FocusManager::GetInstance().ClearFocus();
+        }
+    }
     Invalidate();
 }
 
 // ==================== Property Change ====================
 
-void Control::OnPropertyChanged(const std::string& propertyName) {
+void Control::OnPropertyChanged(const std::string& /*propertyName*/) {
     // Override in derived classes
 }
 
@@ -446,6 +515,22 @@ void Panel::Render(IRenderContext* context) {
             child->Render(context);
         }
     }
+}
+
+ControlPtr Panel::HitTestPoint(const Point& point) {
+    if (!GetIsVisible() || m_opacity <= 0) {
+        return nullptr;
+    }
+    
+    // Test children first in reverse order (Z-order: last child is on top)
+    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
+        if (auto result = (*it)->HitTestPoint(point)) {
+            return result;
+        }
+    }
+    
+    // Then test self
+    return Control::HitTestPoint(point);
 }
 
 // ==================== ContentControl ====================
@@ -591,7 +676,7 @@ float Canvas::GetTop(Control* control) {
     return val.has_value() ? std::any_cast<float>(val) : 0.0f;
 }
 
-Size Canvas::MeasureOverride(const Size& availableSize) {
+Size Canvas::MeasureOverride(const Size& /*availableSize*/) {
     Size desiredSize;
     
     for (auto& child : m_children) {
@@ -762,7 +847,10 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
             val = GetAttachedProperty(child.get(), "Grid.Column");
             int col = val.has_value() ? std::any_cast<int>(val) : 0;
             
-            child->Arrange(Rect(col * colWidth, row * rowHeight, colWidth, rowHeight));
+            // Use global coordinates relative to Grid's position
+            child->Arrange(Rect(m_renderRect.x + col * colWidth, 
+                               m_renderRect.y + row * rowHeight, 
+                               colWidth, rowHeight));
         }
     }
     
@@ -792,7 +880,7 @@ Size Button::MeasureOverride(const Size& availableSize) {
     return size;
 }
 
-void Button::RenderOverride(IRenderContext* context) {
+void Button::RenderOverride(IRenderContext* /*context*/) {
     // Update background based on state
     if (m_isPressed) {
         SetBackground(m_pressedBackground);
@@ -816,13 +904,13 @@ void Button::OnMouseLeave() {
     Invalidate();
 }
 
-void Button::OnMouseDown(const Point& point) {
+void Button::OnMouseDown(const Point& /*point*/) {
     m_isPressed = true;
     Focus();
     Invalidate();
 }
 
-void Button::OnMouseUp(const Point& point) {
+void Button::OnMouseUp(const Point& /*point*/) {
     if (m_isPressed) {
         m_isPressed = false;
         RaiseClick();
@@ -847,7 +935,6 @@ void Button::Render(IRenderContext* context) {
 // ==================== TextBlock ====================
 
 TextBlock::TextBlock() {
-    // Default size
     m_textSizeDirty = true;
 }
 
@@ -868,9 +955,28 @@ void TextBlock::UpdateTextSize(IRenderContext* context) {
 }
 
 Size TextBlock::MeasureOverride(const Size& availableSize) {
-    // Return cached text size
-    // In real implementation, would need context to measure text
-    return Size(100, m_fontSize * 1.2f);  // Placeholder
+    // Estimate text size based on font metrics
+    // Average character width is roughly 0.6 * fontSize for most fonts
+    float avgCharWidth = m_fontSize * 0.6f;
+    float lineHeight = m_fontSize * 1.2f;
+    
+    // Count characters and estimate lines
+    size_t charCount = m_text.length();
+    float textWidth = charCount * avgCharWidth;
+    
+    // If width is constrained, calculate wrapped height
+    float availableWidth = availableSize.width > 0 ? availableSize.width : textWidth;
+    int numLines = std::max(1, static_cast<int>(std::ceil(textWidth / availableWidth)));
+    
+    // Clamp to available width
+    float finalWidth = std::min(textWidth, availableWidth);
+    float finalHeight = numLines * lineHeight;
+    
+    // Cache for rendering
+    m_textSize = Size(finalWidth, finalHeight);
+    m_textSizeDirty = false;
+    
+    return Size(finalWidth, finalHeight);
 }
 
 void TextBlock::Render(IRenderContext* context) {
@@ -880,6 +986,12 @@ void TextBlock::Render(IRenderContext* context) {
     auto brush = context->CreateSolidColorBrush(m_foreground);
     
     context->DrawTextString(m_text, format.get(), m_renderRect.Position(), brush.get());
+}
+
+// ==================== 路由事件函数定义 ====================
+void Control::AddHandler(const RoutedEvent& routedEvent, RoutedEventHandler handler) {
+    size_t key = routedEvent.GetId();
+    m_routedEventHandlers[key].push_back(handler);
 }
 
 } // namespace controls
