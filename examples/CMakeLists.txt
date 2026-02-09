@@ -53,6 +53,11 @@ if(TARGET LuaUI_ControlsLayout)
     add_subdirectory(08_visual_layout_demo)
 endif()
 
+# 09_composite_layout - Layout + Controls composite demo
+if(TARGET LuaUI_ControlsLayout)
+    add_subdirectory(09_composite_layout)
+endif()
+
 # Copy resources to output directory
 if(EXISTS ${CMAKE_SOURCE_DIR}/resources)
     file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
