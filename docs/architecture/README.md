@@ -8,8 +8,10 @@
 
 | 文档 | 描述 |
 |------|------|
+| [DIRECTORY_STRUCTURE.md](DIRECTORY_STRUCTURE.md) | 项目目录结构说明 |
 | [Commercial_UI_Framework_Design.md](Commercial_UI_Framework_Design.md) | 整体架构设计、设计哲学、技术选型 |
 | [Render_Engine_Design.md](Render_Engine_Design.md) | Direct2D渲染引擎详细设计 |
+| [Layout_System.md](Layout_System.md) | 布局系统设计与使用指南 |
 | [Lua_Binding_Design.md](Lua_Binding_Design.md) | Lua脚本系统与API设计 |
 | [MVVM_DataBinding_Design.md](MVVM_DataBinding_Design.md) | MVVM架构与数据绑定系统 |
 | [Style_Theme_Design.md](Style_Theme_Design.md) | 样式与主题系统设计 |
@@ -19,9 +21,9 @@
 ## 快速导航
 
 ### 如果你是框架使用者
-1. 先阅读 [Commercial_UI_Framework_Design.md](Commercial_UI_Framework_Design.md) 了解整体架构
-2. 查看 [Lua_Binding_Design.md](Lua_Binding_Design.md) 了解Lua API使用
-3. 参考 [MVVM_DataBinding_Design.md](MVVM_DataBinding_Design.md) 学习MVVM模式
+1. 先阅读 [DIRECTORY_STRUCTURE.md](DIRECTORY_STRUCTURE.md) 了解项目结构
+2. 查看 [Layout_System.md](Layout_System.md) 学习布局系统使用
+3. 参考 [Lua_Binding_Design.md](Lua_Binding_Design.md) 了解Lua API使用
 
 ### 如果你是框架开发者
 1. 详细阅读所有架构文档

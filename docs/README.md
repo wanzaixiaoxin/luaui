@@ -7,6 +7,8 @@ docs/
 ├── README.md                      # 本文档 - 文档导航
 ├── architecture/                  # 架构设计文档
 │   ├── README.md                  # 架构文档索引
+│   ├── DIRECTORY_STRUCTURE.md     # 目录结构说明
+│   ├── Layout_System.md           # 布局系统设计
 │   ├── Commercial_UI_Framework_Design.md  # 整体架构设计
 │   ├── Render_Engine_Design.md    # 渲染引擎设计
 │   ├── Lua_Binding_Design.md      # Lua绑定设计
@@ -25,14 +27,13 @@ docs/
 
 ### 🏗️ 架构设计
 阅读顺序建议：
-1. [Commercial_UI_Framework_Design.md](architecture/Commercial_UI_Framework_Design.md) - 整体架构
-2. [Implementation_Roadmap.md](architecture/Implementation_Roadmap.md) - 开发路线图
-3. [Render_Engine_Design.md](architecture/Render_Engine_Design.md) - 渲染引擎
-4. [MVVM_DataBinding_Design.md](architecture/MVVM_DataBinding_Design.md) - 数据绑定
+1. [DIRECTORY_STRUCTURE.md](architecture/DIRECTORY_STRUCTURE.md) - 目录结构
+2. [Layout_System.md](architecture/Layout_System.md) - 布局系统
+3. [Commercial_UI_Framework_Design.md](architecture/Commercial_UI_Framework_Design.md) - 整体架构
+4. [Render_Engine_Design.md](architecture/Render_Engine_Design.md) - 渲染引擎
 5. [Lua_Binding_Design.md](architecture/Lua_Binding_Design.md) - Lua API
 
 ### 📁 项目相关
-- [DIRECTORY_STRUCTURE.md](../DIRECTORY_STRUCTURE.md) - 目录结构说明
 - [Sample_Project_Structure.md](architecture/Sample_Project_Structure.md) - 示例项目结构
 
 ### 🚀 开始使用
