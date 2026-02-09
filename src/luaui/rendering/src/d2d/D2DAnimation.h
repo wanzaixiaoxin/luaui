@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/IAnimation.h"
+#include "IAnimation.h"
 #include <vector>
 
 namespace luaui {

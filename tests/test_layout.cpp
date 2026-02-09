@@ -3,7 +3,7 @@
 #include <cmath>
 #include <memory>
 
-#include "luaui/controls/layout.h"
+#include "layout.h"
 
 using namespace luaui;
 using namespace luaui::controls;

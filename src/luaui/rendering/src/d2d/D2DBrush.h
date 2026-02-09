@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/IBrush.h"
+#include "IBrush.h"
 #include <d2d1.h>
 #include <wrl/client.h>
 

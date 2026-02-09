@@ -1,4 +1,4 @@
-#include "luaui/controls/StackPanel.h"
+#include "StackPanel.h"
 #include <algorithm>
 
 namespace luaui {

@@ -12,7 +12,7 @@ public:
     
     std::string GetTypeName() const override { return "Slider"; }
     
-    // 值范围
+    // 值范�?
     double GetMinimum() const { return m_minimum; }
     void SetMinimum(double minimum);
     
@@ -58,7 +58,7 @@ private:
     ValueChangedHandler m_valueChangedHandler;
     RedrawCallback m_redrawCallback;
     
-    // 拖拽状态
+    // 拖拽状�?
     bool m_isDragging = false;
     
     // 尺寸
@@ -83,7 +83,7 @@ public:
     
     std::string GetTypeName() const override { return "ProgressBar"; }
     
-    // 进度值 (0-100)
+    // 进度�?(0-100)
     double GetValue() const { return m_value; }
     void SetValue(double value);
     

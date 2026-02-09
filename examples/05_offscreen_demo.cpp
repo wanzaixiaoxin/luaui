@@ -1,8 +1,8 @@
 // Offscreen Rendering Demo - Shows render-to-texture functionality
 #include <windows.h>
 #include <objbase.h>  // For COM functions
-#include "luaui/rendering/IRenderEngine.h"
-#include "luaui/rendering/IRenderTarget.h"
+#include "IRenderEngine.h"
+#include "IRenderTarget.h"
 #include "Logger.h"
 
 using namespace luaui::rendering;

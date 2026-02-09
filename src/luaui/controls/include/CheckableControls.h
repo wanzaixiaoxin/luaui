@@ -12,7 +12,7 @@ public:
     
     std::string GetTypeName() const override { return "CheckBox"; }
     
-    // Checked 状态
+    // Checked 状�?
     bool GetIsChecked() const { return m_isChecked; }
     void SetIsChecked(bool checked);
     
@@ -49,7 +49,7 @@ public:
     
     std::string GetTypeName() const override { return "RadioButton"; }
     
-    // Selected 状态
+    // Selected 状�?
     bool GetIsSelected() const { return m_isSelected; }
     void SetIsSelected(bool selected);
     

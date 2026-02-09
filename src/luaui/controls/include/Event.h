@@ -21,10 +21,10 @@ public:
     // 事件是否已处理（阻止进一步传递）
     bool Handled = false;
     
-    // 事件源（原始触发控件）
+    // 事件源（原始触发控件�?
     Control* Source = nullptr;
     
-    // 事件当前所在控件
+    // 事件当前所在控�?
     Control* OriginalSource = nullptr;
 };
 
@@ -55,9 +55,9 @@ public:
 
     int KeyCode = 0;           // 虚拟键码
     bool IsRepeat = false;         // 是否重复按键
-    bool IsSystemKey = false;  // 是否是系统键（Alt+Key）
+    bool IsSystemKey = false;  // 是否是系统键（Alt+Key�?
     
-    // 修饰键状态
+    // 修饰键状�?
     bool Control = false;
     bool Shift = false;
     bool Alt = false;
@@ -76,8 +76,8 @@ public:
 // 事件路由策略
 enum class RoutingStrategy {
     Direct,     // 直接发送到目标控件
-    Bubble,     // 冒泡：目标 -> 父控件 -> 根
-    Tunnel      // 隧道：根 -> 父控件 -> 目标（预览）
+    Bubble,     // 冒泡：目�?-> 父控�?-> �?
+    Tunnel      // 隧道：根 -> 父控�?-> 目标（预览）
 };
 
 // 路由事件定义
@@ -99,7 +99,7 @@ private:
     static Id s_nextId;
 };
 
-// 预定义路由事件
+// 预定义路由事�?
 namespace Events {
     // 鼠标事件
     extern const RoutedEvent PreviewMouseDown;  // 隧道
@@ -133,7 +133,7 @@ namespace Events {
     extern const RoutedEvent TouchMove;
 }
 
-// 事件处理器类型
+// 事件处理器类�?
 template<typename TArgs>
 using EventHandler = std::function<void(Control* sender, TArgs& args)>;
 
@@ -157,7 +157,7 @@ private:
     std::vector<Entry> m_entries;
 };
 
-// 事件路由管理器
+// 事件路由管理�?
 class EventRouter {
 public:
     // 构建路由路径

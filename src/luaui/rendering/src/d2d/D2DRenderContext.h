@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/IRenderContext.h"
+#include "IRenderContext.h"
 #include <d2d1.h>
 #include <dwrite.h>
 #include <wrl/client.h>

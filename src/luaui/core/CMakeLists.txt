@@ -8,9 +8,9 @@ set(CORE_SOURCES
 )
 
 set(CORE_HEADERS
-    include/luaui/Types.h
-    include/luaui/UIElement.h
-    include/luaui/Panel.h
+    include/Types.h
+    include/UIElement.h
+    include/Panel.h
 )
 
 add_library(LuaUI_Core STATIC ${CORE_SOURCES} ${CORE_HEADERS})

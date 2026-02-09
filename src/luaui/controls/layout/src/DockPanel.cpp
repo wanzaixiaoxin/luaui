@@ -1,4 +1,4 @@
-#include "luaui/controls/DockPanel.h"
+#include "DockPanel.h"
 #include <algorithm>
 #include <unordered_map>
 

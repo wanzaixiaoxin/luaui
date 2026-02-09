@@ -1,6 +1,6 @@
-﻿#include "Control.h"
-#include "luaui/controls/FocusManager.h"
-#include "luaui/controls/layout.h"
+#include "Control.h"
+#include "FocusManager.h"
+#include "layout.h"
 #include <algorithm>
 #include <limits>
 #include <cmath>
@@ -56,7 +56,7 @@ Control::Control() {
 }
 
 Control::~Control() {
-    // 浠嶧ocusManager娉ㄩ攢锛岄伩鍏嶆偓绌烘寚閽?
+    // 从FocusManager注销，避免悬空指�?
     FocusManager::GetInstance().UnregisterFocusable(this);
 }
 
@@ -302,7 +302,7 @@ void Control::SetIsFocusable(bool focusable) {
     if (m_isFocusable != focusable) {
         m_isFocusable = focusable;
         
-        // 娉ㄥ唽/娉ㄩ攢鍒?FocusManager
+        // 注册/注销�?FocusManager
         if (m_isFocusable) {
             FocusManager::GetInstance().RegisterFocusable(this);
         } else {
@@ -388,14 +388,14 @@ void Control::RaiseClick() {
     }
 }
 
-// ==================== 璺敱浜嬩欢绯荤粺 ====================
+// ==================== 路由事件系统 ====================
 void Control::RemoveHandler(const RoutedEvent& routedEvent) {
     size_t key = routedEvent.GetId();
     m_routedEventHandlers.erase(key);
 }
 
 void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) {
-    // 璋冪敤娉ㄥ唽鐨勫鐞嗗櫒
+    // 调用注册的处理器
     size_t key = routedEvent.GetId();
     auto it = m_routedEventHandlers.find(key);
     if (it != m_routedEventHandlers.end()) {
@@ -405,11 +405,11 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
         }
     }
     
-    // 璋冪敤铏氭嫙鍑芥暟
+    // 调用虚拟函数
     if (!args.Handled) {
         const std::string& name = routedEvent.GetName();
         
-        // 榧犳爣浜嬩欢
+        // 鼠标事件
         if (name == "PreviewMouseDown" || name == "MouseDown") {
             OnMouseDown(static_cast<MouseEventArgs&>(args));
         } else if (name == "PreviewMouseUp" || name == "MouseUp") {
@@ -417,13 +417,13 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
         } else if (name == "PreviewMouseMove" || name == "MouseMove") {
             OnMouseMove(static_cast<MouseEventArgs&>(args));
         }
-        // 閿洏浜嬩欢
+        // 键盘事件
         else if (name == "PreviewKeyDown" || name == "KeyDown") {
             OnKeyDown(static_cast<KeyEventArgs&>(args));
         } else if (name == "PreviewKeyUp" || name == "KeyUp") {
             OnKeyUp(static_cast<KeyEventArgs&>(args));
         }
-        // 鐒︾偣浜嬩欢
+        // 焦点事件
         else if (name == "GotFocus") {
             OnGotFocus();
         } else if (name == "LostFocus") {
@@ -437,13 +437,13 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
 bool Control::Focus() {
     if (!m_isFocusable) return false;
     
-    // 閬垮厤閫掑綊锛氬鏋滃凡缁忔槸鐒︾偣锛岀洿鎺ヨ繑鍥?
+    // 避免递归：如果已经是焦点，直接返�?
     if (FocusManager::GetInstance().GetFocusedControl() == this) {
         m_isFocused = true;
         return true;
     }
     
-    // 浣跨敤 FocusManager 璁剧疆鐒︾偣
+    // 使用 FocusManager 设置焦点
     FocusManager::GetInstance().SetFocusedControl(this);
     
     m_isFocused = true;
@@ -454,7 +454,7 @@ bool Control::Focus() {
 void Control::KillFocus() {
     if (m_isFocused) {
         m_isFocused = false;
-        // 鍙湁褰撳墠鐒︾偣鏄湰鎺т欢鏃舵墠娓呴櫎鐒︾偣
+        // 只有当前焦点是本控件时才清除焦点
         if (FocusManager::GetInstance().GetFocusedControl() == this) {
             FocusManager::GetInstance().ClearFocus();
         }
@@ -1618,7 +1618,7 @@ int ListBox::HitTestItem(const Point& point) {
     return -1;
 }
 
-// ==================== 璺敱浜嬩欢鍑芥暟瀹氫箟 ====================
+// ==================== 路由事件函数定义 ====================
 void Control::AddHandler(const RoutedEvent& routedEvent, RoutedEventHandler handler) {
     size_t key = routedEvent.GetId();
     m_routedEventHandlers[key].push_back(handler);

@@ -1,7 +1,7 @@
 // LuaUI Layout Demo - Controls Layout System
 // Demonstrates the integrated Panel layout system in Controls
 
-#include "luaui/controls/layout.h"
+#include "layout.h"
 #include <iostream>
 
 using namespace luaui;

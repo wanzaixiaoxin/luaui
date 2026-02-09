@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/Types.h"
+#include "Types.h"
 #include <d2d1.h>
 #include <wincodec.h>
 

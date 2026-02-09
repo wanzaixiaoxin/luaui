@@ -1,4 +1,4 @@
-#include "luaui/controls/Canvas.h"
+#include "Canvas.h"
 #include <algorithm>
 #include <unordered_map>
 #include <limits>

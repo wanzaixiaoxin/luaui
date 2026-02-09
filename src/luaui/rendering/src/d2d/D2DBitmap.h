@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/IBitmap.h"
+#include "IBitmap.h"
 #include <d2d1.h>
 #include <wrl/client.h>
 

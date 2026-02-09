@@ -1,6 +1,6 @@
 // Rendering Module Unit Tests
 #include "TestFramework.h"
-#include "luaui/rendering/Types.h"
+#include "Types.h"
 #include <cmath>
 
 using namespace luaui::rendering;

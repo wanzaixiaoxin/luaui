@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/ITextFormat.h"
+#include "ITextFormat.h"
 #include <dwrite.h>
 #include <wrl/client.h>
 

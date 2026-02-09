@@ -1,13 +1,13 @@
-#include "luaui/controls/Event.h"
+#include "Event.h"
 #include "Control.h"
 
 namespace luaui {
 namespace controls {
 
-// RoutedEvent ID 生成器
+// RoutedEvent ID 生成�?
 RoutedEvent::Id RoutedEvent::s_nextId = 1;
 
-// ==================== 预定义路由事件 ====================
+// ==================== 预定义路由事�?====================
 namespace Events {
     // 鼠标事件
     const RoutedEvent PreviewMouseDown("PreviewMouseDown", RoutingStrategy::Tunnel);
@@ -82,7 +82,7 @@ void EventRouter::BuildRoute(Control* target, EventRoute& route, RoutingStrategy
 void EventRouter::RaiseEvent(Control* target, const RoutedEvent& routedEvent, RoutedEventArgs& args) {
     if (!target) return;
     
-    // 设置事件源
+    // 设置事件�?
     args.Source = target;
     args.Handled = false;
     

@@ -1,4 +1,4 @@
-#include "luaui/Panel.h"
+#include "Panel.h"
 
 namespace luaui {
 

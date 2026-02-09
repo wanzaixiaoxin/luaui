@@ -1,4 +1,4 @@
-#include "luaui/controls/WrapPanel.h"
+#include "WrapPanel.h"
 #include <algorithm>
 #include <vector>
 

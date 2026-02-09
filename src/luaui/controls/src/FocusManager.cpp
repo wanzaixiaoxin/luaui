@@ -1,4 +1,4 @@
-#include "luaui/controls/FocusManager.h"
+#include "FocusManager.h"
 #include "Control.h"
 #include <algorithm>
 
@@ -14,22 +14,22 @@ FocusManager& FocusManager::GetInstance() {
 void FocusManager::SetFocusedControl(Control* control) {
     if (m_focusedControl == control) return;
     
-    // 检查新控件是否可获得焦点
+    // 检查新控件是否可获得焦�?
     if (control && !control->GetIsFocusable()) return;
     
     Control* oldFocus = m_focusedControl;
     Control* newFocus = control;
     
-    // 更新内部状态（不调用控件的 Focus/KillFocus 避免递归）
+    // 更新内部状态（不调用控件的 Focus/KillFocus 避免递归�?
     m_focusedControl = newFocus;
     
-    // 更新旧控件的焦点状态
+    // 更新旧控件的焦点状�?
     if (oldFocus && oldFocus != newFocus) {
         oldFocus->m_isFocused = false;
         oldFocus->Invalidate();
     }
     
-    // 更新新控件的焦点状态
+    // 更新新控件的焦点状�?
     if (newFocus) {
         newFocus->m_isFocused = true;
         newFocus->Invalidate();
@@ -62,7 +62,7 @@ void FocusManager::UnregisterFocusable(Control* control) {
         m_focusableControls.erase(it);
     }
     
-    // 如果注销的是当前焦点控件，清除焦点
+    // 如果注销的是当前焦点控件，清除焦�?
     if (m_focusedControl == control) {
         ClearFocus();
     }
@@ -91,7 +91,7 @@ Control* FocusManager::GetNextTabControl(Control* current, bool forward) {
     
     // 简单的 Tab 顺序：按注册顺序
     if (!current) {
-        // 如果没有当前焦点，返回第一个/最后一个
+        // 如果没有当前焦点，返回第一�?最后一�?
         return forward ? m_focusableControls.front() : m_focusableControls.back();
     }
     

@@ -1,4 +1,4 @@
-#include "luaui/controls/LayoutPanel.h"
+#include "LayoutPanel.h"
 #include <algorithm>
 
 namespace luaui {

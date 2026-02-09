@@ -1,5 +1,5 @@
 #pragma once
-#include "luaui/Types.h"
+#include "Types.h"
 #include <memory>
 #include <string>
 #include <vector>

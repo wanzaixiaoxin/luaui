@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/ITextLayout.h"
+#include "ITextLayout.h"
 #include <dwrite.h>
 #include <wrl/client.h>
 #include <map>

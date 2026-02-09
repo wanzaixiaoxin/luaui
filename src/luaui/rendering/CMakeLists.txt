@@ -18,17 +18,18 @@ set(SOURCES
 )
 
 set(HEADERS
-    include/luaui/rendering/Types.h
-    include/luaui/rendering/IBrush.h
-    include/luaui/rendering/IGeometry.h
-    include/luaui/rendering/IBitmap.h
-    include/luaui/rendering/ITextFormat.h
-    include/luaui/rendering/IRenderContext.h
-    include/luaui/rendering/IRenderEngine.h
-    include/luaui/rendering/IRenderTarget.h
-    include/luaui/rendering/ITextLayout.h
-    include/luaui/rendering/IAnimation.h
-    include/luaui/rendering/ResourceCache.h
+    include/Types.h
+    include/IBrush.h
+    include/IGeometry.h
+    include/IBitmap.h
+    include/ITextFormat.h
+    include/IRenderContext.h
+    include/IRenderEngine.h
+    include/IRenderTarget.h
+    include/ITextLayout.h
+    include/IAnimation.h
+    include/ResourceCache.h
+    include/IFontManager.h
     src/d2d/D2DRenderContext.h
     src/d2d/D2DRenderEngine.h
     src/d2d/D2DRenderTarget.h

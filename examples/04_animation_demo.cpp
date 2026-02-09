@@ -1,8 +1,8 @@
 // Animation Demo - Shows animation system usage
 #include <windows.h>
 #include <objbase.h>  // For COM functions
-#include "luaui/rendering/IRenderEngine.h"
-#include "luaui/rendering/IAnimation.h"
+#include "IRenderEngine.h"
+#include "IAnimation.h"
 #include "Logger.h"
 #include <cmath>
 

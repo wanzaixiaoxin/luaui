@@ -1,8 +1,8 @@
 #pragma once
 
-#include "luaui/rendering/Types.h"
-#include "luaui/rendering/IRenderContext.h"
-#include "luaui/controls/Event.h"
+#include "Types.h"
+#include "IRenderContext.h"
+#include "Event.h"
 #include <memory>
 #include <vector>
 #include <string>

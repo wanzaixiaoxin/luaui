@@ -10,7 +10,7 @@ namespace controls {
 class Control;
 using ControlPtr = std::shared_ptr<Control>;
 
-// ==================== Focus 管理器 ====================
+// ==================== Focus 管理�?====================
 class FocusManager {
 public:
     static FocusManager& GetInstance();
@@ -22,18 +22,18 @@ public:
     // 清除焦点
     void ClearFocus();
 
-    // 焦点移动到下一个/上一个控件
+    // 焦点移动到下一�?上一个控�?
     void MoveFocusNext();
     void MoveFocusPrevious();
 
-    // 注册可焦点控件
+    // 注册可焦点控�?
     void RegisterFocusable(Control* control);
     void UnregisterFocusable(Control* control);
 
-    // 获取 Tab 顺序中的下一个控件
+    // 获取 Tab 顺序中的下一个控�?
     Control* GetNextTabControl(Control* current, bool forward = true);
 
-    // 设置焦点作用域（如对话框）
+    // 设置焦点作用域（如对话框�?
     void SetFocusScope(Control* scopeRoot);
     void ClearFocusScope();
 

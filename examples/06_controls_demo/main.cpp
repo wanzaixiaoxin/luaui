@@ -1,13 +1,13 @@
 #include "Control.h"
-#include "luaui/controls/layout.h"
-#include "luaui/controls/Shapes.h"
-#include "luaui/controls/Image.h"
-#include "luaui/controls/Event.h"
-#include "luaui/controls/FocusManager.h"
-#include "luaui/controls/CheckableControls.h"
-#include "luaui/controls/RangeControls.h"
-#include "luaui/rendering/IRenderContext.h"
-#include "luaui/rendering/IRenderEngine.h"
+#include "layout.h"
+#include "Shapes.h"
+#include "Image.h"
+#include "Event.h"
+#include "FocusManager.h"
+#include "CheckableControls.h"
+#include "RangeControls.h"
+#include "IRenderContext.h"
+#include "IRenderEngine.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>  // For CoInitializeEx, CoUninitialize
@@ -18,10 +18,10 @@ using namespace luaui;
 using namespace luaui::controls;
 using namespace luaui::rendering;
 
-// 全局状态显示文本
+// 全局状态显示文�?
 std::wstring g_statusText = L"Ready";
 
-// 更新状态文本
+// 更新状态文�?
 void SetStatus(const std::wstring& text) {
     g_statusText = text;
     OutputDebugStringW((text + L"\n").c_str());
@@ -72,7 +72,7 @@ public:
             SetStatus(L"RadioButton selected");
         }
         
-        // 处理 Slider - 调用 OnMouseDown 开始拖拽
+        // 处理 Slider - 调用 OnMouseDown 开始拖�?
         if (auto slider = dynamic_cast<Slider*>(m_hoveredControl.get())) {
             m_draggingSlider = slider;
             slider->HandleMouseDown(pt);
@@ -95,10 +95,10 @@ public:
     
     void HandleMouseMoveDrag(const Point& pt, Control* root) {
         if (m_draggingSlider) {
-            // 直接传递 Point 给 Slider
+            // 直接传�?Point �?Slider
             m_draggingSlider->HandleMouseMove(pt);
         } else {
-            // 处理普通鼠标移动
+            // 处理普通鼠标移�?
             HandleMouseMove(pt, root);
         }
     }
@@ -175,7 +175,7 @@ public:
 
 private:
     void CreateControls() {
-        // 创建根滚动面板（模拟）
+        // 创建根滚动面板（模拟�?
         m_rootPanel = std::make_shared<StackPanel>();
         m_rootPanel->SetName("root");
         m_rootPanel->SetMargin(15, 15, 15, 15);
@@ -188,7 +188,7 @@ private:
         title->SetForeground(Color::FromHex(0x1a1a1a));
         m_rootPanel->AddChild(title);
         
-        // 副标题
+        // 副标�?
         auto subtitle = std::make_shared<TextBlock>();
         subtitle->SetText(L"Press Tab to navigate, Space to activate");
         subtitle->SetFontSize(12);
@@ -203,7 +203,7 @@ private:
         buttonPanel->SetOrientation(StackPanel::Orientation::Horizontal);
         buttonPanel->SetSpacing(12);
         
-        // 普通按钮
+        // 普通按�?
         auto btn1 = std::make_shared<Button>();
         auto btn1Text = std::make_shared<TextBlock>();
         btn1Text->SetText(L"Click Me!");
@@ -226,7 +226,7 @@ private:
         
         m_rootPanel->AddChild(buttonPanel);
 
-        // ===== 复选框和单选按钮区域 =====
+        // ===== 复选框和单选按钮区�?=====
         auto checkSectionTitle = CreateSectionTitle(L"CheckBox & RadioButton");
         m_rootPanel->AddChild(checkSectionTitle);
         
@@ -234,7 +234,7 @@ private:
         checkPanel->SetOrientation(StackPanel::Orientation::Horizontal);
         checkPanel->SetSpacing(30);
         
-        // 复选框组
+        // 复选框�?
         auto checkGroup = std::make_shared<StackPanel>();
         checkGroup->SetSpacing(8);
         
@@ -297,14 +297,14 @@ private:
         });
         
         slider1->SetValueChangedHandler([this](Slider* sender, double value) {
-            // 更新进度条
+            // 更新进度�?
             if (m_progressBar) {
                 m_progressBar->SetValue(value);
             }
         });
         rangePanel->AddChild(slider1);
         
-        // 进度条
+        // 进度�?
         m_progressBar = std::make_shared<ProgressBar>();
         m_progressBar->SetValue(50);
         rangePanel->AddChild(m_progressBar);
@@ -340,7 +340,7 @@ private:
         ellipse->SetStrokeThickness(2);
         shapesPanel->AddChild(ellipse);
         
-        // 带边框矩形
+        // 带边框矩�?
         auto simpleRect = std::make_shared<luaui::controls::Rectangle>();
         simpleRect->SetWidth(80);
         simpleRect->SetHeight(60);
@@ -417,7 +417,7 @@ private:
             return;
         }
 
-        // 更新状态文本
+        // 更新状态文�?
         if (m_statusText) {
             m_statusText->SetText(g_statusText);
         }
@@ -425,7 +425,7 @@ private:
         // 清空背景
         context->Clear(Color::White());
 
-        // 测量和排列
+        // 测量和排�?
         RECT rc;
         GetClientRect(m_hWnd, &rc);
         float width = static_cast<float>(rc.right - rc.left);
@@ -480,7 +480,7 @@ private:
                     float x = static_cast<float>(GET_X_LPARAM(lParam));
                     float y = static_cast<float>(GET_Y_LPARAM(lParam));
                     pThis->m_inputTracker.HandleMouseMoveDrag(Point(x, y), pThis->m_rootPanel.get());
-                    // Slider 会通过回调自动触发重绘，但悬停效果需要这里重绘
+                    // Slider 会通过回调自动触发重绘，但悬停效果需要这里重�?
                     InvalidateRect(hWnd, nullptr, FALSE);
                     return 0;
                 }
@@ -507,7 +507,7 @@ private:
                     args.Shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
                     args.Alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
                     
-                    // Tab 键导航
+                    // Tab 键导�?
                     if (keyCode == VK_TAB) {
                         if (args.Shift) {
                             FocusManager::GetInstance().MoveFocusPrevious();
@@ -519,7 +519,7 @@ private:
                         return 0;
                     }
                     
-                    // Space 键激活
+                    // Space 键激�?
                     if (keyCode == VK_SPACE) {
                         Control* focused = FocusManager::GetInstance().GetFocusedControl();
                         if (auto btn = dynamic_cast<Button*>(focused)) {

@@ -11,7 +11,7 @@ enum class Stretch {
     None,       // 不拉伸，保持原始尺寸
     Fill,       // 填充整个区域（可能变形）
     Uniform,    // 等比缩放，完整显示（可能有黑边）
-    UniformToFill  // 等比缩放，填满区域（可能裁剪）
+    UniformToFill  // 等比缩放，填满区域（可能裁剪�?
 };
 
 // ==================== Image 控件 ====================
@@ -25,7 +25,7 @@ public:
     std::wstring GetSource() const { return m_source; }
     void SetSource(const std::wstring& path);
     
-    // 从内存加载
+    // 从内存加�?
     void SetSourceFromMemory(const void* data, size_t size);
     
     // 拉伸模式

@@ -13,13 +13,13 @@ set(LAYOUT_SOURCES
 )
 
 set(LAYOUT_HEADERS
-    include/luaui/controls/layout.h
-    include/luaui/controls/LayoutPanel.h
-    include/luaui/controls/StackPanel.h
-    include/luaui/controls/Grid.h
-    include/luaui/controls/Canvas.h
-    include/luaui/controls/DockPanel.h
-    include/luaui/controls/WrapPanel.h
+    include/layout.h
+    include/LayoutPanel.h
+    include/StackPanel.h
+    include/Grid.h
+    include/Canvas.h
+    include/DockPanel.h
+    include/WrapPanel.h
 )
 
 add_library(LuaUI_ControlsLayout STATIC ${LAYOUT_SOURCES} ${LAYOUT_HEADERS})

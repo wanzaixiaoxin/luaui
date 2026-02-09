@@ -1,6 +1,6 @@
 #pragma once
 
-#include "luaui/rendering/IGeometry.h"
+#include "IGeometry.h"
 #include <d2d1.h>
 #include <wrl/client.h>
 

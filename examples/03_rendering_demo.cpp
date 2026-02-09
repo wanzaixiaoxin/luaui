@@ -1,8 +1,8 @@
 // Rendering Demo - Shows Direct2D rendering engine usage
 #include <windows.h>
 #include <objbase.h>  // For COM functions
-#include "luaui/rendering/IRenderEngine.h"
-#include "luaui/rendering/IRenderContext.h"
+#include "IRenderEngine.h"
+#include "IRenderContext.h"
 #include "Logger.h"
 #include <iostream>
 #include <fstream>

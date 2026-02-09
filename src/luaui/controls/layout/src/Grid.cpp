@@ -1,4 +1,4 @@
-#include "luaui/controls/Grid.h"
+#include "Grid.h"
 #include <algorithm>
 #include <unordered_map>
 
