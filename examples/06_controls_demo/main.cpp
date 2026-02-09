@@ -1,4 +1,5 @@
 #include "Control.h"
+#include "luaui/controls/layout.h"
 #include "luaui/controls/Shapes.h"
 #include "luaui/controls/Image.h"
 #include "luaui/controls/Event.h"

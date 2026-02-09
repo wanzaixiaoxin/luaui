@@ -58,6 +58,8 @@ add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 # ============================================
 add_subdirectory(src/luaui/utils)
 add_subdirectory(src/luaui/rendering)
+add_subdirectory(src/luaui/core)
+add_subdirectory(src/luaui/controls/layout)
 
 # ============================================
 # LuaUI Library
@@ -73,6 +75,10 @@ file(GLOB_RECURSE LUAUI_HEADERS
     ${CMAKE_SOURCE_DIR}/src/*.hpp
 )
 
+# Exclude test files from main library
+list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/tests/.*")
+list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/tests/.*")
+
 if(LUAUI_SOURCES)
     add_library(LuaUI STATIC ${LUAUI_SOURCES} ${LUAUI_HEADERS})
 
@@ -82,6 +88,8 @@ if(LUAUI_SOURCES)
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils/include>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/layout/include>
             $<INSTALL_INTERFACE:include>
     )
 

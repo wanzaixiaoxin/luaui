@@ -1,8 +1,22 @@
-#include "Control.h"
+﻿#include "Control.h"
 #include "luaui/controls/FocusManager.h"
+#include "luaui/controls/layout.h"
 #include <algorithm>
 #include <limits>
 #include <cmath>
+
+#ifndef VK_LEFT
+#define VK_LEFT     0x25
+#define VK_UP       0x26
+#define VK_RIGHT    0x27
+#define VK_DOWN     0x28
+#define VK_HOME     0x24
+#define VK_END      0x23
+#define VK_DELETE   0x2E
+#define VK_TAB      0x09
+#define VK_RETURN   0x0D
+#define VK_BACK     0x08
+#endif
 
 namespace luaui {
 namespace controls {
@@ -42,7 +56,7 @@ Control::Control() {
 }
 
 Control::~Control() {
-    // 从FocusManager注销，避免悬空指针
+    // 浠嶧ocusManager娉ㄩ攢锛岄伩鍏嶆偓绌烘寚閽?
     FocusManager::GetInstance().UnregisterFocusable(this);
 }
 
@@ -288,7 +302,7 @@ void Control::SetIsFocusable(bool focusable) {
     if (m_isFocusable != focusable) {
         m_isFocusable = focusable;
         
-        // 注册/注销到 FocusManager
+        // 娉ㄥ唽/娉ㄩ攢鍒?FocusManager
         if (m_isFocusable) {
             FocusManager::GetInstance().RegisterFocusable(this);
         } else {
@@ -374,14 +388,14 @@ void Control::RaiseClick() {
     }
 }
 
-// ==================== 路由事件系统 ====================
+// ==================== 璺敱浜嬩欢绯荤粺 ====================
 void Control::RemoveHandler(const RoutedEvent& routedEvent) {
     size_t key = routedEvent.GetId();
     m_routedEventHandlers.erase(key);
 }
 
 void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) {
-    // 调用注册的处理器
+    // 璋冪敤娉ㄥ唽鐨勫鐞嗗櫒
     size_t key = routedEvent.GetId();
     auto it = m_routedEventHandlers.find(key);
     if (it != m_routedEventHandlers.end()) {
@@ -391,11 +405,11 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
         }
     }
     
-    // 调用虚拟函数
+    // 璋冪敤铏氭嫙鍑芥暟
     if (!args.Handled) {
         const std::string& name = routedEvent.GetName();
         
-        // 鼠标事件
+        // 榧犳爣浜嬩欢
         if (name == "PreviewMouseDown" || name == "MouseDown") {
             OnMouseDown(static_cast<MouseEventArgs&>(args));
         } else if (name == "PreviewMouseUp" || name == "MouseUp") {
@@ -403,13 +417,13 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
         } else if (name == "PreviewMouseMove" || name == "MouseMove") {
             OnMouseMove(static_cast<MouseEventArgs&>(args));
         }
-        // 键盘事件
+        // 閿洏浜嬩欢
         else if (name == "PreviewKeyDown" || name == "KeyDown") {
             OnKeyDown(static_cast<KeyEventArgs&>(args));
         } else if (name == "PreviewKeyUp" || name == "KeyUp") {
             OnKeyUp(static_cast<KeyEventArgs&>(args));
         }
-        // 焦点事件
+        // 鐒︾偣浜嬩欢
         else if (name == "GotFocus") {
             OnGotFocus();
         } else if (name == "LostFocus") {
@@ -423,13 +437,13 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
 bool Control::Focus() {
     if (!m_isFocusable) return false;
     
-    // 避免递归：如果已经是焦点，直接返回
+    // 閬垮厤閫掑綊锛氬鏋滃凡缁忔槸鐒︾偣锛岀洿鎺ヨ繑鍥?
     if (FocusManager::GetInstance().GetFocusedControl() == this) {
         m_isFocused = true;
         return true;
     }
     
-    // 使用 FocusManager 设置焦点
+    // 浣跨敤 FocusManager 璁剧疆鐒︾偣
     FocusManager::GetInstance().SetFocusedControl(this);
     
     m_isFocused = true;
@@ -440,7 +454,7 @@ bool Control::Focus() {
 void Control::KillFocus() {
     if (m_isFocused) {
         m_isFocused = false;
-        // 只有当前焦点是本控件时才清除焦点
+        // 鍙湁褰撳墠鐒︾偣鏄湰鎺т欢鏃舵墠娓呴櫎鐒︾偣
         if (FocusManager::GetInstance().GetFocusedControl() == this) {
             FocusManager::GetInstance().ClearFocus();
         }
@@ -470,75 +484,6 @@ std::any Control::GetAttachedProperty(Control* control, const std::string& key) 
         }
     }
     return std::any();
-}
-
-// ==================== Panel ====================
-
-ControlPtr Panel::GetChild(size_t index) const {
-    if (index < m_children.size()) {
-        return m_children[index];
-    }
-    return nullptr;
-}
-
-void Panel::AddChild(const ControlPtr& child) {
-    if (child) {
-        child->SetParent(shared_from_this());
-        m_children.push_back(child);
-        InvalidateMeasure();
-    }
-}
-
-void Panel::RemoveChild(const ControlPtr& child) {
-    auto it = std::find(m_children.begin(), m_children.end(), child);
-    if (it != m_children.end()) {
-        (*it)->SetParent(nullptr);
-        m_children.erase(it);
-        InvalidateMeasure();
-    }
-}
-
-void Panel::RemoveChildAt(size_t index) {
-    if (index < m_children.size()) {
-        m_children[index]->SetParent(nullptr);
-        m_children.erase(m_children.begin() + index);
-        InvalidateMeasure();
-    }
-}
-
-void Panel::ClearChildren() {
-    for (auto& child : m_children) {
-        if (child) child->SetParent(nullptr);
-    }
-    m_children.clear();
-    InvalidateMeasure();
-}
-
-void Panel::Render(IRenderContext* context) {
-    Control::Render(context);
-    
-    // Render children (they use global coordinates in their m_renderRect)
-    for (auto& child : m_children) {
-        if (child && child->GetIsVisible()) {
-            child->Render(context);
-        }
-    }
-}
-
-ControlPtr Panel::HitTestPoint(const Point& point) {
-    if (!GetIsVisible() || m_opacity <= 0) {
-        return nullptr;
-    }
-    
-    // Test children first in reverse order (Z-order: last child is on top)
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if (auto result = (*it)->HitTestPoint(point)) {
-            return result;
-        }
-    }
-    
-    // Then test self
-    return Control::HitTestPoint(point);
 }
 
 // ==================== ContentControl ====================
@@ -599,34 +544,31 @@ ControlPtr Border::GetChild(size_t index) const {
 
 Size Border::MeasureOverride(const Size& availableSize) {
     // Account for border thickness
-    float borderH = m_borderThickness * 2;
-    float borderV = m_borderThickness * 2;
-    
     Size childAvailable(
-        std::max(0.0f, availableSize.width - borderH),
-        std::max(0.0f, availableSize.height - borderV)
+        std::max(0.0f, availableSize.width - m_borderThickness * 2),
+        std::max(0.0f, availableSize.height - m_borderThickness * 2)
     );
     
     if (m_content) {
         m_content->Measure(childAvailable);
         auto childSize = m_content->GetDesiredSize();
-        return Size(childSize.width + borderH, childSize.height + borderV);
+        return Size(
+            childSize.width + m_borderThickness * 2,
+            childSize.height + m_borderThickness * 2
+        );
     }
     
-    return Size(borderH, borderV);
+    return Size(m_borderThickness * 2, m_borderThickness * 2);
 }
 
 Size Border::ArrangeOverride(const Size& finalSize) {
     if (m_content) {
-        float borderH = m_borderThickness * 2;
-        float borderV = m_borderThickness * 2;
-        
         // Content rect is relative to Border's position
         Rect childRect(
             m_renderRect.x + m_borderThickness,
             m_renderRect.y + m_borderThickness,
-            std::max(0.0f, finalSize.width - borderH),
-            std::max(0.0f, finalSize.height - borderV)
+            finalSize.width - m_borderThickness * 2,
+            finalSize.height - m_borderThickness * 2
         );
         
         m_content->Arrange(childRect);
@@ -662,207 +604,350 @@ void Border::Render(IRenderContext* context) {
     }
 }
 
-// ==================== Canvas ====================
+// ==================== ScrollViewer ====================
 
-void Canvas::SetLeft(Control* control, float left) {
-    SetAttachedProperty(control, "Canvas.Left", left);
-    if (control) control->InvalidateArrange();
+ScrollViewer::ScrollViewer() {
+    SetHorizontalScrollBarVisibility(ScrollBarVisibility::Auto);
+    SetVerticalScrollBarVisibility(ScrollBarVisibility::Auto);
 }
 
-void Canvas::SetTop(Control* control, float top) {
-    SetAttachedProperty(control, "Canvas.Top", top);
-    if (control) control->InvalidateArrange();
+void ScrollViewer::SetHorizontalOffset(float offset) {
+    if (m_horizontalOffset != offset) {
+        m_horizontalOffset = offset;
+        ClampOffsets();
+        InvalidateArrange();
+    }
 }
 
-float Canvas::GetLeft(Control* control) {
-    auto val = GetAttachedProperty(control, "Canvas.Left");
-    return val.has_value() ? std::any_cast<float>(val) : 0.0f;
+void ScrollViewer::SetVerticalOffset(float offset) {
+    if (m_verticalOffset != offset) {
+        m_verticalOffset = offset;
+        ClampOffsets();
+        InvalidateArrange();
+    }
 }
 
-float Canvas::GetTop(Control* control) {
-    auto val = GetAttachedProperty(control, "Canvas.Top");
-    return val.has_value() ? std::any_cast<float>(val) : 0.0f;
+void ScrollViewer::SetHorizontalScrollBarVisibility(ScrollBarVisibility visibility) {
+    if (m_hScrollVisibility != visibility) {
+        m_hScrollVisibility = visibility;
+        InvalidateMeasure();
+    }
 }
 
-Size Canvas::MeasureOverride(const Size& /*availableSize*/) {
-    Size desiredSize;
-    
-    for (auto& child : m_children) {
-        if (child) {
-            child->Measure(Size(std::numeric_limits<float>::max(), std::numeric_limits<float>::max()));
-            auto childSize = child->GetDesiredSize();
-            
-            float left = GetLeft(child.get());
-            float top = GetTop(child.get());
-            
-            desiredSize.width = std::max(desiredSize.width, left + childSize.width);
-            desiredSize.height = std::max(desiredSize.height, top + childSize.height);
-        }
+void ScrollViewer::SetVerticalScrollBarVisibility(ScrollBarVisibility visibility) {
+    if (m_vScrollVisibility != visibility) {
+        m_vScrollVisibility = visibility;
+        InvalidateMeasure();
+    }
+}
+
+void ScrollViewer::ScrollToHorizontalOffset(float offset) {
+    SetHorizontalOffset(offset);
+}
+
+void ScrollViewer::ScrollToVerticalOffset(float offset) {
+    SetVerticalOffset(offset);
+}
+
+void ScrollViewer::LineLeft() {
+    SetHorizontalOffset(m_horizontalOffset - 16);
+}
+
+void ScrollViewer::LineRight() {
+    SetHorizontalOffset(m_horizontalOffset + 16);
+}
+
+void ScrollViewer::LineUp() {
+    SetVerticalOffset(m_verticalOffset - 16);
+}
+
+void ScrollViewer::LineDown() {
+    SetVerticalOffset(m_verticalOffset + 16);
+}
+
+void ScrollViewer::PageLeft() {
+    SetHorizontalOffset(m_horizontalOffset - m_viewport.width * 0.8f);
+}
+
+void ScrollViewer::PageRight() {
+    SetHorizontalOffset(m_horizontalOffset + m_viewport.width * 0.8f);
+}
+
+void ScrollViewer::PageUp() {
+    SetVerticalOffset(m_verticalOffset - m_viewport.height * 0.8f);
+}
+
+void ScrollViewer::PageDown() {
+    SetVerticalOffset(m_verticalOffset + m_viewport.height * 0.8f);
+}
+
+void ScrollViewer::UpdateScrollBarVisibility() {
+    // Determine if scrollbars should be shown
+    switch (m_hScrollVisibility) {
+        case ScrollBarVisibility::Visible:
+            m_showHScroll = true;
+            break;
+        case ScrollBarVisibility::Hidden:
+            m_showHScroll = false;
+            break;
+        case ScrollBarVisibility::Auto:
+        default:
+            m_showHScroll = m_extent.width > m_viewport.width + 0.5f;
+            break;
     }
     
-    return desiredSize;
-}
-
-Size Canvas::ArrangeOverride(const Size& finalSize) {
-    for (auto& child : m_children) {
-        if (child) {
-            float left = GetLeft(child.get());
-            float top = GetTop(child.get());
-            auto childSize = child->GetDesiredSize();
-            
-            // Arrange with absolute positioning relative to Canvas
-            child->Arrange(Rect(m_renderRect.x + left, m_renderRect.y + top, 
-                               childSize.width, childSize.height));
-        }
+    switch (m_vScrollVisibility) {
+        case ScrollBarVisibility::Visible:
+            m_showVScroll = true;
+            break;
+        case ScrollBarVisibility::Hidden:
+            m_showVScroll = false;
+            break;
+        case ScrollBarVisibility::Auto:
+        default:
+            m_showVScroll = m_extent.height > m_viewport.height + 0.5f;
+            break;
     }
-    
-    return finalSize;
 }
 
-// ==================== StackPanel ====================
-
-Size StackPanel::MeasureOverride(const Size& availableSize) {
-    Size desiredSize;
+void ScrollViewer::ClampOffsets() {
+    float maxHOffset = std::max(0.0f, m_extent.width - m_viewport.width);
+    float maxVOffset = std::max(0.0f, m_extent.height - m_viewport.height);
     
-    if (m_orientation == Orientation::Vertical) {
-        float maxWidth = 0;
-        float totalHeight = 0;
-        
-        for (size_t i = 0; i < m_children.size(); ++i) {
-            auto& child = m_children[i];
-            if (child) {
-                child->Measure(Size(availableSize.width, std::numeric_limits<float>::max()));
-                auto childSize = child->GetDesiredSize();
-                
-                maxWidth = std::max(maxWidth, childSize.width);
-                totalHeight += childSize.height;
-                if (i > 0) totalHeight += m_spacing;
-            }
-        }
-        
-        desiredSize = Size(maxWidth, totalHeight);
+    m_horizontalOffset = std::max(0.0f, std::min(m_horizontalOffset, maxHOffset));
+    m_verticalOffset = std::max(0.0f, std::min(m_verticalOffset, maxVOffset));
+}
+
+Size ScrollViewer::MeasureOverride(const Size& availableSize) {
+    // Calculate available size for content (reserve space for scrollbars)
+    Size contentAvailable = availableSize;
+    bool potentiallyShowH = m_hScrollVisibility == ScrollBarVisibility::Visible ||
+                           (m_hScrollVisibility == ScrollBarVisibility::Auto);
+    bool potentiallyShowV = m_vScrollVisibility == ScrollBarVisibility::Visible ||
+                           (m_vScrollVisibility == ScrollBarVisibility::Auto);
+    
+    // Measure content with infinite size to get its desired size
+    Size infiniteSize(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    
+    if (m_content) {
+        m_content->Measure(infiniteSize);
+        m_extent = m_content->GetDesiredSize();
     } else {
-        float totalWidth = 0;
-        float maxHeight = 0;
-        
-        for (size_t i = 0; i < m_children.size(); ++i) {
-            auto& child = m_children[i];
-            if (child) {
-                child->Measure(Size(std::numeric_limits<float>::max(), availableSize.height));
-                auto childSize = child->GetDesiredSize();
-                
-                totalWidth += childSize.width;
-                if (i > 0) totalWidth += m_spacing;
-                maxHeight = std::max(maxHeight, childSize.height);
-            }
-        }
-        
-        desiredSize = Size(totalWidth, maxHeight);
+        m_extent = Size();
     }
     
-    return desiredSize;
-}
-
-Size StackPanel::ArrangeOverride(const Size& finalSize) {
-    if (m_orientation == Orientation::Vertical) {
-        float y = m_renderRect.y;
-        
-        for (auto& child : m_children) {
-            if (child) {
-                auto childSize = child->GetDesiredSize();
-                child->Arrange(Rect(m_renderRect.x, y, finalSize.width, childSize.height));
-                y += childSize.height + m_spacing;
-            }
-        }
-    } else {
-        float x = m_renderRect.x;
-        
-        for (auto& child : m_children) {
-            if (child) {
-                auto childSize = child->GetDesiredSize();
-                child->Arrange(Rect(x, m_renderRect.y, childSize.width, finalSize.height));
-                x += childSize.width + m_spacing;
-            }
-        }
-    }
+    // Calculate viewport size
+    m_viewport = availableSize;
     
-    return finalSize;
-}
-
-// ==================== Grid ====================
-
-void Grid::AddRowDefinition(float height) {
-    RowDefinition def;
-    def.height = height;
-    m_rows.push_back(def);
-}
-
-void Grid::AddColumnDefinition(float width) {
-    ColumnDefinition def;
-    def.width = width;
-    m_columns.push_back(def);
-}
-
-void Grid::SetRow(Control* control, int row) {
-    SetAttachedProperty(control, "Grid.Row", row);
-    if (control) control->InvalidateArrange();
-}
-
-void Grid::SetColumn(Control* control, int column) {
-    SetAttachedProperty(control, "Grid.Column", column);
-    if (control) control->InvalidateArrange();
-}
-
-void Grid::SetRowSpan(Control* control, int span) {
-    SetAttachedProperty(control, "Grid.RowSpan", span);
-    if (control) control->InvalidateArrange();
-}
-
-void Grid::SetColumnSpan(Control* control, int span) {
-    SetAttachedProperty(control, "Grid.ColumnSpan", span);
-    if (control) control->InvalidateArrange();
-}
-
-Size Grid::MeasureOverride(const Size& availableSize) {
-    // Simplified grid measure - just sum up children
-    Size desiredSize;
+    // Update scrollbar visibility
+    UpdateScrollBarVisibility();
     
-    for (auto& child : m_children) {
-        if (child) {
-            child->Measure(availableSize);
-            auto childSize = child->GetDesiredSize();
-            desiredSize.width = std::max(desiredSize.width, childSize.width);
-            desiredSize.height = std::max(desiredSize.height, childSize.height);
-        }
-    }
+    // Adjust viewport for visible scrollbars
+    if (m_showVScroll) m_viewport.width -= ScrollBarThickness;
+    if (m_showHScroll) m_viewport.height -= ScrollBarThickness;
     
-    return desiredSize;
+    // Ensure viewport doesn't go negative
+    m_viewport.width = std::max(0.0f, m_viewport.width);
+    m_viewport.height = std::max(0.0f, m_viewport.height);
+    
+    // Re-check if scrollbars should be shown with adjusted viewport
+    UpdateScrollBarVisibility();
+    
+    // Clamp offsets
+    ClampOffsets();
+    
+    return availableSize;
 }
 
-Size Grid::ArrangeOverride(const Size& finalSize) {
-    // Simplified grid arrange
-    if (m_rows.empty()) AddRowDefinition(1.0f);  // Auto
-    if (m_columns.empty()) AddColumnDefinition(1.0f);  // Auto
+Size ScrollViewer::ArrangeOverride(const Size& finalSize) {
+    // Calculate viewport size accounting for scrollbars
+    m_viewport = finalSize;
+    if (m_showVScroll) m_viewport.width -= ScrollBarThickness;
+    if (m_showHScroll) m_viewport.height -= ScrollBarThickness;
     
-    float rowHeight = finalSize.height / m_rows.size();
-    float colWidth = finalSize.width / m_columns.size();
+    m_viewport.width = std::max(0.0f, m_viewport.width);
+    m_viewport.height = std::max(0.0f, m_viewport.height);
     
-    for (auto& child : m_children) {
-        if (child) {
-            auto val = GetAttachedProperty(child.get(), "Grid.Row");
-            int row = val.has_value() ? std::any_cast<int>(val) : 0;
-            
-            val = GetAttachedProperty(child.get(), "Grid.Column");
-            int col = val.has_value() ? std::any_cast<int>(val) : 0;
-            
-            // Use global coordinates relative to Grid's position
-            child->Arrange(Rect(m_renderRect.x + col * colWidth, 
-                               m_renderRect.y + row * rowHeight, 
-                               colWidth, rowHeight));
-        }
+    // Arrange content with negative offset to simulate scrolling
+    if (m_content) {
+        float x = m_renderRect.x - m_horizontalOffset;
+        float y = m_renderRect.y - m_verticalOffset;
+        m_content->Arrange(Rect(x, y, std::max(m_extent.width, m_viewport.width), 
+                               std::max(m_extent.height, m_viewport.height)));
     }
     
     return finalSize;
+}
+
+void ScrollViewer::Render(IRenderContext* context) {
+    // Render background
+    if (m_background.a > 0) {
+        auto bgBrush = context->CreateSolidColorBrush(m_background);
+        context->FillRectangle(m_renderRect, bgBrush.get());
+    }
+    
+    // Render content (will be clipped by parent or render target)
+    if (m_content) {
+        m_content->Render(context);
+    }
+    
+    // Render scrollbars
+    RenderScrollBars(context);
+}
+
+void ScrollViewer::RenderScrollBars(IRenderContext* context) {
+    // Horizontal scrollbar
+    if (m_showHScroll && m_extent.width > m_viewport.width) {
+        auto trackRect = GetHorizontalScrollBarTrackRect();
+        auto thumbRect = GetHorizontalThumbRect();
+        
+        // Track
+        auto trackBrush = context->CreateSolidColorBrush(Color::FromHex(0xF0F0F0));
+        context->FillRectangle(trackRect, trackBrush.get());
+        
+        // Thumb
+        auto thumbBrush = context->CreateSolidColorBrush(Color::FromHex(0xC0C0C0));
+        context->FillRectangle(thumbRect, thumbBrush.get());
+        
+        // Border
+        auto borderBrush = context->CreateSolidColorBrush(Color::FromHex(0x808080));
+        context->DrawRectangle(trackRect, borderBrush.get(), 1.0f);
+    }
+    
+    // Vertical scrollbar
+    if (m_showVScroll && m_extent.height > m_viewport.height) {
+        auto trackRect = GetVerticalScrollBarTrackRect();
+        auto thumbRect = GetVerticalThumbRect();
+        
+        // Track
+        auto trackBrush = context->CreateSolidColorBrush(Color::FromHex(0xF0F0F0));
+        context->FillRectangle(trackRect, trackBrush.get());
+        
+        // Thumb
+        auto thumbBrush = context->CreateSolidColorBrush(Color::FromHex(0xC0C0C0));
+        context->FillRectangle(thumbRect, thumbBrush.get());
+        
+        // Border
+        auto borderBrush = context->CreateSolidColorBrush(Color::FromHex(0x808080));
+        context->DrawRectangle(trackRect, borderBrush.get(), 1.0f);
+    }
+}
+
+Rect ScrollViewer::GetHorizontalScrollBarTrackRect() const {
+    float y = m_renderRect.y + m_actualHeight - ScrollBarThickness;
+    float width = m_showVScroll ? m_actualWidth - ScrollBarThickness : m_actualWidth;
+    return Rect(m_renderRect.x, y, width, ScrollBarThickness);
+}
+
+Rect ScrollViewer::GetVerticalScrollBarTrackRect() const {
+    float x = m_renderRect.x + m_actualWidth - ScrollBarThickness;
+    float height = m_showHScroll ? m_actualHeight - ScrollBarThickness : m_actualHeight;
+    return Rect(x, m_renderRect.y, ScrollBarThickness, height);
+}
+
+Rect ScrollViewer::GetHorizontalThumbRect() const {
+    auto trackRect = GetHorizontalScrollBarTrackRect();
+    
+    float trackWidth = trackRect.width;
+    float thumbWidth = std::max(ScrollBarThumbMinSize, 
+                               trackWidth * (m_viewport.width / m_extent.width));
+    float maxOffset = m_extent.width - m_viewport.width;
+    float thumbPos = (maxOffset > 0) ? (m_horizontalOffset / maxOffset) * (trackWidth - thumbWidth) : 0;
+    
+    return Rect(trackRect.x + thumbPos, trackRect.y, thumbWidth, trackRect.height);
+}
+
+Rect ScrollViewer::GetVerticalThumbRect() const {
+    auto trackRect = GetVerticalScrollBarTrackRect();
+    
+    float trackHeight = trackRect.height;
+    float thumbHeight = std::max(ScrollBarThumbMinSize, 
+                                trackHeight * (m_viewport.height / m_extent.height));
+    float maxOffset = m_extent.height - m_viewport.height;
+    float thumbPos = (maxOffset > 0) ? (m_verticalOffset / maxOffset) * (trackHeight - thumbHeight) : 0;
+    
+    return Rect(trackRect.x, trackRect.y + thumbPos, trackRect.width, thumbHeight);
+}
+
+bool ScrollViewer::HandleMouseDown(const Point& pt) {
+    // Check horizontal scrollbar
+    if (m_showHScroll) {
+        auto thumbRect = GetHorizontalThumbRect();
+        if (thumbRect.Contains(pt)) {
+            m_isDraggingHThumb = true;
+            m_dragStartPos = pt;
+            m_dragStartOffset = m_horizontalOffset;
+            return true;
+        }
+        
+        // Click on track - page scroll
+        auto trackRect = GetHorizontalScrollBarTrackRect();
+        if (trackRect.Contains(pt)) {
+            if (pt.x < thumbRect.x) PageLeft();
+            else if (pt.x > thumbRect.x + thumbRect.width) PageRight();
+            return true;
+        }
+    }
+    
+    // Check vertical scrollbar
+    if (m_showVScroll) {
+        auto thumbRect = GetVerticalThumbRect();
+        if (thumbRect.Contains(pt)) {
+            m_isDraggingVThumb = true;
+            m_dragStartPos = pt;
+            m_dragStartOffset = m_verticalOffset;
+            return true;
+        }
+        
+        // Click on track - page scroll
+        auto trackRect = GetVerticalScrollBarTrackRect();
+        if (trackRect.Contains(pt)) {
+            if (pt.y < thumbRect.y) PageUp();
+            else if (pt.y > thumbRect.y + thumbRect.height) PageDown();
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool ScrollViewer::HandleMouseMove(const Point& pt) {
+    if (m_isDraggingHThumb) {
+        auto trackRect = GetHorizontalScrollBarTrackRect();
+        float trackWidth = trackRect.width;
+        float thumbWidth = std::max(ScrollBarThumbMinSize, 
+                                   trackWidth * (m_viewport.width / m_extent.width));
+        float maxOffset = m_extent.width - m_viewport.width;
+        
+        float deltaX = pt.x - m_dragStartPos.x;
+        float deltaOffset = (deltaX / (trackWidth - thumbWidth)) * maxOffset;
+        SetHorizontalOffset(m_dragStartOffset + deltaOffset);
+        return true;
+    }
+    
+    if (m_isDraggingVThumb) {
+        auto trackRect = GetVerticalScrollBarTrackRect();
+        float trackHeight = trackRect.height;
+        float thumbHeight = std::max(ScrollBarThumbMinSize, 
+                                    trackHeight * (m_viewport.height / m_extent.height));
+        float maxOffset = m_extent.height - m_viewport.height;
+        
+        float deltaY = pt.y - m_dragStartPos.y;
+        float deltaOffset = (deltaY / (trackHeight - thumbHeight)) * maxOffset;
+        SetVerticalOffset(m_dragStartOffset + deltaOffset);
+        return true;
+    }
+    
+    return false;
+}
+
+bool ScrollViewer::HandleMouseUp(const Point& /*pt*/) {
+    if (m_isDraggingHThumb || m_isDraggingVThumb) {
+        m_isDraggingHThumb = false;
+        m_isDraggingVThumb = false;
+        return true;
+    }
+    return false;
 }
 
 // ==================== Button ====================
@@ -996,7 +1081,544 @@ void TextBlock::Render(IRenderContext* context) {
     context->DrawTextString(m_text, format.get(), m_renderRect.Position(), brush.get());
 }
 
-// ==================== 路由事件函数定义 ====================
+// ==================== TextBox ====================
+
+TextBox::TextBox() {
+    SetIsFocusable(true);
+    SetBackground(Color::White());
+    SetBorderBrush(m_normalBorder);
+}
+
+void TextBox::SetText(const std::wstring& text) {
+    if (m_text != text) {
+        m_text = text;
+        // Clamp caret position
+        m_caretPosition = std::min(m_caretPosition, (int)m_text.length());
+        ClearSelection();
+        UpdateScrollOffset();
+        Invalidate();
+        if (m_textChangedHandler) {
+            m_textChangedHandler(this, m_text);
+        }
+    }
+}
+
+void TextBox::SetCaretPosition(int pos) {
+    pos = std::max(0, std::min(pos, (int)m_text.length()));
+    if (m_caretPosition != pos) {
+        m_caretPosition = pos;
+        m_caretVisible = true;
+        UpdateScrollOffset();
+        Invalidate();
+    }
+}
+
+void TextBox::SelectAll() {
+    m_selectionStart = 0;
+    m_selectionEnd = (int)m_text.length();
+    Invalidate();
+}
+
+void TextBox::ClearSelection() {
+    m_selectionStart = m_selectionEnd = 0;
+    Invalidate();
+}
+
+void TextBox::OnGotFocus() {
+    Control::OnGotFocus();
+    m_caretVisible = true;
+    m_caretBlinkTime = 0;
+    SetBorderBrush(m_focusedBorder);
+    Invalidate();
+}
+
+void TextBox::OnLostFocus() {
+    Control::OnLostFocus();
+    m_caretVisible = false;
+    ClearSelection();
+    SetBorderBrush(m_normalBorder);
+    Invalidate();
+}
+
+Size TextBox::MeasureOverride(const Size& availableSize) {
+    // Base measurement from Border
+    Size size = Border::MeasureOverride(availableSize);
+    
+    // Minimum textbox size
+    size.width = std::max(size.width, 100.0f);
+    size.height = std::max(size.height, m_fontSize * 1.5f + 8);  // font + padding
+    
+    return size;
+}
+
+Size TextBox::ArrangeOverride(const Size& finalSize) {
+    // Base arrangement from Border
+    Size size = Border::ArrangeOverride(finalSize);
+    
+    // Update scroll offset for caret visibility
+    UpdateScrollOffset();
+    
+    return size;
+}
+
+void TextBox::Render(IRenderContext* context) {
+    // Render border and background
+    Border::Render(context);
+    
+    // Calculate content rect
+    float contentX = m_renderRect.x + m_paddingLeft + 4;
+    float contentY = m_renderRect.y + (m_actualHeight - m_fontSize) / 2;
+    float contentWidth = m_actualWidth - m_paddingLeft - m_paddingRight - 8;
+    
+    // Render text or placeholder
+    std::wstring displayText = GetDisplayText();
+    
+    if (displayText.empty() && m_placeholder.empty() == false && !m_isFocused) {
+        // Render placeholder
+        auto placeholderBrush = context->CreateSolidColorBrush(m_placeholderColor);
+        auto format = context->CreateTextFormat(m_fontFamily, m_fontSize);
+        context->DrawTextString(m_placeholder, format.get(), 
+                               Point(contentX, contentY), placeholderBrush.get());
+    } else if (!displayText.empty()) {
+        // Render text with scroll offset
+        auto textBrush = context->CreateSolidColorBrush(m_textColor);
+        auto format = context->CreateTextFormat(m_fontFamily, m_fontSize);
+        context->DrawTextString(displayText, format.get(), 
+                               Point(contentX - m_scrollOffset, contentY), textBrush.get());
+        
+        // Render selection highlight
+        if (HasSelection() && m_isFocused) {
+            // Simple selection rendering (highlight whole text for now)
+            auto selectionBrush = context->CreateSolidColorBrush(Color::FromHex(0x0078D4));
+            // TODO: Calculate exact selection rects
+        }
+    }
+    
+    // Render caret
+    if (GetIsCaretVisible()) {
+        // Calculate caret position
+        float caretX = contentX;
+        if (m_caretPosition > 0) {
+            // Estimate caret position based on character width
+            float avgCharWidth = m_fontSize * 0.6f;
+            caretX += m_caretPosition * avgCharWidth - m_scrollOffset;
+        }
+        
+        // Clamp to visible area
+        caretX = std::max(contentX, std::min(caretX, contentX + contentWidth));
+        
+        auto caretBrush = context->CreateSolidColorBrush(m_textColor);
+        context->FillRectangle(Rect(caretX, contentY, 1, m_fontSize), caretBrush.get());
+    }
+}
+
+void TextBox::OnMouseDown(const Point& point) {
+    // Calculate caret position from click
+    int pos = HitTestPosition(point);
+    SetCaretPosition(pos);
+    ClearSelection();
+}
+
+void TextBox::OnKeyDown(KeyEventArgs& args) {
+    switch (args.KeyCode) {
+        case VK_LEFT:
+            if (m_caretPosition > 0) {
+                SetCaretPosition(m_caretPosition - 1);
+            }
+            args.Handled = true;
+            break;
+            
+        case VK_RIGHT:
+            if (m_caretPosition < (int)m_text.length()) {
+                SetCaretPosition(m_caretPosition + 1);
+            }
+            args.Handled = true;
+            break;
+            
+        case VK_HOME:
+            SetCaretPosition(0);
+            args.Handled = true;
+            break;
+            
+        case VK_END:
+            SetCaretPosition((int)m_text.length());
+            args.Handled = true;
+            break;
+            
+        case VK_DELETE:
+            if (HasSelection()) {
+                DeleteSelection();
+            } else if (m_caretPosition < (int)m_text.length()) {
+                m_text.erase(m_caretPosition, 1);
+                SetText(m_text);
+            }
+            args.Handled = true;
+            break;
+            
+        case 'A':
+            if (args.Control) {
+                SelectAll();
+                args.Handled = true;
+            }
+            break;
+            
+        case 'C':
+            if (args.Control && HasSelection()) {
+                // Copy to clipboard would go here
+                args.Handled = true;
+            }
+            break;
+            
+        case 'V':
+            if (args.Control && !m_isReadOnly) {
+                // Paste from clipboard would go here
+                args.Handled = true;
+            }
+            break;
+            
+        case 'X':
+            if (args.Control && HasSelection() && !m_isReadOnly) {
+                // Cut to clipboard would go here
+                DeleteSelection();
+                args.Handled = true;
+            }
+            break;
+    }
+}
+
+void TextBox::OnChar(wchar_t ch) {
+    if (m_isReadOnly) return;
+    
+    // Ignore control characters
+    if (ch < 32 && ch != VK_TAB && ch != VK_RETURN) return;
+    
+    // Handle backspace
+    if (ch == VK_BACK) {
+        if (HasSelection()) {
+            DeleteSelection();
+        } else if (m_caretPosition > 0) {
+            m_caretPosition--;
+            m_text.erase(m_caretPosition, 1);
+            SetText(m_text);
+        }
+        return;
+    }
+    
+    // Check max length
+    if (m_maxLength > 0 && (int)m_text.length() >= m_maxLength) {
+        return;
+    }
+    
+    // Delete selection and insert character
+    if (HasSelection()) {
+        DeleteSelection();
+    }
+    
+    m_text.insert(m_caretPosition, 1, ch);
+    m_caretPosition++;
+    SetText(m_text);
+}
+
+void TextBox::UpdateCaret() {
+    if (m_isFocused) {
+        m_caretBlinkTime += 16;  // Approximate frame time
+        if (m_caretBlinkTime >= CaretBlinkInterval) {
+            m_caretBlinkTime = 0;
+            m_caretVisible = !m_caretVisible;
+            Invalidate();
+        }
+    }
+}
+
+void TextBox::InsertText(const std::wstring& text) {
+    if (m_isReadOnly) return;
+    
+    // Check max length
+    if (m_maxLength > 0) {
+        int remaining = m_maxLength - (int)m_text.length();
+        if (remaining <= 0) return;
+        if ((int)text.length() > remaining) {
+            m_text.insert(m_caretPosition, text.substr(0, remaining));
+            m_caretPosition += remaining;
+        } else {
+            m_text.insert(m_caretPosition, text);
+            m_caretPosition += (int)text.length();
+        }
+    } else {
+        m_text.insert(m_caretPosition, text);
+        m_caretPosition += (int)text.length();
+    }
+    SetText(m_text);
+}
+
+void TextBox::DeleteSelection() {
+    if (!HasSelection()) return;
+    
+    int start = std::min(m_selectionStart, m_selectionEnd);
+    int end = std::max(m_selectionStart, m_selectionEnd);
+    
+    m_text.erase(start, end - start);
+    m_caretPosition = start;
+    ClearSelection();
+    SetText(m_text);
+}
+
+void TextBox::UpdateScrollOffset() {
+    // Simple scroll offset calculation
+    float avgCharWidth = m_fontSize * 0.6f;
+    float caretPixelPos = m_caretPosition * avgCharWidth;
+    float contentWidth = m_actualWidth - m_paddingLeft - m_paddingRight - 8;
+    
+    if (caretPixelPos < m_scrollOffset) {
+        m_scrollOffset = caretPixelPos;
+    } else if (caretPixelPos > m_scrollOffset + contentWidth - avgCharWidth) {
+        m_scrollOffset = caretPixelPos - contentWidth + avgCharWidth;
+    }
+    
+    m_scrollOffset = std::max(0.0f, m_scrollOffset);
+}
+
+int TextBox::HitTestPosition(const Point& point) {
+    float contentX = m_renderRect.x + m_paddingLeft + 4;
+    float localX = point.x - contentX + m_scrollOffset;
+    
+    float avgCharWidth = m_fontSize * 0.6f;
+    int pos = static_cast<int>(localX / avgCharWidth + 0.5f);
+    
+    return std::max(0, std::min(pos, (int)m_text.length()));
+}
+
+std::wstring TextBox::GetDisplayText() const {
+    if (m_isPassword) {
+        return std::wstring(m_text.length(), L'\u2022');  // Bullet character
+    }
+    return m_text;
+}
+
+// ==================== ListBoxItem ====================
+
+ListBoxItem::ListBoxItem() {
+    SetIsFocusable(false);
+}
+
+void ListBoxItem::SetContent(const std::wstring& content) {
+    if (m_content != content) {
+        m_content = content;
+        InvalidateMeasure();
+    }
+}
+
+void ListBoxItem::SetIsSelected(bool selected) {
+    if (m_isSelected != selected) {
+        m_isSelected = selected;
+        Invalidate();
+    }
+}
+
+void ListBoxItem::SetIsHovered(bool hovered) {
+    if (m_isHovered != hovered) {
+        m_isHovered = hovered;
+        Invalidate();
+    }
+}
+
+Size ListBoxItem::MeasureOverride(const Size& availableSize) {
+    // Estimate text size
+    float avgCharWidth = m_fontSize * 0.6f;
+    float textWidth = m_content.length() * avgCharWidth;
+    float textHeight = m_fontSize * 1.2f;
+    
+    return Size(textWidth + 16, textHeight + 8);  // padding
+}
+
+void ListBoxItem::Render(IRenderContext* context) {
+    // Background
+    Color bgColor;
+    if (m_isSelected) {
+        bgColor = m_selectedBg;
+    } else if (m_isHovered) {
+        bgColor = m_hoverBg;
+    } else {
+        bgColor = m_normalBg;
+    }
+    
+    auto bgBrush = context->CreateSolidColorBrush(bgColor);
+    context->FillRectangle(m_renderRect, bgBrush.get());
+    
+    // Text
+    Color textColor = m_isSelected ? m_selectedText : m_normalText;
+    auto textBrush = context->CreateSolidColorBrush(textColor);
+    auto format = context->CreateTextFormat(L"Segoe UI", m_fontSize);
+    
+    Point textPos(m_renderRect.x + 8, m_renderRect.y + 4);
+    context->DrawTextString(m_content, format.get(), textPos, textBrush.get());
+}
+
+// ==================== ListBox ====================
+
+ListBox::ListBox() {
+    SetIsFocusable(true);
+}
+
+void ListBox::AddItem(const std::wstring& item) {
+    auto listItem = std::make_shared<ListBoxItem>();
+    listItem->SetContent(item);
+    AddItem(listItem);
+}
+
+void ListBox::AddItem(const std::shared_ptr<ListBoxItem>& item) {
+    m_items.push_back(item);
+    InvalidateMeasure();
+}
+
+void ListBox::RemoveItem(int index) {
+    if (index >= 0 && index < (int)m_items.size()) {
+        m_items.erase(m_items.begin() + index);
+        if (m_selectedIndex == index) {
+            m_selectedIndex = -1;
+        } else if (m_selectedIndex > index) {
+            m_selectedIndex--;
+        }
+        InvalidateMeasure();
+    }
+}
+
+void ListBox::ClearItems() {
+    m_items.clear();
+    m_selectedIndex = -1;
+    InvalidateMeasure();
+}
+
+std::shared_ptr<ListBoxItem> ListBox::GetItem(int index) {
+    if (index >= 0 && index < (int)m_items.size()) {
+        return m_items[index];
+    }
+    return nullptr;
+}
+
+void ListBox::SetSelectedIndex(int index) {
+    if (index < -1) index = -1;
+    if (index >= (int)m_items.size()) index = (int)m_items.size() - 1;
+    
+    if (m_selectedIndex != index) {
+        m_selectedIndex = index;
+        UpdateItemStates();
+        Invalidate();
+        
+        if (m_selectionChangedHandler) {
+            m_selectionChangedHandler(this, m_selectedIndex);
+        }
+    }
+}
+
+std::wstring ListBox::GetSelectedItem() const {
+    if (m_selectedIndex >= 0 && m_selectedIndex < (int)m_items.size()) {
+        return m_items[m_selectedIndex]->GetContent();
+    }
+    return L"";
+}
+
+void ListBox::UpdateItemStates() {
+    for (size_t i = 0; i < m_items.size(); i++) {
+        m_items[i]->SetIsSelected((int)i == m_selectedIndex);
+    }
+}
+
+Size ListBox::MeasureOverride(const Size& availableSize) {
+    // Measure all items
+    float maxWidth = 0;
+    float totalHeight = 0;
+    
+    for (auto& item : m_items) {
+        item->Measure(availableSize);
+        auto size = item->GetDesiredSize();
+        maxWidth = std::max(maxWidth, size.width);
+        totalHeight += size.height;
+    }
+    
+    // Store item height for hit testing
+    if (!m_items.empty()) {
+        m_itemHeight = m_items[0]->GetDesiredSize().height;
+    }
+    
+    // Border
+    maxWidth += 2;
+    totalHeight += 2;
+    
+    return Size(maxWidth, totalHeight);
+}
+
+Size ListBox::ArrangeOverride(const Size& finalSize) {
+    float y = m_renderRect.y + 1;  // Border
+    
+    for (auto& item : m_items) {
+        auto size = item->GetDesiredSize();
+        item->Arrange(Rect(m_renderRect.x + 1, y, finalSize.width - 2, size.height));
+        y += size.height;
+    }
+    
+    return finalSize;
+}
+
+void ListBox::Render(IRenderContext* context) {
+    // Border
+    auto borderBrush = context->CreateSolidColorBrush(Color::FromHex(0x808080));
+    context->DrawRectangle(m_renderRect, borderBrush.get(), 1.0f);
+    
+    // Render items
+    for (auto& item : m_items) {
+        item->Render(context);
+    }
+}
+
+void ListBox::OnMouseDown(const Point& point) {
+    int index = HitTestItem(point);
+    if (index >= 0) {
+        SetSelectedIndex(index);
+    }
+}
+
+void ListBox::OnKeyDown(KeyEventArgs& args) {
+    switch (args.KeyCode) {
+        case VK_UP:
+            if (m_selectedIndex > 0) {
+                SetSelectedIndex(m_selectedIndex - 1);
+            }
+            args.Handled = true;
+            break;
+            
+        case VK_DOWN:
+            if (m_selectedIndex < (int)m_items.size() - 1) {
+                SetSelectedIndex(m_selectedIndex + 1);
+            }
+            args.Handled = true;
+            break;
+            
+        case VK_HOME:
+            SetSelectedIndex(0);
+            args.Handled = true;
+            break;
+            
+        case VK_END:
+            SetSelectedIndex((int)m_items.size() - 1);
+            args.Handled = true;
+            break;
+    }
+}
+
+int ListBox::HitTestItem(const Point& point) {
+    if (point.y < m_renderRect.y || point.y >= m_renderRect.y + m_actualHeight) {
+        return -1;
+    }
+    
+    int index = static_cast<int>((point.y - m_renderRect.y - 1) / m_itemHeight);
+    if (index >= 0 && index < (int)m_items.size()) {
+        return index;
+    }
+    return -1;
+}
+
+// ==================== 璺敱浜嬩欢鍑芥暟瀹氫箟 ====================
 void Control::AddHandler(const RoutedEvent& routedEvent, RoutedEventHandler handler) {
     size_t key = routedEvent.GetId();
     m_routedEventHandlers[key].push_back(handler);

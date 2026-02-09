@@ -6,6 +6,21 @@ enable_testing()
 # Common include directory for test framework
 set(TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+# Test executable for Controls Layout
+if(TARGET LuaUI_ControlsLayout AND TARGET LuaUI)
+    add_executable(test_layout test_layout.cpp)
+    target_link_libraries(test_layout PRIVATE LuaUI LuaUI_ControlsLayout)
+    target_include_directories(test_layout PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls/layout/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
+    )
+    
+    # Add test
+    add_test(NAME LayoutTest COMMAND test_layout)
+endif()
+
 # Test executable for rendering types
 if(TARGET LuaUI_Rendering)
     add_executable(test_rendering test_rendering.cpp)

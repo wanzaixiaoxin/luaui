@@ -217,10 +217,6 @@ public:
     virtual bool IsDirty() const { return m_isDirty; }
     virtual void ClearDirty() { m_isDirty = false; }
     
-    // Data context
-    virtual std::any GetDataContext() const { return m_dataContext; }
-    virtual void SetDataContext(const std::any& data) { m_dataContext = data; }
-    
 protected:
     // Attached properties
     static void SetAttachedProperty(Control* control, const std::string& key, const std::any& value);
@@ -284,9 +280,6 @@ protected:
     // Dirty state
     bool m_isDirty = true;
     
-    // Data
-    std::any m_dataContext;
-    
 private:
     // Allow FocusManager to access private members
     friend class FocusManager;
@@ -307,30 +300,15 @@ private:
     std::map<std::string, std::any> m_attachedProperties;
 };
 
-// Panel (container with multiple children)
-class Panel : public Control {
-public:
-    Panel() = default;
-    virtual ~Panel() = default;
-    
-    size_t GetChildCount() const override { return m_children.size(); }
-    ControlPtr GetChild(size_t index) const override;
-    
-    virtual void AddChild(const ControlPtr& child);
-    virtual void RemoveChild(const ControlPtr& child);
-    virtual void RemoveChildAt(size_t index);
-    virtual void ClearChildren();
-    
-    void Render(IRenderContext* context) override;
-    
-    // Hit testing - search children first (Z-order: last child on top)
-    ControlPtr HitTestPoint(const Point& point) override;
-    
-protected:
-    std::vector<ControlPtr> m_children;
-};
+// Forward declarations for layout classes (defined in layout/ subfolder)
+class Panel;
+class Canvas;
+class StackPanel;
+class Grid;
+class DockPanel;
+class WrapPanel;
 
-// Content control (single child)
+// ContentControl (single child container)
 class ContentControl : public Control {
 public:
     ContentControl() = default;
@@ -384,90 +362,89 @@ protected:
     CornerRadius m_cornerRadius;
 };
 
-
-
-// Canvas (absolute positioning)
-class Canvas : public Panel {
+// ScrollViewer
+class ScrollViewer : public ContentControl {
 public:
-    Canvas() = default;
+    ScrollViewer();
     
-    std::string GetTypeName() const override { return "Canvas"; }
+    std::string GetTypeName() const override { return "ScrollViewer"; }
     
-    // Attached properties
-    static void SetLeft(Control* control, float left);
-    static void SetTop(Control* control, float top);
-    static float GetLeft(Control* control);
-    static float GetTop(Control* control);
+    // Scroll offsets
+    float GetHorizontalOffset() const { return m_horizontalOffset; }
+    void SetHorizontalOffset(float offset);
     
-protected:
-    Size MeasureOverride(const Size& availableSize) override;
-    Size ArrangeOverride(const Size& finalSize) override;
-};
-
-// StackPanel
-class StackPanel : public Panel {
-public:
-    StackPanel() = default;
+    float GetVerticalOffset() const { return m_verticalOffset; }
+    void SetVerticalOffset(float offset);
     
-    std::string GetTypeName() const override { return "StackPanel"; }
+    // Extent (total content size)
+    Size GetExtent() const { return m_extent; }
     
-    enum class Orientation { Horizontal, Vertical };
+    // Viewport (visible area size)
+    Size GetViewport() const { return m_viewport; }
     
-    Orientation GetOrientation() const { return m_orientation; }
-    void SetOrientation(Orientation orient) { m_orientation = orient; InvalidateMeasure(); }
+    // Scrollbar visibility
+    enum class ScrollBarVisibility { Auto, Visible, Hidden };
     
-    float GetSpacing() const { return m_spacing; }
-    void SetSpacing(float spacing) { m_spacing = spacing; InvalidateMeasure(); }
+    ScrollBarVisibility GetHorizontalScrollBarVisibility() const { return m_hScrollVisibility; }
+    void SetHorizontalScrollBarVisibility(ScrollBarVisibility visibility);
     
-protected:
-    Size MeasureOverride(const Size& availableSize) override;
-    Size ArrangeOverride(const Size& finalSize) override;
+    ScrollBarVisibility GetVerticalScrollBarVisibility() const { return m_vScrollVisibility; }
+    void SetVerticalScrollBarVisibility(ScrollBarVisibility visibility);
     
-private:
-    Orientation m_orientation = Orientation::Vertical;
-    float m_spacing = 0;
-};
-
-// Grid
-class Grid : public Panel {
-public:
-    Grid() = default;
+    // Scroll methods
+    void ScrollToHorizontalOffset(float offset);
+    void ScrollToVerticalOffset(float offset);
+    void LineLeft();
+    void LineRight();
+    void LineUp();
+    void LineDown();
+    void PageLeft();
+    void PageRight();
+    void PageUp();
+    void PageDown();
     
-    std::string GetTypeName() const override { return "Grid"; }
-    
-    // Row/Column definitions
-    struct RowDefinition {
-        float height = 0;       // 0 = Auto, >1 = Pixel, <1 = Star
-        float minHeight = 0;
-        float maxHeight = std::numeric_limits<float>::max();
-        float actualHeight = 0;
-    };
-    
-    struct ColumnDefinition {
-        float width = 0;        // 0 = Auto, >1 = Pixel, <1 = Star
-        float minWidth = 0;
-        float maxWidth = std::numeric_limits<float>::max();
-        float actualWidth = 0;
-    };
-    
-    void AddRowDefinition(float height);
-    void AddColumnDefinition(float width);
-    void ClearRowDefinitions() { m_rows.clear(); }
-    void ClearColumnDefinitions() { m_columns.clear(); }
-    
-    // Attached properties
-    static void SetRow(Control* control, int row);
-    static void SetColumn(Control* control, int column);
-    static void SetRowSpan(Control* control, int span);
-    static void SetColumnSpan(Control* control, int span);
+    void Render(IRenderContext* context) override;
     
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
     
 private:
-    std::vector<RowDefinition> m_rows;
-    std::vector<ColumnDefinition> m_columns;
+    float m_horizontalOffset = 0;
+    float m_verticalOffset = 0;
+    Size m_extent;
+    Size m_viewport;
+    
+    ScrollBarVisibility m_hScrollVisibility = ScrollBarVisibility::Auto;
+    ScrollBarVisibility m_vScrollVisibility = ScrollBarVisibility::Auto;
+    
+    bool m_showHScroll = false;
+    bool m_showVScroll = false;
+    
+    static constexpr float ScrollBarThickness = 16.0f;
+    static constexpr float ScrollBarThumbMinSize = 16.0f;
+    
+    void UpdateScrollBarVisibility();
+    void ClampOffsets();
+    
+    // Scrollbar rendering
+    void RenderScrollBars(IRenderContext* context);
+    Rect GetHorizontalScrollBarTrackRect() const;
+    Rect GetVerticalScrollBarTrackRect() const;
+    Rect GetHorizontalThumbRect() const;
+    Rect GetVerticalThumbRect() const;
+    
+    // Mouse handling for scrollbars
+    bool m_isDraggingHThumb = false;
+    bool m_isDraggingVThumb = false;
+    Point m_dragStartPos;
+    float m_dragStartOffset = 0;
+    
+public:
+    // Public mouse handlers for scrollbar interaction
+    bool HandleMouseDown(const Point& pt);
+    bool HandleMouseMove(const Point& pt);
+    bool HandleMouseUp(const Point& pt);
 };
 
 // Button
@@ -534,6 +511,184 @@ private:
     bool m_textSizeDirty = true;
     
     void UpdateTextSize(IRenderContext* context);
+};
+
+// TextBox - Single line text input
+class TextBox : public Border {
+public:
+    TextBox();
+    
+    std::string GetTypeName() const override { return "TextBox"; }
+    
+    // Text
+    std::wstring GetText() const { return m_text; }
+    void SetText(const std::wstring& text);
+    
+    // Placeholder
+    std::wstring GetPlaceholder() const { return m_placeholder; }
+    void SetPlaceholder(const std::wstring& placeholder) { m_placeholder = placeholder; Invalidate(); }
+    
+    // Password mode
+    bool GetIsPassword() const { return m_isPassword; }
+    void SetIsPassword(bool isPassword) { m_isPassword = isPassword; Invalidate(); }
+    
+    // Cursor position
+    int GetCaretPosition() const { return m_caretPosition; }
+    void SetCaretPosition(int pos);
+    
+    // Selection
+    bool HasSelection() const { return m_selectionStart != m_selectionEnd; }
+    void SelectAll();
+    void ClearSelection();
+    
+    // Read only
+    bool GetIsReadOnly() const { return m_isReadOnly; }
+    void SetIsReadOnly(bool readOnly) { m_isReadOnly = readOnly; }
+    
+    // Max length
+    int GetMaxLength() const { return m_maxLength; }
+    void SetMaxLength(int maxLength) { m_maxLength = maxLength; }
+    
+    // Events
+    using TextChangedHandler = std::function<void(TextBox* sender, const std::wstring& text)>;
+    void SetTextChangedHandler(TextChangedHandler handler) { m_textChangedHandler = handler; }
+    
+    void Render(IRenderContext* context) override;
+    
+    // Input handling
+    void OnMouseDown(const Point& point);
+    void OnKeyDown(KeyEventArgs& args);
+    void OnChar(wchar_t ch);
+    
+    // Caret animation
+    void UpdateCaret();
+    bool GetIsCaretVisible() const { return m_isFocused && m_caretVisible; }
+    
+protected:
+    Size MeasureOverride(const Size& availableSize) override;
+    Size ArrangeOverride(const Size& finalSize) override;
+    void OnGotFocus() override;
+    void OnLostFocus() override;
+    
+private:
+    std::wstring m_text;
+    std::wstring m_placeholder;
+    bool m_isPassword = false;
+    bool m_isReadOnly = false;
+    int m_maxLength = 0;  // 0 = unlimited
+    
+    // Cursor
+    int m_caretPosition = 0;
+    bool m_caretVisible = true;
+    float m_caretBlinkTime = 0;
+    static constexpr float CaretBlinkInterval = 530;  // ms
+    
+    // Selection
+    int m_selectionStart = 0;
+    int m_selectionEnd = 0;
+    
+    // Scroll offset for long text
+    float m_scrollOffset = 0;
+    
+    TextChangedHandler m_textChangedHandler;
+    
+    // Helper methods
+    void InsertText(const std::wstring& text);
+    void DeleteSelection();
+    void UpdateScrollOffset();
+    int HitTestPosition(const Point& point);
+    std::wstring GetDisplayText() const;
+    
+    // Default styling
+    Color m_normalBorder = Color::FromHex(0x808080);
+    Color m_focusedBorder = Color::FromHex(0x0078D4);
+    Color m_textColor = Color::Black();
+    Color m_placeholderColor = Color::FromHex(0x808080);
+    float m_fontSize = 14.0f;
+    std::wstring m_fontFamily = L"Segoe UI";
+};
+
+// ListBoxItem
+class ListBoxItem : public Control {
+public:
+    ListBoxItem();
+    
+    std::string GetTypeName() const override { return "ListBoxItem"; }
+    
+    std::wstring GetContent() const { return m_content; }
+    void SetContent(const std::wstring& content);
+    
+    bool GetIsSelected() const { return m_isSelected; }
+    void SetIsSelected(bool selected);
+    
+    bool GetIsHovered() const { return m_isHovered; }
+    void SetIsHovered(bool hovered);
+    
+    void Render(IRenderContext* context) override;
+    
+protected:
+    Size MeasureOverride(const Size& availableSize) override;
+    
+private:
+    std::wstring m_content;
+    bool m_isSelected = false;
+    bool m_isHovered = false;
+    
+    Color m_normalBg = Color::White();
+    Color m_hoverBg = Color::FromHex(0xE5F3FF);
+    Color m_selectedBg = Color::FromHex(0x0078D4);
+    Color m_normalText = Color::Black();
+    Color m_selectedText = Color::White();
+    float m_fontSize = 14.0f;
+};
+
+// ListBox
+class ListBox : public Control {
+public:
+    ListBox();
+    
+    std::string GetTypeName() const override { return "ListBox"; }
+    
+    // Items
+    void AddItem(const std::wstring& item);
+    void AddItem(const std::shared_ptr<ListBoxItem>& item);
+    void RemoveItem(int index);
+    void ClearItems();
+    size_t GetItemCount() const { return m_items.size(); }
+    std::shared_ptr<ListBoxItem> GetItem(int index);
+    
+    // Selection
+    int GetSelectedIndex() const { return m_selectedIndex; }
+    void SetSelectedIndex(int index);
+    std::wstring GetSelectedItem() const;
+    
+    // Events
+    using SelectionChangedHandler = std::function<void(ListBox* sender, int selectedIndex)>;
+    void SetSelectionChangedHandler(SelectionChangedHandler handler) { m_selectionChangedHandler = handler; }
+    
+    void Render(IRenderContext* context) override;
+    
+    // Input handling
+    void OnMouseDown(const Point& point);
+    void OnKeyDown(KeyEventArgs& args);
+    
+protected:
+    Size MeasureOverride(const Size& availableSize) override;
+    Size ArrangeOverride(const Size& finalSize) override;
+    
+private:
+    std::vector<std::shared_ptr<ListBoxItem>> m_items;
+    int m_selectedIndex = -1;
+    int m_hoveredIndex = -1;
+    
+    // Scroll
+    float m_scrollOffset = 0;
+    float m_itemHeight = 24.0f;
+    
+    SelectionChangedHandler m_selectionChangedHandler;
+    
+    void UpdateItemStates();
+    int HitTestItem(const Point& point);
 };
 
 } // namespace controls
