@@ -71,7 +71,7 @@ public:
     virtual Panel* GetParentPanel() const;
     
     virtual size_t GetChildCount() const { return 0; }
-    virtual ControlPtr GetChild(size_t index) const { return nullptr; }
+    virtual ControlPtr GetChild(size_t /*index*/) const { return nullptr; }
     
     // Identity
     virtual const std::string& GetName() const { return m_name; }
@@ -319,14 +319,24 @@ public:
     
     void Render(IRenderContext* context) override;
     
+    // Border properties
+    float GetBorderThickness() const { return m_borderThickness; }
+    void SetBorderThickness(float thickness) { m_borderThickness = thickness; Invalidate(); }
+    
+    Color GetBorderBrush() const { return m_borderBrush; }
+    void SetBorderBrush(const Color& color) { m_borderBrush = color; Invalidate(); }
+    
+    CornerRadius GetCornerRadius() const { return m_cornerRadius; }
+    void SetCornerRadius(const CornerRadius& radius) { m_cornerRadius = radius; Invalidate(); }
+    
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
     
-private:
+protected:
     ControlPtr m_content;
-    float m_borderThickness = 0;
-    Color m_borderBrush = Color::Black();
+    float m_borderThickness = 1.0f;  // Default 1px border
+    Color m_borderBrush = Color::FromHex(0x808080);  // Default gray border
     CornerRadius m_cornerRadius;
 };
 

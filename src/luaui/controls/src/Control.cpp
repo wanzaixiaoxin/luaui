@@ -123,6 +123,10 @@ void Control::Measure(const Size& availableSize) {
     // Call override
     Size desiredSize = MeasureOverride(constrainedSize);
     
+    // If explicit width/height is set, use those values
+    if (m_width > 0) desiredSize.width = m_width;
+    if (m_height > 0) desiredSize.height = m_height;
+    
     // Apply min/max constraints
     desiredSize.width = std::max(m_minWidth, std::min(desiredSize.width, m_maxWidth));
     desiredSize.height = std::max(m_minHeight, std::min(desiredSize.height, m_maxHeight));
@@ -436,7 +440,7 @@ void Panel::ClearChildren() {
 void Panel::Render(IRenderContext* context) {
     Control::Render(context);
     
-    // Render children
+    // Render children (they use global coordinates in their m_renderRect)
     for (auto& child : m_children) {
         if (child && child->GetIsVisible()) {
             child->Render(context);
@@ -524,9 +528,10 @@ Size Border::ArrangeOverride(const Size& finalSize) {
         float borderH = m_borderThickness * 2;
         float borderV = m_borderThickness * 2;
         
+        // Content rect is relative to Border's position
         Rect childRect(
-            m_borderThickness,
-            m_borderThickness,
+            m_renderRect.x + m_borderThickness,
+            m_renderRect.y + m_borderThickness,
             std::max(0.0f, finalSize.width - borderH),
             std::max(0.0f, finalSize.height - borderV)
         );
@@ -612,7 +617,9 @@ Size Canvas::ArrangeOverride(const Size& finalSize) {
             float top = GetTop(child.get());
             auto childSize = child->GetDesiredSize();
             
-            child->Arrange(Rect(left, top, childSize.width, childSize.height));
+            // Arrange with absolute positioning relative to Canvas
+            child->Arrange(Rect(m_renderRect.x + left, m_renderRect.y + top, 
+                               childSize.width, childSize.height));
         }
     }
     
@@ -665,22 +672,22 @@ Size StackPanel::MeasureOverride(const Size& availableSize) {
 
 Size StackPanel::ArrangeOverride(const Size& finalSize) {
     if (m_orientation == Orientation::Vertical) {
-        float y = 0;
+        float y = m_renderRect.y;
         
         for (auto& child : m_children) {
             if (child) {
                 auto childSize = child->GetDesiredSize();
-                child->Arrange(Rect(0, y, finalSize.width, childSize.height));
+                child->Arrange(Rect(m_renderRect.x, y, finalSize.width, childSize.height));
                 y += childSize.height + m_spacing;
             }
         }
     } else {
-        float x = 0;
+        float x = m_renderRect.x;
         
         for (auto& child : m_children) {
             if (child) {
                 auto childSize = child->GetDesiredSize();
-                child->Arrange(Rect(x, 0, childSize.width, finalSize.height));
+                child->Arrange(Rect(x, m_renderRect.y, childSize.width, finalSize.height));
                 x += childSize.width + m_spacing;
             }
         }
@@ -767,6 +774,8 @@ Size Grid::ArrangeOverride(const Size& finalSize) {
 Button::Button() {
     SetIsFocusable(true);
     SetBackground(m_normalBackground);
+    m_borderThickness = 1.0f;
+    m_borderBrush = Color::FromHex(0x808080);
 }
 
 Size Button::MeasureOverride(const Size& availableSize) {

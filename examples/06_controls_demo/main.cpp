@@ -92,8 +92,10 @@ private:
 
         // Create a border with content
         auto border = std::make_shared<Border>();
-        border->SetBackground(Color::FromHex(0xF0F0F0));
+        border->SetBackground(Color::FromHex(0xF5F5F5));
         border->SetPadding(15, 15, 15, 15);
+        border->SetBorderThickness(2.0f);
+        border->SetBorderBrush(Color::FromHex(0xCCCCCC));
 
         auto borderContent = std::make_shared<TextBlock>();
         borderContent->SetText(L"Border Control with Content");
@@ -234,10 +236,20 @@ private:
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
-    ControlsDemoWindow demo;
-    if (!demo.Initialize(hInstance, nCmdShow)) {
-        MessageBoxW(nullptr, L"Failed to initialize demo", L"Error", MB_OK);
+    // Initialize COM for WIC (required by rendering engine)
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(hr)) {
+        MessageBoxW(nullptr, L"Failed to initialize COM", L"Error", MB_OK);
         return 1;
     }
-    return demo.Run();
+    
+    ControlsDemoWindow demo;
+    if (!demo.Initialize(hInstance, nCmdShow)) {
+        CoUninitialize();
+        return 1;
+    }
+    
+    int result = demo.Run();
+    CoUninitialize();
+    return result;
 }
