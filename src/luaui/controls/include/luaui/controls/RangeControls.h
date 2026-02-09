@@ -16,7 +16,7 @@ public:
     double GetMinimum() const { return m_minimum; }
     void SetMinimum(double minimum);
     
-    double GetMaximum() const { return m_maxumum; }
+    double GetMaximum() const { return m_maximum; }
     void SetMaximum(double maximum);
     
     double GetValue() const { return m_value; }
@@ -37,10 +37,10 @@ public:
     
     void Render(IRenderContext* context) override;
     
-    // Public for external event handling
-    void OnMouseDown(const Point& pt);
-    void OnMouseMove(const Point& pt);
-    void OnMouseUp(const Point& pt);
+    // Public for external event handling (direct point interface for demo integration)
+    void HandleMouseDown(const Point& pt);
+    void HandleMouseMove(const Point& pt);
+    void HandleMouseUp(const Point& pt);
     
     // Set the redraw callback for real-time updates during dragging
     using RedrawCallback = std::function<void()>;
@@ -51,7 +51,7 @@ protected:
 
 private:
     double m_minimum = 0.0;
-    double m_maxumum = 100.0;
+    double m_maximum = 100.0;
     double m_value = 0.0;
     double m_step = 1.0;
     Orientation m_orientation = Orientation::Horizontal;

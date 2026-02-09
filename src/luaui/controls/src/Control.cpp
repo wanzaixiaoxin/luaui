@@ -2,6 +2,7 @@
 #include "luaui/controls/FocusManager.h"
 #include <algorithm>
 #include <limits>
+#include <cmath>
 
 namespace luaui {
 namespace controls {
@@ -38,6 +39,11 @@ DependencyProperty* DependencyProperty::GetByName(const std::string& name) {
 
 Control::Control() {
     SetIsFocusable(true);
+}
+
+Control::~Control() {
+    // 从FocusManager注销，避免悬空指针
+    FocusManager::GetInstance().UnregisterFocusable(this);
 }
 
 Panel* Control::GetParentPanel() const {
@@ -215,6 +221,7 @@ ControlPtr Control::HitTestPoint(const Point& point) {
 // ==================== Rendering ====================
 
 void Control::Render(IRenderContext* context) {
+    if (!context) return;
     if (!GetIsVisible() || m_opacity <= 0) {
         return;
     }
@@ -224,7 +231,7 @@ void Control::Render(IRenderContext* context) {
     // Apply transform if not identity
     const float* matrix = m_renderTransform.GetMatrix();
     bool isIdentity = (matrix[0] == 1.0f && matrix[1] == 0.0f && matrix[2] == 0.0f &&
-                       matrix[3] == 0.0f && matrix[4] == 1.0f && matrix[5] == 0.0f);
+                       matrix[3] == 1.0f && matrix[4] == 0.0f && matrix[5] == 0.0f);
     if (!isIdentity) {
         context->MultiplyTransform(m_renderTransform);
     }
@@ -291,6 +298,7 @@ void Control::SetIsFocusable(bool focusable) {
 }
 
 void Control::SetOpacity(float opacity) {
+    if (!std::isfinite(opacity)) return;
     opacity = std::max(0.0f, std::min(1.0f, opacity));
     if (m_opacity != opacity) {
         m_opacity = opacity;

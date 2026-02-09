@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <cmath>
 
 namespace luaui {
 namespace controls {
@@ -21,29 +22,43 @@ Slider::Slider() {
 }
 
 void Slider::SetMinimum(double minimum) {
+    if (!std::isfinite(minimum)) return;
     if (m_minimum != minimum) {
         m_minimum = minimum;
+        // 确保 maximum >= minimum
+        if (m_maximum < m_minimum) {
+            m_maximum = m_minimum;
+        }
         SetValue(m_value);  // 重新约束值
         Invalidate();
     }
 }
 
 void Slider::SetMaximum(double maximum) {
-    if (m_maxumum != maximum) {
-        m_maxumum = maximum;
+    if (!std::isfinite(maximum)) return;
+    if (m_maximum != maximum) {
+        m_maximum = maximum;
+        // 确保 maximum >= minimum
+        if (m_maximum < m_minimum) {
+            m_minimum = m_maximum;
+        }
         SetValue(m_value);  // 重新约束值
         Invalidate();
     }
 }
 
 void Slider::SetValue(double value) {
+    if (!std::isfinite(value)) return;
+    
     // 约束值在范围内
-    value = (std::max)(m_minimum, (std::min)(value, m_maxumum));
+    value = (std::max)(m_minimum, (std::min)(value, m_maximum));
     
     // 应用步长
-    if (m_step > 0) {
+    if (m_step > 0 && std::isfinite(m_step)) {
         double steps = std::round((value - m_minimum) / m_step);
         value = m_minimum + steps * m_step;
+        // 再次约束，确保步长计算后仍在范围内
+        value = (std::max)(m_minimum, (std::min)(value, m_maximum));
     }
     
     if (m_value != value) {
@@ -71,6 +86,9 @@ Size Slider::MeasureOverride(const Size& availableSize) {
 }
 
 void Slider::Render(IRenderContext* context) {
+    if (!context) return;
+    if (m_actualWidth <= 0 || m_actualHeight <= 0) return;
+    
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     
     // 计算轨道和 thumb 位置
@@ -131,7 +149,7 @@ float Slider::CalculateThumbPosition() const {
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     float trackLength = isHorizontal ? m_actualWidth : m_actualHeight;
     
-    double range = m_maxumum - m_minimum;
+    double range = m_maximum - m_minimum;
     if (range <= 0) return 0;
     
     double ratio = (m_value - m_minimum) / range;
@@ -139,12 +157,15 @@ float Slider::CalculateThumbPosition() const {
 }
 
 double Slider::ValueFromPosition(float position, float trackLength) {
+    if (trackLength <= 0.0f || !std::isfinite(trackLength)) return m_minimum;
+    if (!std::isfinite(position)) return m_value;
+    
     double ratio = std::max(0.0f, std::min(position / trackLength, 1.0f));
-    double value = m_minimum + ratio * (m_maxumum - m_minimum);
+    double value = m_minimum + ratio * (m_maximum - m_minimum);
     return value;
 }
 
-void Slider::OnMouseDown(const Point& pt) {
+void Slider::HandleMouseDown(const Point& pt) {
     m_isDragging = true;
     
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
@@ -158,7 +179,7 @@ void Slider::OnMouseDown(const Point& pt) {
     SetValue(ValueFromPosition(pos, trackLength));
 }
 
-void Slider::OnMouseMove(const Point& pt) {
+void Slider::HandleMouseMove(const Point& pt) {
     if (m_isDragging) {
         bool isHorizontal = (m_orientation == Orientation::Horizontal);
         float pos = isHorizontal ? pt.x - m_renderRect.x 
@@ -172,7 +193,7 @@ void Slider::OnMouseMove(const Point& pt) {
     }
 }
 
-void Slider::OnMouseUp(const Point& /*pt*/) {
+void Slider::HandleMouseUp(const Point& /*pt*/) {
     m_isDragging = false;
 }
 

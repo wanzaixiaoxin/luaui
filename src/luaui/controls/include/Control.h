@@ -63,7 +63,7 @@ public:
 class Control : public std::enable_shared_from_this<Control> {
 public:
     Control();
-    virtual ~Control() = default;
+    virtual ~Control();
     
     // Hierarchy
     virtual ControlPtr GetParent() const { return m_parent.lock(); }

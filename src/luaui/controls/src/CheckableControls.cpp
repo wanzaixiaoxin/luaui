@@ -184,7 +184,10 @@ void RadioButton::Render(IRenderContext* context) {
     // 绘制选中点
     if (m_isSelected) {
         auto dotBrush = context->CreateSolidColorBrush(Color::FromHex(0x0078D4));
-        context->FillCircle(Point(centerX, centerY), radius - 5, dotBrush.get());
+        float dotRadius = std::max(0.0f, radius - 5);
+        if (dotRadius > 0) {
+            context->FillCircle(Point(centerX, centerY), dotRadius, dotBrush.get());
+        }
     }
     
     // 绘制文本

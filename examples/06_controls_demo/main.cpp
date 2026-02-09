@@ -74,7 +74,7 @@ public:
         // 处理 Slider - 调用 OnMouseDown 开始拖拽
         if (auto slider = dynamic_cast<Slider*>(m_hoveredControl.get())) {
             m_draggingSlider = slider;
-            slider->OnMouseDown(pt);
+            slider->HandleMouseDown(pt);
         }
     }
     
@@ -85,7 +85,7 @@ public:
         
         // 通知 Slider 鼠标释放
         if (m_draggingSlider) {
-            m_draggingSlider->OnMouseUp(pt);
+            m_draggingSlider->HandleMouseUp(pt);
         }
         
         m_draggingSlider = nullptr;
@@ -95,7 +95,7 @@ public:
     void HandleMouseMoveDrag(const Point& pt, Control* root) {
         if (m_draggingSlider) {
             // 直接传递 Point 给 Slider
-            m_draggingSlider->OnMouseMove(pt);
+            m_draggingSlider->HandleMouseMove(pt);
         } else {
             // 处理普通鼠标移动
             HandleMouseMove(pt, root);
