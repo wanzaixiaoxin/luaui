@@ -58,7 +58,6 @@ add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 # ============================================
 add_subdirectory(src/luaui/utils)
 add_subdirectory(src/luaui/rendering)
-add_subdirectory(src/luaui/core)
 add_subdirectory(src/luaui/controls/layout)
 
 # ============================================
