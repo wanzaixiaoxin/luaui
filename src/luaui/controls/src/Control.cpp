@@ -518,6 +518,27 @@ void ContentControl::Render(IRenderContext* context) {
     }
 }
 
+ControlPtr ContentControl::HitTestPoint(const Point& point) {
+    if (!GetIsVisible() || m_opacity <= 0) {
+        return nullptr;
+    }
+    
+    // Check content first
+    if (m_content && m_content->GetIsVisible()) {
+        auto hit = m_content->HitTestPoint(point);
+        if (hit) {
+            return hit;
+        }
+    }
+    
+    // Check self
+    if (HitTest(point)) {
+        return shared_from_this();
+    }
+    
+    return nullptr;
+}
+
 // ==================== Border ====================
 
 void Border::SetContent(const ControlPtr& content) {
@@ -615,7 +636,7 @@ void ScrollViewer::SetHorizontalOffset(float offset) {
     if (m_horizontalOffset != offset) {
         m_horizontalOffset = offset;
         ClampOffsets();
-        InvalidateArrange();
+        Invalidate();  // Only need to redraw, not rearrange
     }
 }
 
@@ -623,7 +644,7 @@ void ScrollViewer::SetVerticalOffset(float offset) {
     if (m_verticalOffset != offset) {
         m_verticalOffset = offset;
         ClampOffsets();
-        InvalidateArrange();
+        Invalidate();  // Only need to redraw, not rearrange
     }
 }
 
@@ -767,11 +788,13 @@ Size ScrollViewer::ArrangeOverride(const Size& finalSize) {
     m_viewport.width = std::max(0.0f, m_viewport.width);
     m_viewport.height = std::max(0.0f, m_viewport.height);
     
-    // Arrange content with negative offset to simulate scrolling
+    // Arrange content at (0, 0) relative to content area
+    // Scroll offset is applied during rendering via transform
     if (m_content) {
-        float x = m_renderRect.x - m_horizontalOffset;
-        float y = m_renderRect.y - m_verticalOffset;
-        m_content->Arrange(Rect(x, y, std::max(m_extent.width, m_viewport.width), 
+        float contentX = m_renderRect.x;
+        float contentY = m_renderRect.y;
+        m_content->Arrange(Rect(contentX, contentY, 
+                               std::max(m_extent.width, m_viewport.width), 
                                std::max(m_extent.height, m_viewport.height)));
     }
     
@@ -785,9 +808,32 @@ void ScrollViewer::Render(IRenderContext* context) {
         context->FillRectangle(m_renderRect, bgBrush.get());
     }
     
-    // Render content (will be clipped by parent or render target)
+    // Render content with clipping and transform
     if (m_content) {
+        // Calculate viewport rect (excluding scrollbars)
+        float viewportX = m_renderRect.x;
+        float viewportY = m_renderRect.y;
+        float viewportW = m_renderRect.width - (m_showVScroll ? ScrollBarThickness : 0);
+        float viewportH = m_renderRect.height - (m_showHScroll ? ScrollBarThickness : 0);
+        
+        // Push clip to viewport area
+        context->PushClip(Rect(viewportX, viewportY, viewportW, viewportH));
+        
+        // Push state for transform
+        context->PushState();
+        
+        // Apply scroll offset transform
+        Transform scrollTransform = Transform::Translation(-m_horizontalOffset, -m_verticalOffset);
+        context->MultiplyTransform(scrollTransform);
+        
+        // Render content
         m_content->Render(context);
+        
+        // Restore transform
+        context->PopState();
+        
+        // Restore clip
+        context->PopClip();
     }
     
     // Render scrollbars
@@ -947,6 +993,88 @@ bool ScrollViewer::HandleMouseUp(const Point& /*pt*/) {
         return true;
     }
     return false;
+}
+
+void ScrollViewer::OnMouseDown(MouseEventArgs& args) {
+    luaui::rendering::Point pt(args.Position.X, args.Position.Y);
+    if (HandleMouseDown(pt)) {
+        args.Handled = true;
+    }
+}
+
+void ScrollViewer::OnMouseMove(MouseEventArgs& args) {
+    luaui::rendering::Point pt(args.Position.X, args.Position.Y);
+    if (HandleMouseMove(pt)) {
+        args.Handled = true;
+    }
+}
+
+void ScrollViewer::OnMouseUp(MouseEventArgs& args) {
+    luaui::rendering::Point pt(args.Position.X, args.Position.Y);
+    if (HandleMouseUp(pt)) {
+        args.Handled = true;
+    }
+}
+
+void ScrollViewer::OnMouseWheel(MouseEventArgs& args) {
+    // Handle vertical scrolling with mouse wheel
+    if (m_showVScroll && m_extent.height > m_viewport.height) {
+        float delta = args.Clicks / 120.0f * 30.0f; // Standard wheel delta = 120, scroll 30 pixels
+        SetVerticalOffset(m_verticalOffset - delta);
+        args.Handled = true;
+    }
+    // Handle horizontal scrolling if Shift is held (or if no vertical scroll)
+    else if (m_showHScroll && m_extent.width > m_viewport.width) {
+        float delta = args.Clicks / 120.0f * 30.0f;
+        SetHorizontalOffset(m_horizontalOffset - delta);
+        args.Handled = true;
+    }
+}
+
+ControlPtr ScrollViewer::HitTestPoint(const Point& point) {
+    if (!GetIsVisible() || m_opacity <= 0) {
+        return nullptr;
+    }
+    
+    // Check if point is within viewport (content area) or scrollbar area
+    bool inViewport = false;
+    bool inScrollbar = false;
+    
+    // Calculate viewport rect
+    float viewportX = m_renderRect.x;
+    float viewportY = m_renderRect.y;
+    float viewportW = m_renderRect.width - (m_showVScroll ? ScrollBarThickness : 0);
+    float viewportH = m_renderRect.height - (m_showHScroll ? ScrollBarThickness : 0);
+    
+    Rect viewportRect(viewportX, viewportY, viewportW, viewportH);
+    if (viewportRect.Contains(point)) {
+        inViewport = true;
+    }
+    
+    // Check scrollbars
+    if ((m_showHScroll && GetHorizontalScrollBarTrackRect().Contains(point)) ||
+        (m_showVScroll && GetVerticalScrollBarTrackRect().Contains(point))) {
+        inScrollbar = true;
+    }
+    
+    // If in viewport, check content with coordinate transformation
+    if (inViewport && m_content) {
+        // Transform point to content coordinates (apply scroll offset)
+        Point contentPoint(point.x + m_horizontalOffset, point.y + m_verticalOffset);
+        auto hit = m_content->HitTestPoint(contentPoint);
+        if (hit) {
+            return hit;
+        }
+        // If content not hit but in viewport, return self
+        return shared_from_this();
+    }
+    
+    // If in scrollbar or bounds, return self
+    if (inScrollbar || m_renderRect.Contains(point)) {
+        return shared_from_this();
+    }
+    
+    return nullptr;
 }
 
 // ==================== Button ====================

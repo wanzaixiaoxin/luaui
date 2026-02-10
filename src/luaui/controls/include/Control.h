@@ -321,6 +321,7 @@ public:
     ControlPtr GetChild(size_t index) const override;
     
     void Render(IRenderContext* context) override;
+    ControlPtr HitTestPoint(const Point& point) override;
     
 protected:
     ControlPtr m_content;
@@ -404,10 +405,17 @@ public:
     void PageDown();
     
     void Render(IRenderContext* context) override;
+    ControlPtr HitTestPoint(const Point& point) override;
     
 protected:
     Size MeasureOverride(const Size& availableSize) override;
     Size ArrangeOverride(const Size& finalSize) override;
+    
+    // Mouse event handlers for scrollbar interaction
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseMove(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
+    void OnMouseWheel(MouseEventArgs& args) override;
     
 private:
     float m_horizontalOffset = 0;

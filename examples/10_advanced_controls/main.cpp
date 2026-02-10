@@ -253,6 +253,16 @@ private:
                     return 0;
                 }
                 case WM_MOUSEMOVE: {
+                    float x = static_cast<float>(GET_X_LPARAM(lParam));
+                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
+                    
+                    MouseEventArgs args(x, y);
+                    if (pThis->m_root) {
+                        auto hit = pThis->m_root->HitTestPoint(Point(x, y));
+                        if (hit) {
+                            hit->OnMouseMove(args);
+                        }
+                    }
                     InvalidateRect(hWnd, nullptr, FALSE);
                     return 0;
                 }
@@ -271,6 +281,16 @@ private:
                     return 0;
                 }
                 case WM_LBUTTONUP: {
+                    float x = static_cast<float>(GET_X_LPARAM(lParam));
+                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
+                    
+                    MouseEventArgs args(x, y);
+                    if (pThis->m_root) {
+                        auto hit = pThis->m_root->HitTestPoint(Point(x, y));
+                        if (hit) {
+                            hit->OnMouseUp(args);
+                        }
+                    }
                     InvalidateRect(hWnd, nullptr, FALSE);
                     return 0;
                 }
