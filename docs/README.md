@@ -31,7 +31,9 @@ docs/
 2. [Layout_System.md](architecture/Layout_System.md) - 布局系统
 3. [Commercial_UI_Framework_Design.md](architecture/Commercial_UI_Framework_Design.md) - 整体架构
 4. [Render_Engine_Design.md](architecture/Render_Engine_Design.md) - 渲染引擎
-5. [Lua_Binding_Design.md](architecture/Lua_Binding_Design.md) - Lua API
+5. [XML_Layout_Design.md](architecture/XML_Layout_Design.md) - XML布局系统 (当前阶段)
+6. [MVVM_DataBinding_Design.md](architecture/MVVM_DataBinding_Design.md) - MVVM架构 (准备阶段)
+7. [Lua_Binding_Design.md](architecture/Lua_Binding_Design.md) - Lua API
 
 ### 📁 项目相关
 - [Sample_Project_Structure.md](architecture/Sample_Project_Structure.md) - 示例项目结构
