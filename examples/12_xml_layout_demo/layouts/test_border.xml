@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StackPanel xmlns="http://luaui.io/schema"
+            Margin="20"
+            Spacing="10"
+            Background="White">
+    
+    <!-- 测试 Border 背景色 -->
+    <Border Background="#2196F3" 
+            Padding="20"
+            Width="300"
+            Height="100">
+        <TextBlock Text="Blue Border"
+                  FontSize="20"
+                  Foreground="White"/>
+    </Border>
+    
+    <!-- 测试 Button -->
+    <Button Content="Test Button"
+            SetStateColors="#4CAF50,#43A047,#2E7D32"
+            Padding="15,8"
+            Width="150"/>
+    
+</StackPanel>

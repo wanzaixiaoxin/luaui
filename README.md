@@ -7,6 +7,7 @@ A Windows UI framework with Lua scripting and Direct2D rendering.
 - **Direct2D Rendering** - Hardware-accelerated 2D graphics
 - **Layout System** - StackPanel, Grid, Canvas, DockPanel, WrapPanel
 - **Control System** - Button, TextBox, CheckBox, Slider, ProgressBar, etc.
+- **XML Layout System** - Declarative UI with external config files and code-behind
 - **Lua Scripting** - Embed Lua for UI logic
 - **Modern C++** - C++17 standard
 
@@ -23,6 +24,9 @@ src/luaui/
 ├── rendering/          # Rendering engine
 │   ├── include/        # IRenderContext.h, Types.h...
 │   └── src/d2d/        # Direct2D implementation
+├── xml/                # XML Layout system
+│   ├── include/        # XmlLayout.h, IXmlLoader.h...
+│   └── src/            # XML loader implementation
 └── utils/              # Utilities
     └── include/        # Logger.h
 ```
@@ -70,6 +74,31 @@ panel->Measure(Size(800, 600));
 panel->Arrange(Rect(0, 0, 800, 600));
 ```
 
+### Use XML Layout
+
+```xml
+<!-- layout.xml -->
+<StackPanel xmlns="http://luaui.io/schema" Background="White" Margin="20">
+    <TextBlock Text="Hello XML!" FontSize="24" Foreground="#333"/>
+    <Button x:Name="clickBtn" Content="Click Me" 
+            SetStateColors="#2196F3,#1976D2,#0D47A1"/>
+</StackPanel>
+```
+
+```cpp
+#include "XmlLayout.h"
+
+// Load from XML file
+auto loader = luaui::xml::CreateXmlLoader();
+auto root = loader->Load("layout.xml");
+
+// Find named controls and attach events
+auto button = FindControlByName<Button>(root, "clickBtn");
+if (button) {
+    button->AddClickHandler([](auto*) { /* handle click */ });
+}
+```
+
 ## Documentation
 
 - [Directory Structure](docs/architecture/DIRECTORY_STRUCTURE.md)
@@ -89,6 +118,7 @@ panel->Arrange(Rect(0, 0, 800, 600));
 | 07_layout_demo | Layout engine |
 | 08_visual_layout_demo | Visual layout showcase |
 | 09_composite_layout | Layout + Controls composite |
+| 12_xml_layout_demo | XML Layout with code-behind |
 
 ## License
 

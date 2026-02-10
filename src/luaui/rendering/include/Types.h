@@ -26,6 +26,9 @@ struct Color {
     static Color Red() { return Color(1, 0, 0); }
     static Color Green() { return Color(0, 1, 0); }
     static Color Blue() { return Color(0, 0, 1); }
+    static Color Yellow() { return Color(1, 1, 0); }
+    static Color Cyan() { return Color(0, 1, 1); }
+    static Color Magenta() { return Color(1, 0, 1); }
     
     // Create from RGBA bytes
     static Color FromRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) {
@@ -132,6 +135,18 @@ struct Rect {
         }
         return Rect();
     }
+};
+
+// Thickness for margins and padding
+struct Thickness {
+    float left, top, right, bottom;
+    
+    Thickness() : left(0), top(0), right(0), bottom(0) {}
+    Thickness(float all) : left(all), top(all), right(all), bottom(all) {}
+    Thickness(float horizontal, float vertical) 
+        : left(horizontal), top(vertical), right(horizontal), bottom(vertical) {}
+    Thickness(float l, float t, float r, float b) 
+        : left(l), top(t), right(r), bottom(b) {}
 };
 
 // Corner radius for rounded rectangles

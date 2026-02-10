@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Grid xmlns="http://luaui.io/schema"
+      Margin="20"
+      Background="#F5F5F5">
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+    
+    <Border Grid.Row="0" Background="#2196F3" Padding="20">
+        <TextBlock Text="Header (Row 0)" FontSize="24" Foreground="White"/>
+    </Border>
+    
+    <Border Grid.Row="1" Background="White" Padding="20">
+        <TextBlock Text="Content (Row 1, Star)"/>
+    </Border>
+    
+    <Border Grid.Row="2" Background="#424242" Padding="15">
+        <TextBlock Text="Footer (Row 2)" Foreground="White"/>
+    </Border>
+</Grid>
