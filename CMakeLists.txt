@@ -59,6 +59,7 @@ add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 add_subdirectory(src/luaui/utils)
 add_subdirectory(src/luaui/rendering)
 add_subdirectory(src/luaui/controls/layout)
+add_subdirectory(src/luaui/style)
 
 # ============================================
 # LuaUI Library
@@ -93,6 +94,7 @@ if(LUAUI_SOURCES)
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/include>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core/include>
             $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/layout/include>
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/style/include>
             $<INSTALL_INTERFACE:include>
     )
 

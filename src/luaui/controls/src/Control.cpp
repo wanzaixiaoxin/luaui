@@ -1,6 +1,8 @@
 #include "Control.h"
 #include "FocusManager.h"
 #include "layout.h"
+#include "Style.h"
+#include "ResourceDictionary.h"
 #include <algorithm>
 #include <limits>
 #include <cmath>
@@ -48,6 +50,23 @@ DependencyProperty* DependencyProperty::GetByName(const std::string& name) {
     auto it = s_nameMap.find(name);
     return it != s_nameMap.end() ? it->second : nullptr;
 }
+
+// ==================== Control Static Properties ====================
+
+DependencyProperty::Id Control::BackgroundProperty = DependencyProperty::Register(
+    "Background", 
+    PropertyMetadata{Color::FromHex(0xE0E0E0)}
+);
+
+DependencyProperty::Id Control::ForegroundProperty = DependencyProperty::Register(
+    "Foreground", 
+    PropertyMetadata{Color::Black}
+);
+
+DependencyProperty::Id Control::BorderThicknessProperty = DependencyProperty::Register(
+    "BorderThickness", 
+    PropertyMetadata{1.0f}
+);
 
 // ==================== Control ====================
 
@@ -256,8 +275,9 @@ void Control::Render(IRenderContext* context) {
     }
     
     // Render background
-    if (m_background.a > 0) {
-        auto bgBrush = context->CreateSolidColorBrush(m_background);
+    Color bg = GetBackground();
+    if (bg.a > 0) {
+        auto bgBrush = context->CreateSolidColorBrush(bg);
         context->FillRectangle(m_renderRect, bgBrush.get());
     }
     
@@ -373,11 +393,18 @@ void Control::SetVerticalAlignment(VerticalAlignment align) {
 // ==================== Background ====================
 
 void Control::SetBackground(const Color& color) {
-    if (m_background.r != color.r || m_background.g != color.g || 
-        m_background.b != color.b || m_background.a != color.a) {
-        m_background = color;
-        Invalidate();
+    SetValue(BackgroundProperty, color);
+}
+
+Color Control::GetBackground() const {
+    auto value = GetValue(BackgroundProperty);
+    if (value.has_value()) {
+        try {
+            return std::any_cast<Color>(value);
+        } catch (...) {
+        }
     }
+    return m_background;
 }
 
 // ==================== Events ====================
@@ -464,8 +491,16 @@ void Control::KillFocus() {
 
 // ==================== Property Change ====================
 
-void Control::OnPropertyChanged(const std::string& /*propertyName*/) {
-    // Override in derived classes
+void Control::OnPropertyChanged(const std::string& propertyName) {
+    // Notify triggers if a style is applied
+    // Note: We need to notify the actual trigger instances, not the template triggers
+    // This is handled by Style::NotifyTriggersOfPropertyChange
+    if (m_style) {
+        auto* prop = DependencyProperty::GetByName(propertyName);
+        if (prop) {
+            m_style->NotifyTriggersOfPropertyChange(this, prop->GetId());
+        }
+    }
 }
 
 // ==================== Attached Properties ====================
@@ -600,8 +635,9 @@ Size Border::ArrangeOverride(const Size& finalSize) {
 
 void Border::Render(IRenderContext* context) {
     // Render background
-    if (m_background.a > 0) {
-        auto bgBrush = context->CreateSolidColorBrush(m_background);
+    Color bg = GetBackground();
+    if (bg.a > 0) {
+        auto bgBrush = context->CreateSolidColorBrush(bg);
         if (m_cornerRadius.topLeft > 0) {
             context->FillRoundedRectangle(m_renderRect, m_cornerRadius, bgBrush.get());
         } else {
@@ -803,8 +839,9 @@ Size ScrollViewer::ArrangeOverride(const Size& finalSize) {
 
 void ScrollViewer::Render(IRenderContext* context) {
     // Render background
-    if (m_background.a > 0) {
-        auto bgBrush = context->CreateSolidColorBrush(m_background);
+    Color bg = GetBackground();
+    if (bg.a > 0) {
+        auto bgBrush = context->CreateSolidColorBrush(bg);
         context->FillRectangle(m_renderRect, bgBrush.get());
     }
     
@@ -1100,8 +1137,9 @@ Size Button::MeasureOverride(const Size& availableSize) {
     return size;
 }
 
-void Button::RenderOverride(IRenderContext* /*context*/) {
-    // Update background based on state
+void Button::Render(IRenderContext* context) {
+    // Button automatically handles hover/press visual feedback
+    // This is the "behavior" - simple and self-contained
     if (m_isPressed) {
         SetBackground(m_pressedBackground);
     } else if (m_isHovered) {
@@ -1110,7 +1148,8 @@ void Button::RenderOverride(IRenderContext* /*context*/) {
         SetBackground(m_normalBackground);
     }
     
-    // Content is rendered by ContentControl::Render
+    // Render as Border (background, border, content)
+    Border::Render(context);
 }
 
 void Button::OnMouseEnter() {
@@ -1140,18 +1179,114 @@ void Button::OnMouseUp(MouseEventArgs& args) {
     args.Handled = true;
 }
 
-void Button::Render(IRenderContext* context) {
-    // Update background based on state
-    if (m_isPressed) {
-        m_background = m_pressedBackground;
-    } else if (m_isHovered) {
-        m_background = m_hoverBackground;
-    } else {
-        m_background = m_normalBackground;
+// ==================== Control Style System Methods ====================
+
+void Control::SetStyle(std::shared_ptr<Style> style) {
+    if (m_style == style) {
+        return;
     }
     
-    // Render as Border (background, border, content)
-    Border::Render(context);
+    // Unapply current style
+    if (m_style) {
+        m_style->Unapply(this);
+    }
+    
+    m_style = style;
+    
+    // Apply new style
+    if (m_style) {
+        m_style->Apply(this, m_resources.get());
+    }
+}
+
+void Control::SetInlineSetter(DependencyProperty::Id propertyId, const std::any& value) {
+    // Store the inline setter value
+    m_inlineSetters[propertyId] = value;
+    
+    // Apply the value to the property
+    SetValue(propertyId, value);
+}
+
+void Control::ClearInlineSetter(DependencyProperty::Id propertyId) {
+    auto it = m_inlineSetters.find(propertyId);
+    if (it != m_inlineSetters.end()) {
+        m_inlineSetters.erase(it);
+        
+        // Clear the local value to revert to style value
+        ClearValue(propertyId);
+    }
+}
+
+bool Control::HasInlineSetter(DependencyProperty::Id propertyId) const {
+    return m_inlineSetters.find(propertyId) != m_inlineSetters.end();
+}
+
+std::shared_ptr<ResourceDictionary> Control::GetResources() {
+    if (!m_resources) {
+        m_resources = std::make_shared<ResourceDictionary>();
+    }
+    return m_resources;
+}
+
+void Control::SetResources(std::shared_ptr<ResourceDictionary> resources) {
+    m_resources = resources;
+}
+
+std::any Control::FindResource(const std::string& key) const {
+    // First look in own resource dictionary
+    if (m_resources) {
+        auto value = m_resources->Get(key);
+        if (value.has_value()) {
+            return value;
+        }
+    }
+    
+    // Then look in parent chain
+    auto parent = GetParent();
+    if (parent) {
+        return parent->FindResource(key);
+    }
+    
+    // Finally look in ThemeManager
+    // Note: ThemeManager needs to be properly implemented
+    return std::any();
+}
+
+void Control::InvalidateStyle() {
+    // Reapply current style if exists
+    if (m_style) {
+        m_style->Unapply(this);
+        m_style->Apply(this, m_resources.get());
+    }
+    Invalidate();
+}
+
+void Control::UpdateStyle() {
+    // Find and apply the appropriate style
+    auto style = FindApplicableStyle();
+    if (style != m_style) {
+        SetStyle(style);
+    }
+}
+
+std::shared_ptr<Style> Control::FindApplicableStyle() const {
+    // By default, return the explicitly set style
+    // Derived classes can override to provide implicit styles
+    return m_style;
+}
+
+void Control::ApplyStyle() {
+    // Apply the current style if any
+    if (m_style) {
+        m_style->Apply(this, m_resources.get());
+    }
+}
+
+void Control::ClearAppliedStyle() {
+    // Unapply the current style if any
+    if (m_style) {
+        m_style->Unapply(this);
+    }
 }
 
 // ==================== TextBlock ====================

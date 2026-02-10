@@ -9,11 +9,17 @@
 #include <functional>
 #include <map>
 #include <any>
+#include <typeindex>
 
 namespace luaui {
 namespace controls {
 
 using namespace luaui::rendering;
+
+// Forward declarations for style system
+class ResourceDictionary;
+class Style;
+class ThemeManager;
 
 // Forward declarations
 class Control;
@@ -149,8 +155,13 @@ public:
     void SetVerticalAlignment(VerticalAlignment align);
     
     // Background
-    virtual Color GetBackground() const { return m_background; }
+    virtual Color GetBackground() const;
     virtual void SetBackground(const Color& color);
+    
+    // Dependency Properties
+    static DependencyProperty::Id BackgroundProperty;
+    static DependencyProperty::Id ForegroundProperty;
+    static DependencyProperty::Id BorderThicknessProperty;
     
     // Render transform
     virtual const Transform& GetRenderTransform() const { return m_renderTransform; }
@@ -280,7 +291,42 @@ protected:
     // Dirty state
     bool m_isDirty = true;
     
+    // ==================== Style System Integration ====================
+public:
+    // Style property
+    virtual std::shared_ptr<Style> GetStyle() const { return m_style; }
+    virtual void SetStyle(std::shared_ptr<Style> style);
+    
+    // Inline setter (highest priority)
+    virtual void SetInlineSetter(DependencyProperty::Id propertyId, const std::any& value);
+    virtual void ClearInlineSetter(DependencyProperty::Id propertyId);
+    virtual bool HasInlineSetter(DependencyProperty::Id propertyId) const;
+    
+    // Resources (control-level resource dictionary)
+    virtual std::shared_ptr<ResourceDictionary> GetResources();
+    virtual void SetResources(std::shared_ptr<ResourceDictionary> resources);
+    
+    // Resource lookup
+    virtual std::any FindResource(const std::string& key) const;
+    template<typename T>
+    T FindResource(const std::string& key) const {
+        return std::any_cast<T>(FindResource(key));
+    }
+    
+    // Style invalidation and update
+    virtual void InvalidateStyle();
+    virtual void UpdateStyle();
+    
+protected:
+    // Find applicable style for this control
+    virtual std::shared_ptr<Style> FindApplicableStyle() const;
+    
+    // Apply/clear style
+    virtual void ApplyStyle();
+    virtual void ClearAppliedStyle();
+    
 private:
+    // ==================== Existing members ====================
     // Allow FocusManager to access private members
     friend class FocusManager;
     
@@ -298,6 +344,12 @@ private:
     
     // Attached properties storage
     std::map<std::string, std::any> m_attachedProperties;
+    
+    // ==================== Style System Members ====================
+    std::shared_ptr<Style> m_style;              // Explicit style
+    std::shared_ptr<Style> m_appliedStyle;       // Currently applied style
+    std::shared_ptr<ResourceDictionary> m_resources; // Local resources
+    std::map<DependencyProperty::Id, std::any> m_inlineSetters; // Inline setters
 };
 
 // Forward declarations for layout classes (defined in layout/ subfolder)
@@ -462,7 +514,17 @@ public:
     
     std::string GetTypeName() const override { return "Button"; }
     
+    // State query
     bool GetIsPressed() const { return m_isPressed; }
+    bool GetIsHovered() const { return m_isHovered; }
+    
+    // Custom state colors - call this to override default gray colors
+    void SetStateColors(const Color& normal, const Color& hover, const Color& pressed) {
+        m_normalBackground = normal;
+        m_hoverBackground = hover;
+        m_pressedBackground = pressed;
+        Invalidate();
+    }
     
     void Render(IRenderContext* context) override;
     
@@ -474,12 +536,13 @@ public:
     
 protected:
     Size MeasureOverride(const Size& availableSize) override;
-    void RenderOverride(IRenderContext* context) override;
     
 private:
-    bool m_isPressed = false;
+    // State flags (simple members, not dependency properties)
     bool m_isHovered = false;
+    bool m_isPressed = false;
     
+    // State colors (configurable)
     Color m_normalBackground = Color::FromHex(0xE0E0E0);
     Color m_hoverBackground = Color::FromHex(0xD0D0D0);
     Color m_pressedBackground = Color::FromHex(0xC0C0C0);

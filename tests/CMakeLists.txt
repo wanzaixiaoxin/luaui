@@ -47,3 +47,18 @@ if(TARGET LuaUI_Utils)
     # Add test
     add_test(NAME LoggerTest COMMAND test_logger)
 endif()
+
+# Test executable for style system
+if(TARGET LuaUI_Style)
+    add_executable(test_style_system test_style_system.cpp)
+    target_link_libraries(test_style_system PRIVATE LuaUI_Style LuaUI)
+    target_include_directories(test_style_system PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/style/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls/include
+    )
+
+    # Add test
+    add_test(NAME StyleSystemTest COMMAND test_style_system)
+endif()

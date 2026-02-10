@@ -63,6 +63,11 @@ if(TARGET LuaUI)
     add_subdirectory(10_advanced_controls)
 endif()
 
+# 11_style_demo - Style system demo
+if(TARGET LuaUI_Style)
+    add_subdirectory(11_style_demo)
+endif()
+
 # Copy resources to output directory
 if(EXISTS ${CMAKE_SOURCE_DIR}/resources)
     file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
