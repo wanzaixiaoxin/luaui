@@ -458,11 +458,11 @@ public:
     
     void Render(IRenderContext* context) override;
     
-    // Event handling
-    void OnMouseEnter();
-    void OnMouseLeave();
-    void OnMouseDown(const Point& point);
-    void OnMouseUp(const Point& point);
+    // Event handling - override base class virtual methods
+    void OnMouseEnter() override;
+    void OnMouseLeave() override;
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
     
 protected:
     Size MeasureOverride(const Size& availableSize) override;
@@ -555,9 +555,9 @@ public:
     
     void Render(IRenderContext* context) override;
     
-    // Input handling
-    void OnMouseDown(const Point& point);
-    void OnKeyDown(KeyEventArgs& args);
+    // Input handling - override base class virtual methods
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnKeyDown(KeyEventArgs& args) override;
     void OnChar(wchar_t ch);
     
     // Caret animation
@@ -668,9 +668,9 @@ public:
     
     void Render(IRenderContext* context) override;
     
-    // Input handling
-    void OnMouseDown(const Point& point);
-    void OnKeyDown(KeyEventArgs& args);
+    // Input handling - override base class virtual methods
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnKeyDown(KeyEventArgs& args) override;
     
 protected:
     Size MeasureOverride(const Size& availableSize) override;

@@ -55,7 +55,8 @@ public:
         m_mouseDownControl = m_hoveredControl;
 
         if (auto btn = dynamic_cast<Button*>(m_hoveredControl.get())) {
-            btn->OnMouseDown(pt);
+            MouseEventArgs args(pt.x, pt.y);
+            btn->OnMouseDown(args);
         }
 
         // 处理 CheckBox
@@ -81,7 +82,8 @@ public:
 
     void HandleMouseUp(const Point& pt, Control* /*root*/) {
         if (auto btn = dynamic_cast<Button*>(m_hoveredControl.get())) {
-            btn->OnMouseUp(pt);
+            MouseEventArgs args(pt.x, pt.y);
+            btn->OnMouseUp(args);
         }
 
         // 通知 Slider 鼠标释放
@@ -240,7 +242,7 @@ private:
 
         auto cb1 = std::make_shared<CheckBox>();
         cb1->SetText(L"Enable Feature A");
-        cb1->SetCheckChangedHandler([](CheckBox* sender, bool isChecked) {
+        cb1->SetCheckChangedHandler([](CheckBox* /*sender*/, bool isChecked) {
             std::wstringstream ss;
             ss << L"Feature A: " << (isChecked ? L"ON" : L"OFF");
             SetStatus(ss.str());
@@ -296,7 +298,7 @@ private:
             InvalidateRect(hwnd, nullptr, FALSE);
         });
 
-        slider1->SetValueChangedHandler([this](Slider* sender, double value) {
+        slider1->SetValueChangedHandler([this](Slider* /*sender*/, double value) {
             // 更新进度条
             if (m_progressBar) {
                 m_progressBar->SetValue(value);

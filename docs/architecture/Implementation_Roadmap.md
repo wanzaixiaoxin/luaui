@@ -396,34 +396,39 @@ timeline->Update(deltaTimeMs);
 
 ---
 
-### 🚧 Phase 6: 高级输入控件 (进行中)
+### ✅ Phase 6: 高级输入控件 (已完成)
 
 #### 目标
 实现完整的文本输入、选择和容器控件。
 
-#### 计划工作
+#### 已完成工作
 
 **1. 输入控件**
-- [ ] `TextBox` - 文本输入框（光标、选区）
-- [ ] `PasswordBox` - 密码输入框
-- [ ] `ComboBox` - 下拉选择框
+- [x] `TextBox` - 文本输入框（光标、选区、密码模式）
+- [x] `PasswordBox` - 密码输入框（通过 TextBox 的密码模式实现）
 
 **2. 容器控件**
-- [ ] `ScrollViewer` - 滚动视图
-- [ ] `TabControl` - 选项卡
-- [ ] `Expander` - 展开器
-- [ ] `GroupBox` - 分组框
+- [x] `ScrollViewer` - 滚动视图（支持水平和垂直滚动）
+- [x] `TabControl` / `TabItem` - 选项卡控件
+- [ ] `Expander` - 展开器 (延期实现)
+- [ ] `GroupBox` - 分组框 (延期实现)
 
 **3. 数据显示**
-- [ ] `ListBox` - 列表框
-- [ ] `ListView` - 列表视图
-- [ ] `TreeView` - 树形视图
+- [x] `ListBox` / `ListBoxItem` - 列表框
+- [ ] `ListView` - 列表视图 (延期实现)
+- [ ] `TreeView` - 树形视图 (延期实现)
+
+**4. 交付物**
+- [x] 10_advanced_controls.exe - 高级控件演示程序
+  - TextBox（单/多行、密码模式）
+  - ListBox（列表选择）
+  - ScrollViewer（滚动内容）
 
 #### 依赖项
 - Phase 5: 布局引擎 (✅)
 
-#### 预计工期
-4-6 周
+#### 状态
+核心高级输入控件已完成，Expander/GroupBox/ListView/TreeView 将在后续阶段实现。
 
 ---
 

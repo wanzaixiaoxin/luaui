@@ -12,7 +12,7 @@
 namespace luaui {
 namespace controls {
 
-// ==================== RadioButtonGroup 管理�?====================
+// ==================== RadioButtonGroup 管理�?====================
 class RadioButtonGroupManager {
 public:
     static RadioButtonGroupManager& GetInstance() {
@@ -72,8 +72,8 @@ void CheckBox::SetText(const std::wstring& text) {
     }
 }
 
-Size CheckBox::MeasureOverride(const Size& availableSize) {
-    // 估算文本宽度（每个字符约 8 像素�?
+Size CheckBox::MeasureOverride(const Size& /*availableSize*/) {
+    // 估算文本宽度（每个字符约 8 像素�?
     float textWidth = m_text.empty() ? 0 : m_text.length() * 8.0f;
     float textHeight = 16.0f;
     
@@ -116,6 +116,7 @@ void CheckBox::Render(IRenderContext* context) {
 }
 
 void CheckBox::OnMouseDown(MouseEventArgs& args) {
+    Focus();
     SetIsChecked(!m_isChecked);
     args.Handled = true;
 }
@@ -143,7 +144,7 @@ void RadioButton::SetIsSelected(bool selected) {
         m_isSelected = selected;
         Invalidate();
         
-        // 如果选中，取消同组其他按钮的选中状�?
+        // 如果选中，取消同组其他按钮的选中状�?
         if (m_isSelected) {
             RadioButtonGroupManager::GetInstance().SelectButton(this);
         }
@@ -161,7 +162,7 @@ void RadioButton::SetText(const std::wstring& text) {
     }
 }
 
-Size RadioButton::MeasureOverride(const Size& availableSize) {
+Size RadioButton::MeasureOverride(const Size& /*availableSize*/) {
     float textWidth = m_text.empty() ? 0 : m_text.length() * 8.0f;
     float textHeight = 16.0f;
     
@@ -181,7 +182,7 @@ void RadioButton::Render(IRenderContext* context) {
     auto borderBrush = context->CreateSolidColorBrush(borderColor);
     context->DrawCircle(Point(centerX, centerY), radius, borderBrush.get(), 2.0f);
     
-    // 绘制选中�?
+    // 绘制选中�?
     if (m_isSelected) {
         auto dotBrush = context->CreateSolidColorBrush(Color::FromHex(0x0078D4));
         float dotRadius = std::max(0.0f, radius - 5);
@@ -201,6 +202,7 @@ void RadioButton::Render(IRenderContext* context) {
 }
 
 void RadioButton::OnMouseDown(MouseEventArgs& args) {
+    Focus();
     SetIsSelected(true);
     args.Handled = true;
 }

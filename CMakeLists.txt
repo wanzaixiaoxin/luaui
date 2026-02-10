@@ -78,6 +78,10 @@ file(GLOB_RECURSE LUAUI_HEADERS
 list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/tests/.*")
 list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/tests/.*")
 
+# Exclude placeholder files that conflict with Control.h
+list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*TextInput\\.cpp$")
+list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*SelectorControls\\.cpp$")
+
 if(LUAUI_SOURCES)
     add_library(LuaUI STATIC ${LUAUI_SOURCES} ${LUAUI_HEADERS})
 

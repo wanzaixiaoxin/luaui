@@ -56,7 +56,7 @@ Control::Control() {
 }
 
 Control::~Control() {
-    // 从FocusManager注销，避免悬空指�?
+    // 从FocusManager注销，避免悬空指�?
     FocusManager::GetInstance().UnregisterFocusable(this);
 }
 
@@ -302,7 +302,7 @@ void Control::SetIsFocusable(bool focusable) {
     if (m_isFocusable != focusable) {
         m_isFocusable = focusable;
         
-        // 注册/注销�?FocusManager
+        // 注册/注销�?FocusManager
         if (m_isFocusable) {
             FocusManager::GetInstance().RegisterFocusable(this);
         } else {
@@ -437,7 +437,7 @@ void Control::RaiseEvent(const RoutedEvent& routedEvent, RoutedEventArgs& args) 
 bool Control::Focus() {
     if (!m_isFocusable) return false;
     
-    // 避免递归：如果已经是焦点，直接返�?
+    // 避免递归：如果已经是焦点，直接返�?
     if (FocusManager::GetInstance().GetFocusedControl() == this) {
         m_isFocused = true;
         return true;
@@ -721,10 +721,9 @@ void ScrollViewer::ClampOffsets() {
 Size ScrollViewer::MeasureOverride(const Size& availableSize) {
     // Calculate available size for content (reserve space for scrollbars)
     Size contentAvailable = availableSize;
-    bool potentiallyShowH = m_hScrollVisibility == ScrollBarVisibility::Visible ||
-                           (m_hScrollVisibility == ScrollBarVisibility::Auto);
-    bool potentiallyShowV = m_vScrollVisibility == ScrollBarVisibility::Visible ||
-                           (m_vScrollVisibility == ScrollBarVisibility::Auto);
+    // Scroll visibility flags are used in ArrangeOverride
+    (void)m_hScrollVisibility;  // Mark as used to avoid warning
+    (void)m_vScrollVisibility;
     
     // Measure content with infinite size to get its desired size
     Size infiniteSize(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
@@ -997,18 +996,20 @@ void Button::OnMouseLeave() {
     Invalidate();
 }
 
-void Button::OnMouseDown(const Point& /*point*/) {
+void Button::OnMouseDown(MouseEventArgs& args) {
     m_isPressed = true;
     Focus();
     Invalidate();
+    args.Handled = true;
 }
 
-void Button::OnMouseUp(const Point& /*point*/) {
+void Button::OnMouseUp(MouseEventArgs& args) {
     if (m_isPressed) {
         m_isPressed = false;
         RaiseClick();
         Invalidate();
     }
+    args.Handled = true;
 }
 
 void Button::Render(IRenderContext* context) {
@@ -1162,13 +1163,17 @@ Size TextBox::ArrangeOverride(const Size& finalSize) {
 }
 
 void TextBox::Render(IRenderContext* context) {
+    // Update caret blink state
+    UpdateCaret();
+    
     // Render border and background
     Border::Render(context);
     
-    // Calculate content rect
-    float contentX = m_renderRect.x + m_paddingLeft + 4;
-    float contentY = m_renderRect.y + (m_actualHeight - m_fontSize) / 2;
-    float contentWidth = m_actualWidth - m_paddingLeft - m_paddingRight - 8;
+    // Calculate content rect (consistent with HitTestPosition)
+    float contentX = m_renderRect.x + m_paddingLeft + m_borderThickness + 4;
+    float contentY = m_renderRect.y + (m_renderRect.height - m_fontSize) / 2;
+    float contentWidth = m_renderRect.width - m_paddingLeft - m_paddingRight - m_borderThickness * 2 - 8;
+    float contentHeight = m_renderRect.height - m_borderThickness * 2;
     
     // Render text or placeholder
     std::wstring displayText = GetDisplayText();
@@ -1183,8 +1188,12 @@ void TextBox::Render(IRenderContext* context) {
         // Render text with scroll offset
         auto textBrush = context->CreateSolidColorBrush(m_textColor);
         auto format = context->CreateTextFormat(m_fontFamily, m_fontSize);
+        
+        // Use scissor rect to clip text to content area
+        context->PushClip(Rect(contentX, m_renderRect.y + m_borderThickness, contentWidth, contentHeight));
         context->DrawTextString(displayText, format.get(), 
                                Point(contentX - m_scrollOffset, contentY), textBrush.get());
+        context->PopClip();
         
         // Render selection highlight
         if (HasSelection() && m_isFocused) {
@@ -1196,12 +1205,15 @@ void TextBox::Render(IRenderContext* context) {
     
     // Render caret
     if (GetIsCaretVisible()) {
-        // Calculate caret position
-        float caretX = contentX;
-        if (m_caretPosition > 0) {
-            // Estimate caret position based on character width
-            float avgCharWidth = m_fontSize * 0.6f;
-            caretX += m_caretPosition * avgCharWidth - m_scrollOffset;
+        // Calculate caret position using MeasureText for accuracy
+        float caretX = contentX - m_scrollOffset;
+        
+        if (m_caretPosition > 0 && !displayText.empty()) {
+            // Measure text up to caret position
+            std::wstring textBeforeCaret = displayText.substr(0, m_caretPosition);
+            auto format = context->CreateTextFormat(m_fontFamily, m_fontSize);
+            Size textSize = format->MeasureText(textBeforeCaret);
+            caretX = contentX + textSize.width - m_scrollOffset;
         }
         
         // Clamp to visible area
@@ -1212,11 +1224,14 @@ void TextBox::Render(IRenderContext* context) {
     }
 }
 
-void TextBox::OnMouseDown(const Point& point) {
+void TextBox::OnMouseDown(MouseEventArgs& args) {
+    Focus();
     // Calculate caret position from click
-    int pos = HitTestPosition(point);
+    Point pt(args.Position.X, args.Position.Y);
+    int pos = HitTestPosition(pt);
     SetCaretPosition(pos);
     ClearSelection();
+    args.Handled = true;
 }
 
 void TextBox::OnKeyDown(KeyEventArgs& args) {
@@ -1289,8 +1304,8 @@ void TextBox::OnKeyDown(KeyEventArgs& args) {
 void TextBox::OnChar(wchar_t ch) {
     if (m_isReadOnly) return;
     
-    // Ignore control characters
-    if (ch < 32 && ch != VK_TAB && ch != VK_RETURN) return;
+    // Ignore control characters (but allow backspace, tab, return)
+    if (ch < 32 && ch != VK_BACK && ch != VK_TAB && ch != VK_RETURN) return;
     
     // Handle backspace
     if (ch == VK_BACK) {
@@ -1364,28 +1379,75 @@ void TextBox::DeleteSelection() {
 }
 
 void TextBox::UpdateScrollOffset() {
-    // Simple scroll offset calculation
-    float avgCharWidth = m_fontSize * 0.6f;
-    float caretPixelPos = m_caretPosition * avgCharWidth;
-    float contentWidth = m_actualWidth - m_paddingLeft - m_paddingRight - 8;
+    // Calculate caret pixel position using same logic as HitTestPosition
+    float caretPixelPos = 0;
+    float enWidth = m_fontSize * 0.5f;  // English/numeric width
+    float cnWidth = m_fontSize * 0.95f; // Chinese character width
+    
+    for (int i = 0; i < m_caretPosition && i < (int)m_text.length(); i++) {
+        wchar_t ch = m_text[i];
+        if ((ch >= 0x4E00 && ch <= 0x9FFF) || 
+            (ch >= 0x3400 && ch <= 0x4DBF) ||
+            (ch >= 0xFF00 && ch <= 0xFFEF)) {
+            caretPixelPos += cnWidth;
+        } else {
+            caretPixelPos += enWidth;
+        }
+    }
+    
+    // Use m_renderRect.width to be consistent with Render()
+    float contentWidth = m_renderRect.width - m_paddingLeft - m_paddingRight - m_borderThickness * 2 - 8;
+    float charWidth = (m_caretPosition > 0 && m_caretPosition <= (int)m_text.length() && 
+                       ((m_text[m_caretPosition-1] >= 0x4E00 && m_text[m_caretPosition-1] <= 0x9FFF) ||
+                        (m_text[m_caretPosition-1] >= 0x3400 && m_text[m_caretPosition-1] <= 0x4DBF) ||
+                        (m_text[m_caretPosition-1] >= 0xFF00 && m_text[m_caretPosition-1] <= 0xFFEF))) ? cnWidth : enWidth;
     
     if (caretPixelPos < m_scrollOffset) {
         m_scrollOffset = caretPixelPos;
-    } else if (caretPixelPos > m_scrollOffset + contentWidth - avgCharWidth) {
-        m_scrollOffset = caretPixelPos - contentWidth + avgCharWidth;
+    } else if (caretPixelPos > m_scrollOffset + contentWidth - charWidth) {
+        m_scrollOffset = caretPixelPos - contentWidth + charWidth;
     }
     
     m_scrollOffset = std::max(0.0f, m_scrollOffset);
 }
 
 int TextBox::HitTestPosition(const Point& point) {
-    float contentX = m_renderRect.x + m_paddingLeft + 4;
-    float localX = point.x - contentX + m_scrollOffset;
+    // contentX is where text starts rendering (accounting for padding and scroll)
+    // Must match the value in Render()
+    float contentX = m_renderRect.x + m_paddingLeft + m_borderThickness + 4;
+    // Text is rendered at (contentX - m_scrollOffset)
+    // Click position relative to text start:
+    float localX = point.x - (contentX - m_scrollOffset);
     
-    float avgCharWidth = m_fontSize * 0.6f;
-    int pos = static_cast<int>(localX / avgCharWidth + 0.5f);
+    // Use more accurate width estimates based on Segoe UI metrics
+    // Chinese characters are approximately square (width = fontSize)
+    // English characters are approximately half width (width = 0.5 * fontSize)
+    float x = 0;
+    float enWidth = m_fontSize * 0.5f;  // English/numeric width
+    float cnWidth = m_fontSize * 0.95f; // Chinese character width (slightly less than 1.0)
     
-    return std::max(0, std::min(pos, (int)m_text.length()));
+    for (size_t i = 0; i < m_text.length(); i++) {
+        wchar_t ch = m_text[i];
+        float charWidth;
+        // CJK Unified Ideographs: 0x4E00 - 0x9FFF
+        // CJK Unified Ideographs Extension A: 0x3400 - 0x4DBF
+        // Fullwidth forms: 0xFF00 - 0xFFEF
+        if ((ch >= 0x4E00 && ch <= 0x9FFF) || 
+            (ch >= 0x3400 && ch <= 0x4DBF) ||
+            (ch >= 0xFF00 && ch <= 0xFFEF)) {
+            charWidth = cnWidth;
+        } else {
+            charWidth = enWidth;
+        }
+        
+        // Check if click is in the first half of this character
+        if (localX < x + charWidth / 2) {
+            return static_cast<int>(i);
+        }
+        x += charWidth;
+    }
+    
+    return static_cast<int>(m_text.length());
 }
 
 std::wstring TextBox::GetDisplayText() const {
@@ -1422,7 +1484,7 @@ void ListBoxItem::SetIsHovered(bool hovered) {
     }
 }
 
-Size ListBoxItem::MeasureOverride(const Size& availableSize) {
+Size ListBoxItem::MeasureOverride(const Size& /*availableSize*/) {
     // Estimate text size
     float avgCharWidth = m_fontSize * 0.6f;
     float textWidth = m_content.length() * avgCharWidth;
@@ -1571,11 +1633,14 @@ void ListBox::Render(IRenderContext* context) {
     }
 }
 
-void ListBox::OnMouseDown(const Point& point) {
-    int index = HitTestItem(point);
+void ListBox::OnMouseDown(MouseEventArgs& args) {
+    Focus();
+    Point pt(args.Position.X, args.Position.Y);
+    int index = HitTestItem(pt);
     if (index >= 0) {
         SetSelectedIndex(index);
     }
+    args.Handled = true;
 }
 
 void ListBox::OnKeyDown(KeyEventArgs& args) {

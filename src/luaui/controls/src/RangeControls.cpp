@@ -29,7 +29,7 @@ void Slider::SetMinimum(double minimum) {
         if (m_maximum < m_minimum) {
             m_maximum = m_minimum;
         }
-        SetValue(m_value);  // 重新约束�?
+        SetValue(m_value);  // 重新约束�?
         Invalidate();
     }
 }
@@ -42,7 +42,7 @@ void Slider::SetMaximum(double maximum) {
         if (m_maximum < m_minimum) {
             m_minimum = m_maximum;
         }
-        SetValue(m_value);  // 重新约束�?
+        SetValue(m_value);  // 重新约束�?
         Invalidate();
     }
 }
@@ -50,14 +50,14 @@ void Slider::SetMaximum(double maximum) {
 void Slider::SetValue(double value) {
     if (!std::isfinite(value)) return;
     
-    // 约束值在范围�?
+    // 约束值在范围�?
     value = (std::max)(m_minimum, (std::min)(value, m_maximum));
     
     // 应用步长
     if (m_step > 0 && std::isfinite(m_step)) {
         double steps = std::round((value - m_minimum) / m_step);
         value = m_minimum + steps * m_step;
-        // 再次约束，确保步长计算后仍在范围�?
+        // 再次约束，确保步长计算后仍在范围�?
         value = (std::max)(m_minimum, (std::min)(value, m_maximum));
     }
     
@@ -77,7 +77,7 @@ void Slider::SetOrientation(Orientation orient) {
     }
 }
 
-Size Slider::MeasureOverride(const Size& availableSize) {
+Size Slider::MeasureOverride(const Size& /*availableSize*/) {
     if (m_orientation == Orientation::Horizontal) {
         return Size(200, ThumbSize);
     } else {
@@ -91,8 +91,7 @@ void Slider::Render(IRenderContext* context) {
     
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     
-    // 计算轨道�?thumb 位置
-    float trackLength = isHorizontal ? m_actualWidth : m_actualHeight;
+    // Calculate thumb position
     float thumbPos = CalculateThumbPosition();
     
     // 轨道颜色
@@ -106,7 +105,7 @@ void Slider::Render(IRenderContext* context) {
         Rect trackRect(m_renderRect.x, trackY, m_actualWidth, TrackThickness);
         context->FillRectangle(trackRect, trackBrush.get());
         
-        // 绘制已填充部�?
+        // 绘制已填充部�?
         auto fillBrush = context->CreateSolidColorBrush(fillColor);
         Rect fillRect(m_renderRect.x, trackY, thumbPos, TrackThickness);
         context->FillRectangle(fillRect, fillBrush.get());
@@ -115,7 +114,7 @@ void Slider::Render(IRenderContext* context) {
         Rect trackRect(trackX, m_renderRect.y, TrackThickness, m_actualHeight);
         context->FillRectangle(trackRect, trackBrush.get());
         
-        // 绘制已填充部�?
+        // 绘制已填充部�?
         auto fillBrush = context->CreateSolidColorBrush(fillColor);
         float fillHeight = thumbPos;
         Rect fillRect(trackX, m_renderRect.y + m_actualHeight - fillHeight, 
@@ -166,6 +165,7 @@ double Slider::ValueFromPosition(float position, float trackLength) {
 }
 
 void Slider::HandleMouseDown(const Point& pt) {
+    Focus();
     m_isDragging = true;
     
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
@@ -211,7 +211,7 @@ void ProgressBar::SetValue(double value) {
     }
 }
 
-Size ProgressBar::MeasureOverride(const Size& availableSize) {
+Size ProgressBar::MeasureOverride(const Size& /*availableSize*/) {
     if (m_orientation == Orientation::Horizontal) {
         return Size(200, 20);
     } else {
