@@ -69,19 +69,20 @@ if(TARGET LuaUI_Style)
 endif()
 
 # 12_xml_layout_demo - XML layout system demo with code-behind
-if(TARGET LuaUI_Xml)
+if(TARGET LuaUI_Xml AND TARGET LuaUI_Core)
     add_executable(12_xml_layout_demo WIN32 
         12_xml_layout_demo/main.cpp
         12_xml_layout_demo/MainWindow.cpp
         12_xml_layout_demo/MainWindow.h
     )
-    target_link_libraries(12_xml_layout_demo PRIVATE LuaUI LuaUI_Xml)
+    target_link_libraries(12_xml_layout_demo PRIVATE LuaUI LuaUI_Xml LuaUI_Core)
     target_include_directories(12_xml_layout_demo PRIVATE
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering/include
         ${CMAKE_SOURCE_DIR}/src/luaui/utils/include
         ${CMAKE_SOURCE_DIR}/src/luaui/controls/include
         ${CMAKE_SOURCE_DIR}/src/luaui/controls/layout/include
         ${CMAKE_SOURCE_DIR}/src/luaui/xml/include
+        ${CMAKE_SOURCE_DIR}/src/luaui/core/include
         ${CMAKE_SOURCE_DIR}/third_party/tinyxml2
         12_xml_layout_demo
     )

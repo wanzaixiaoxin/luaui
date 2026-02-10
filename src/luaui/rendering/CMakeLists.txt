@@ -47,6 +47,7 @@ add_library(${MODULE_NAME} STATIC ${SOURCES} ${HEADERS})
 target_include_directories(${MODULE_NAME}
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
 

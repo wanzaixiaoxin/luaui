@@ -165,6 +165,11 @@ double Slider::ValueFromPosition(float position, float trackLength) {
 }
 
 void Slider::HandleMouseDown(const Point& pt) {
+    // 首先检查点击是否在 Slider 的有效范围内
+    if (!m_renderRect.Contains(pt)) {
+        return;  // 点击在 Slider 外部，不处理
+    }
+    
     Focus();
     m_isDragging = true;
     
@@ -186,7 +191,7 @@ void Slider::HandleMouseMove(const Point& pt) {
                                 : m_actualHeight - (pt.y - m_renderRect.y);
         float trackLength = isHorizontal ? m_actualWidth : m_actualHeight;
         
-        // 约束位置在有效范围内
+        // 约束位置在有效范围内（允许拖动时超出边界，但值会被限制）
         pos = (std::max)(0.0f, (std::min)(pos, trackLength));
         
         SetValue(ValueFromPosition(pos, trackLength));

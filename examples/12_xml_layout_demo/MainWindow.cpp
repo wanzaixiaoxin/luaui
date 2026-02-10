@@ -1,139 +1,275 @@
 #include "MainWindow.h"
 #include "Logger.h"
-#include <fstream>
-#include <sstream>
+#include "Event.h"
+#include <functional>
 
 using namespace luaui;
 using namespace luaui::controls;
-using namespace luaui::rendering;
 using namespace luaui::xml;
 using luaui::utils::Logger;
 
 namespace demo {
 
-MainWindow::MainWindow() { InitializeBindings(); }
+MainWindow::MainWindow() = default;
 MainWindow::~MainWindow() = default;
 
-void MainWindow::InitializeBindings() {
-    RegisterControl("newBtn", &m_newBtn); RegisterControl("openBtn", &m_openBtn);
-    RegisterControl("saveBtn", &m_saveBtn); RegisterControl("searchBtn", &m_searchBtn);
-    RegisterControl("submitBtn", &m_submitBtn); RegisterControl("cancelBtn", &m_cancelBtn);
-    RegisterControl("resetBtn", &m_resetBtn); RegisterControl("settingsBtn", &m_settingsBtn);
-    RegisterControl("navHomeBtn", &m_navHomeBtn); RegisterControl("navProfileBtn", &m_navProfileBtn);
-    RegisterControl("usernameBox", &m_usernameBox); RegisterControl("emailBox", &m_emailBox);
-    RegisterControl("bioBox", &m_bioBox); RegisterControl("volumeSlider", &m_volumeSlider);
-    RegisterControl("profileProgress", &m_profileProgress);
-    RegisterControl("statusText", &m_statusText); RegisterControl("progressPercentText", &m_progressPercentText);
-}
-
-bool MainWindow::Initialize(HINSTANCE hInstance, int nCmdShow) {
-    WNDCLASSEXW wcex = {};
-    wcex.cbSize = sizeof(WNDCLASSEXW); wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WindowProc; wcex.hInstance = hInstance;
-    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszClassName = L"LuaUIXmlMainWindow";
-    if (!RegisterClassExW(&wcex)) return false;
-
-    m_hWnd = CreateWindowExW(0, L"LuaUIXmlMainWindow", L"XML Layout Demo",
-        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,
-        CW_USEDEFAULT, CW_USEDEFAULT, 950, 780, nullptr, nullptr, hInstance, this);
-    if (!m_hWnd) return false;
-
-    m_engine = CreateRenderEngine();
-    if (!m_engine || !m_engine->Initialize()) return false;
-
-    RenderTargetDesc desc; desc.type = RenderTargetType::Window;
-    desc.nativeHandle = m_hWnd; desc.width = 950; desc.height = 780;
-    if (!m_engine->CreateRenderTarget(desc)) return false;
-
-    CreateFromXml();
-    ShowWindow(m_hWnd, nCmdShow); UpdateWindow(m_hWnd);
-    return true;
-}
-
-void MainWindow::CreateFromXml() {
+bool MainWindow::LoadLayout(const std::string& xmlPath) {
     try {
-        Logger::Info("Loading XML...");
-        m_xmlLoader = CreateXmlLoader();
-        m_root = m_xmlLoader->Load("layouts/main_window.xml");
-        FindAndBindControls(); WireUpEvents();
-        UpdateStatus(L"Ready"); UpdateProgress(65.0f);
-    } catch (const std::exception& e) {
-        Logger::ErrorF("XML Error: %s", e.what());
-    }
-}
-
-void MainWindow::FindAndBindControls() {
-    if (!m_root) return;
-    size_t found = 0;
-    std::function<void(ControlPtr)> find = [&](ControlPtr c) {
-        if (!c) return;
-        std::string name = c->GetName();
-        if (!name.empty()) {
-            auto it = m_controlBindings.find(name);
-            if (it != m_controlBindings.end()) { it->second.binder(c.get()); found++; }
+        // Create XML loader
+        m_xmlLoader = luaui::xml::CreateXmlLoader();
+        if (!m_xmlLoader) {
+            Logger::Error("Failed to create XML loader");
+            return false;
         }
-        for (size_t i = 0; i < c->GetChildCount(); i++) find(c->GetChild(i));
+        
+        // Load XML layout
+        auto root = m_xmlLoader->Load(xmlPath);
+        if (!root) {
+            Logger::Error("Failed to load layout: " + xmlPath);
+            return false;
+        }
+    
+    // Bind named controls - need to traverse and find named controls
+    std::function<void(const luaui::controls::ControlPtr&)> bindControls = [this, &bindControls](const luaui::controls::ControlPtr& ctrl) {
+        if (!ctrl) return;
+        
+        const std::string& name = ctrl->GetName();
+        if (!name.empty()) {
+            // Bind named control
+            luaui::controls::Control* c = ctrl.get();
+            if (name == "newBtn") m_newBtn = dynamic_cast<Button*>(c);
+            else if (name == "openBtn") m_openBtn = dynamic_cast<Button*>(c);
+            else if (name == "saveBtn") m_saveBtn = dynamic_cast<Button*>(c);
+            else if (name == "searchBtn") m_searchBtn = dynamic_cast<Button*>(c);
+            else if (name == "submitBtn") m_submitBtn = dynamic_cast<Button*>(c);
+            else if (name == "cancelBtn") m_cancelBtn = dynamic_cast<Button*>(c);
+            else if (name == "resetBtn") m_resetBtn = dynamic_cast<Button*>(c);
+            else if (name == "settingsBtn") m_settingsBtn = dynamic_cast<Button*>(c);
+            else if (name == "navHomeBtn") m_navHomeBtn = dynamic_cast<Button*>(c);
+            else if (name == "navProfileBtn") m_navProfileBtn = dynamic_cast<Button*>(c);
+            else if (name == "navMessagesBtn") m_navMessagesBtn = dynamic_cast<Button*>(c);
+            else if (name == "navSettingsBtn") m_navSettingsBtn = dynamic_cast<Button*>(c);
+            else if (name == "usernameBox") m_usernameBox = dynamic_cast<TextBox*>(c);
+            else if (name == "emailBox") m_emailBox = dynamic_cast<TextBox*>(c);
+            else if (name == "bioBox") m_bioBox = dynamic_cast<TextBox*>(c);
+            else if (name == "searchBox") m_searchBox = dynamic_cast<TextBox*>(c);
+            else if (name == "volumeSlider") m_volumeSlider = dynamic_cast<Slider*>(c);
+            else if (name == "profileProgress") m_profileProgress = dynamic_cast<ProgressBar*>(c);
+            else if (name == "statusText") m_statusText = dynamic_cast<TextBlock*>(c);
+            else if (name == "progressPercentText") m_progressPercentText = dynamic_cast<TextBlock*>(c);
+        }
+        
+        // Recurse into children
+        for (size_t i = 0; i < ctrl->GetChildCount(); ++i) {
+            bindControls(ctrl->GetChild(i));
+        }
+        
+        // Check ContentControl content (Border, etc.)
+        if (auto contentCtrl = std::dynamic_pointer_cast<luaui::controls::ContentControl>(ctrl)) {
+            bindControls(contentCtrl->GetContent());
+        }
     };
-    find(m_root);
-    Logger::InfoF("Found %zu controls", found);
-}
-
-void MainWindow::WireUpEvents() {
-    struct Event { Button* btn; std::function<void()> h; const char* n; };
-    Event events[] = {{m_newBtn, [this](){OnNewClick();}, "new"}, {m_openBtn, [this](){OnOpenClick();}, "open"},
-        {m_saveBtn, [this](){OnSaveClick();}, "save"}, {m_searchBtn, [this](){OnSearchClick();}, "search"},
-        {m_submitBtn, [this](){OnSubmitClick();}, "submit"}, {m_cancelBtn, [this](){OnCancelClick();}, "cancel"},
-        {m_resetBtn, [this](){OnResetClick();}, "reset"}, {m_settingsBtn, [this](){OnSettingsClick();}, "settings"},
-        {m_navHomeBtn, [this](){OnNavHomeClick();}, "home"}, {m_navProfileBtn, [this](){OnNavProfileClick();}, "profile"}};
-    for (auto& e : events) if (e.btn) e.btn->AddClickHandler([h=e.h](Control*){h();});
-    if (m_volumeSlider) m_volumeSlider->SetValueChangedHandler([this](Slider*,double v){OnSliderValueChanged((float)v);});
-}
-
-void MainWindow::OnNewClick() { UpdateStatus(L"New"); UpdateProgress(0); }
-void MainWindow::OnOpenClick() { UpdateStatus(L"Open"); UpdateProgress(85); }
-void MainWindow::OnSaveClick() { UpdateStatus(L"Save"); }
-void MainWindow::OnSearchClick() { UpdateStatus(L"Search"); }
-void MainWindow::OnSubmitClick() { UpdateStatus(L"Submit"); UpdateProgress(100); }
-void MainWindow::OnCancelClick() { UpdateStatus(L"Cancel"); }
-void MainWindow::OnResetClick() { UpdateStatus(L"Reset"); UpdateProgress(0); }
-void MainWindow::OnSettingsClick() { UpdateStatus(L"Settings"); }
-void MainWindow::OnNavHomeClick() { UpdateStatus(L"Home"); }
-void MainWindow::OnNavProfileClick() { UpdateStatus(L"Profile"); }
-void MainWindow::OnSliderValueChanged(float v) { UpdateStatus(L"Volume: " + std::to_wstring((int)v) + L"%"); }
-
-void MainWindow::UpdateStatus(const std::wstring& msg) {
-    if (m_statusText) m_statusText->SetText(msg);
-    Logger::InfoF("%ls", msg.c_str());
-}
-void MainWindow::UpdateProgress(float p) {
-    if (m_profileProgress) m_profileProgress->SetValue(p);
-    if (m_progressPercentText) m_progressPercentText->SetText(std::to_wstring((int)p) + L"%");
-}
-
-void MainWindow::Render() {
-    if (!m_engine->BeginFrame()) return;
-    auto* ctx = m_engine->GetContext(); if (!ctx) { m_engine->Present(); return; }
-    ctx->Clear(Color::FromHex(0xF5F5F5));
-    RECT rc; GetClientRect(m_hWnd, &rc);
-    if (m_root) { m_root->Measure(Size((float)rc.right, (float)rc.bottom));
-        m_root->Arrange(Rect(0, 0, (float)rc.right, (float)rc.bottom)); m_root->Render(ctx); }
-    m_engine->Present();
-}
-int MainWindow::Run() { MSG msg; while (GetMessage(&msg, nullptr, 0, 0)) { TranslateMessage(&msg); DispatchMessage(&msg); } return (int)msg.wParam; }
-
-LRESULT CALLBACK MainWindow::WindowProc(HWND hWnd, UINT msg, WPARAM wP, LPARAM lP) {
-    MainWindow* p = (msg == WM_NCCREATE) ? reinterpret_cast<MainWindow*>(((CREATESTRUCT*)lP)->lpCreateParams) : 
-        reinterpret_cast<MainWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-    if (msg == WM_NCCREATE) { SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)p); p->m_hWnd = hWnd; }
-    if (!p) return DefWindowProc(hWnd, msg, wP, lP);
-    switch (msg) {
-        case WM_PAINT: { PAINTSTRUCT ps; BeginPaint(hWnd, &ps); p->Render(); EndPaint(hWnd, &ps); return 0; }
-        case WM_SIZE: if (p->m_engine) p->m_engine->ResizeRenderTarget(LOWORD(lP), HIWORD(lP)); InvalidateRect(hWnd, nullptr, FALSE); return 0;
-        case WM_LBUTTONDOWN: if (p->m_root) { auto hit = p->m_root->HitTestPoint(Point((float)GET_X_LPARAM(lP), (float)GET_Y_LPARAM(lP))); if (hit) { hit->OnMouseDown(MouseEventArgs((float)GET_X_LPARAM(lP), (float)GET_Y_LPARAM(lP))); if (auto* b = dynamic_cast<Button*>(hit.get())) b->RaiseClick(); } } InvalidateRect(hWnd, nullptr, FALSE); return 0;
-        case WM_DESTROY: PostQuitMessage(0); return 0;
+    
+    bindControls(root);
+    
+    // Set as root - OnLoaded() will be called automatically
+    SetRoot(root);
+    
+    return true;
+    } catch (const std::exception& e) {
+        Logger::Error(std::string("LoadLayout exception: ") + e.what());
+        return false;
     }
-    return DefWindowProc(hWnd, msg, wP, lP);
 }
+
+void MainWindow::OnLoaded() {
+    // Bind button click events
+    if (m_newBtn) {
+        m_newBtn->AddClickHandler([this](Control* c) { OnNewClicked(c); });
+    }
+    if (m_openBtn) {
+        m_openBtn->AddClickHandler([this](Control* c) { OnOpenClicked(c); });
+    }
+    if (m_saveBtn) {
+        m_saveBtn->AddClickHandler([this](Control* c) { OnSaveClicked(c); });
+    }
+    if (m_searchBtn) {
+        m_searchBtn->AddClickHandler([this](Control* c) { OnSearchClicked(c); });
+    }
+    if (m_submitBtn) {
+        m_submitBtn->AddClickHandler([this](Control* c) { OnSubmitClicked(c); });
+    }
+    if (m_cancelBtn) {
+        m_cancelBtn->AddClickHandler([this](Control* c) { OnCancelClicked(c); });
+    }
+    if (m_resetBtn) {
+        m_resetBtn->AddClickHandler([this](Control* c) { OnResetClicked(c); });
+    }
+    if (m_settingsBtn) {
+        m_settingsBtn->AddClickHandler([this](Control* c) { OnSettingsClicked(c); });
+    }
+    
+    // Navigation buttons
+    if (m_navHomeBtn) {
+        m_navHomeBtn->AddClickHandler([this](Control* c) { OnNavHomeClicked(c); });
+    }
+    if (m_navProfileBtn) {
+        m_navProfileBtn->AddClickHandler([this](Control* c) { OnNavProfileClicked(c); });
+    }
+    if (m_navMessagesBtn) {
+        m_navMessagesBtn->AddClickHandler([this](Control* c) { OnNavMessagesClicked(c); });
+    }
+    if (m_navSettingsBtn) {
+        m_navSettingsBtn->AddClickHandler([this](Control* c) { OnNavSettingsClicked(c); });
+    }
+    
+    // Slider event
+    if (m_volumeSlider) {
+        m_volumeSlider->SetValueChangedHandler([this](Slider* s, float val) {
+            OnVolumeChanged(s, val);
+        });
+    }
+    
+    // TextBox events
+    if (m_usernameBox) {
+        m_usernameBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
+            OnTextChanged(tb, text);
+        });
+    }
+    if (m_emailBox) {
+        m_emailBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
+            OnTextChanged(tb, text);
+        });
+    }
+    if (m_bioBox) {
+        m_bioBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
+            OnTextChanged(tb, text);
+        });
+    }
+    
+    // Set initial status
+    UpdateStatus(L"Application loaded. Ready.");
+}
+
+void MainWindow::OnClosing() {
+}
+
+// Event handler implementations
+void MainWindow::OnNewClicked(luaui::controls::Control* sender) {
+    Logger::Info("New button clicked");
+    UpdateStatus(L"Creating new document...");
+}
+
+void MainWindow::OnOpenClicked(luaui::controls::Control* sender) {
+    Logger::Info("Open button clicked");
+    UpdateStatus(L"Opening file...");
+}
+
+void MainWindow::OnSaveClicked(luaui::controls::Control* sender) {
+    Logger::Info("Save button clicked");
+    UpdateStatus(L"Saving document...");
+}
+
+void MainWindow::OnSearchClicked(luaui::controls::Control* sender) {
+    Logger::Info("Search button clicked");
+    if (m_searchBox && !m_searchBox->GetText().empty()) {
+        std::wstring msg = L"Searching for: " + m_searchBox->GetText();
+        UpdateStatus(msg);
+    } else {
+        UpdateStatus(L"Please enter search term");
+    }
+}
+
+void MainWindow::OnSubmitClicked(luaui::controls::Control* sender) {
+    Logger::Info("Submit button clicked");
+    
+    std::wstring username = m_usernameBox ? m_usernameBox->GetText() : L"";
+    std::wstring email = m_emailBox ? m_emailBox->GetText() : L"";
+    
+    if (username.empty() || email.empty()) {
+        UpdateStatus(L"Please fill in required fields");
+        return;
+    }
+    
+    UpdateStatus(L"Form submitted successfully!");
+    UpdateProgress();
+}
+
+void MainWindow::OnCancelClicked(luaui::controls::Control* sender) {
+    Logger::Info("Cancel button clicked");
+    UpdateStatus(L"Operation cancelled");
+}
+
+void MainWindow::OnResetClicked(luaui::controls::Control* sender) {
+    Logger::Info("Reset button clicked");
+    
+    if (m_usernameBox) m_usernameBox->SetText(L"");
+    if (m_emailBox) m_emailBox->SetText(L"");
+    if (m_bioBox) m_bioBox->SetText(L"");
+    if (m_searchBox) m_searchBox->SetText(L"");
+    
+    UpdateStatus(L"Form reset");
+}
+
+void MainWindow::OnSettingsClicked(luaui::controls::Control* sender) {
+    Logger::Info("Settings button clicked");
+    UpdateStatus(L"Opening settings...");
+}
+
+void MainWindow::OnNavHomeClicked(luaui::controls::Control* sender) {
+    Logger::Info("Home navigation clicked");
+    UpdateStatus(L"Navigating to Home");
+}
+
+void MainWindow::OnNavProfileClicked(luaui::controls::Control* sender) {
+    Logger::Info("Profile navigation clicked");
+    UpdateStatus(L"Navigating to Profile");
+}
+
+void MainWindow::OnNavMessagesClicked(luaui::controls::Control* sender) {
+    Logger::Info("Messages navigation clicked");
+    UpdateStatus(L"Navigating to Messages");
+}
+
+void MainWindow::OnNavSettingsClicked(luaui::controls::Control* sender) {
+    Logger::Info("Settings navigation clicked");
+    UpdateStatus(L"Navigating to Settings");
+}
+
+void MainWindow::OnVolumeChanged(Slider* sender, float value) {
+    std::wstring msg = L"Volume changed to: " + std::to_wstring((int)(value * 100)) + L"%";
+    UpdateStatus(msg);
+}
+
+void MainWindow::OnTextChanged(TextBox* sender, const std::wstring& text) {
+    // Optional: Update UI based on text changes
+    UpdateProgress();
+}
+
+void MainWindow::UpdateStatus(const std::wstring& message) {
+    if (m_statusText) {
+        m_statusText->SetText(message);
+    }
+    Logger::Info(std::string(message.begin(), message.end()));
+}
+
+void MainWindow::UpdateProgress() {
+    if (!m_profileProgress) return;
+    
+    // Calculate profile completion
+    float progress = 0.0f;
+    int fields = 0;
+    
+    if (m_usernameBox && !m_usernameBox->GetText().empty()) { progress += 0.3f; fields++; }
+    if (m_emailBox && !m_emailBox->GetText().empty()) { progress += 0.3f; fields++; }
+    if (m_bioBox && !m_bioBox->GetText().empty()) { progress += 0.4f; fields++; }
+    
+    m_profileProgress->SetValue(progress);
+    
+    if (m_progressPercentText) {
+        int percent = (int)(progress * 100);
+        m_progressPercentText->SetText(std::to_wstring(percent) + L"%");
+    }
+}
+
 } // namespace demo

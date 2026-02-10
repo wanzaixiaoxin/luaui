@@ -1,82 +1,69 @@
 #pragma once
+
+#include "Window.h"
 #include "Control.h"
 #include "layout.h"
 #include "RangeControls.h"
-#include "CheckableControls.h"
 #include "XmlLayout.h"
-#include "IRenderEngine.h"
-#include <windows.h>
-#include <windowsx.h>
-#include <functional>
 #include <unordered_map>
+#include <functional>
+
+// Forward declaration for xml namespace types
+namespace luaui { namespace xml { class IXmlLoader; using IXmlLoaderPtr = std::shared_ptr<IXmlLoader>; } }
 
 namespace demo {
 
-// 代码后置类 - 处理 XML 布局中的事件
-class MainWindow {
+/**
+ * @brief MainWindow - Simplified window class using LuaUI framework
+ * 
+ * All message handling is done by the framework. Just override OnLoaded()
+ * to setup your UI and bind events.
+ */
+class MainWindow : public luaui::Window {
 public:
     MainWindow();
     ~MainWindow();
+
+    // Initialize with XML layout
+    bool LoadLayout(const std::string& xmlPath);
+
+protected:
+    // Called after window is created and root is set
+    void OnLoaded() override;
     
-    bool Initialize(HINSTANCE hInstance, int nCmdShow);
-    int Run();
+    // Called when window is closing
+    void OnClosing() override;
 
 private:
-    // 控件查找注册表 - 使用模板自动处理类型转换
-    struct ControlBinding {
-        std::function<void(luaui::controls::Control*)> binder;
-    };
-    
-    // 注册控件绑定
+    // Control binding helpers
     template<typename T>
-    void RegisterControl(const std::string& name, T** ptr) {
-        m_controlBindings[name] = {[ptr](luaui::controls::Control* c) {
-            *ptr = dynamic_cast<T*>(c);
-        }};
+    void BindControl(const std::string& name, T** ptr) {
+        *ptr = FindControl<T>(name);
     }
     
-    // 事件处理器注册表
-    struct EventBinding {
-        luaui::controls::Button* button = nullptr;
-        std::function<void()> handler;
-    };
+    // Event handlers
+    void OnNewClicked(luaui::controls::Control* sender);
+    void OnOpenClicked(luaui::controls::Control* sender);
+    void OnSaveClicked(luaui::controls::Control* sender);
+    void OnSearchClicked(luaui::controls::Control* sender);
+    void OnSubmitClicked(luaui::controls::Control* sender);
+    void OnCancelClicked(luaui::controls::Control* sender);
+    void OnResetClicked(luaui::controls::Control* sender);
+    void OnSettingsClicked(luaui::controls::Control* sender);
+    void OnNavHomeClicked(luaui::controls::Control* sender);
+    void OnNavProfileClicked(luaui::controls::Control* sender);
+    void OnNavMessagesClicked(luaui::controls::Control* sender);
+    void OnNavSettingsClicked(luaui::controls::Control* sender);
     
-    // 初始化 - 注册所有控件和事件
-    void InitializeBindings();
-    void CreateFromXml();
-    void FindAndBindControls();
-    void WireUpEvents();
-    void Render();
+    void OnVolumeChanged(luaui::controls::Slider* sender, float value);
+    void OnTextChanged(luaui::controls::TextBox* sender, const std::wstring& text);
     
-    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-    
-    // 事件处理器
-    void OnNewClick();
-    void OnOpenClick();
-    void OnSaveClick();
-    void OnSearchClick();
-    void OnSubmitClick();
-    void OnCancelClick();
-    void OnResetClick();
-    void OnSettingsClick();
-    void OnNavHomeClick();
-    void OnNavProfileClick();
-    void OnSliderValueChanged(float value);
-    
-    // 状态更新
+    // Update UI state
     void UpdateStatus(const std::wstring& message);
-    void UpdateProgress(float percent);
+    void UpdateProgress();
 
-    HWND m_hWnd = nullptr;
-    luaui::rendering::IRenderEnginePtr m_engine;
-    luaui::controls::ControlPtr m_root;
-    luaui::xml::IXmlLoaderPtr m_xmlLoader;
-    
-    // 控件注册表
-    std::unordered_map<std::string, ControlBinding> m_controlBindings;
-    std::vector<EventBinding> m_eventBindings;
-    
-    // 命名控件引用（自动管理）
+private:
+    // Named controls (auto-bound from XML)
     luaui::controls::Button* m_newBtn = nullptr;
     luaui::controls::Button* m_openBtn = nullptr;
     luaui::controls::Button* m_saveBtn = nullptr;
@@ -87,13 +74,21 @@ private:
     luaui::controls::Button* m_settingsBtn = nullptr;
     luaui::controls::Button* m_navHomeBtn = nullptr;
     luaui::controls::Button* m_navProfileBtn = nullptr;
-    luaui::controls::Slider* m_volumeSlider = nullptr;
+    luaui::controls::Button* m_navMessagesBtn = nullptr;
+    luaui::controls::Button* m_navSettingsBtn = nullptr;
+    
     luaui::controls::TextBox* m_usernameBox = nullptr;
     luaui::controls::TextBox* m_emailBox = nullptr;
     luaui::controls::TextBox* m_bioBox = nullptr;
+    luaui::controls::TextBox* m_searchBox = nullptr;
+    
+    luaui::controls::Slider* m_volumeSlider = nullptr;
     luaui::controls::ProgressBar* m_profileProgress = nullptr;
     luaui::controls::TextBlock* m_statusText = nullptr;
     luaui::controls::TextBlock* m_progressPercentText = nullptr;
+    
+    // XML loader
+    luaui::xml::IXmlLoaderPtr m_xmlLoader;
 };
 
 } // namespace demo

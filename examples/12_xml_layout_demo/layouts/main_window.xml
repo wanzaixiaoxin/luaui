@@ -187,6 +187,7 @@
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Username" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
                             <TextBox x:Name="usernameBox"
+                                    Width="200"
                                     Padding="10,8"
                                     Placeholder="Enter username"/>
                         </StackPanel>
@@ -194,6 +195,7 @@
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
                             <TextBlock Text="Email" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
                             <TextBox x:Name="emailBox"
+                                    Width="200"
                                     Padding="10,8"
                                     Placeholder="Enter email"/>
                         </StackPanel>

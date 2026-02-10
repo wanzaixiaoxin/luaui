@@ -61,6 +61,7 @@ add_subdirectory(src/luaui/rendering)
 add_subdirectory(src/luaui/controls/layout)
 add_subdirectory(src/luaui/style)
 add_subdirectory(src/luaui/xml)
+add_subdirectory(src/luaui/core)
 
 # ============================================
 # LuaUI Library
@@ -79,6 +80,10 @@ file(GLOB_RECURSE LUAUI_HEADERS
 # Exclude test files from main library
 list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/tests/.*")
 list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/tests/.*")
+
+# Exclude core module (built as separate LuaUI_Core library)
+list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/core/.*")
+list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/core/.*")
 
 # Exclude placeholder files that conflict with Control.h
 list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*TextInput\\.cpp$")

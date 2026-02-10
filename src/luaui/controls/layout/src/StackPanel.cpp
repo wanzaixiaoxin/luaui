@@ -52,10 +52,11 @@ Size StackPanel::ArrangeOverride(const Size& finalSize) {
         Rect childRect;
         
         if (isVertical) {
-            childRect = Rect(baseX, baseY + position, finalSize.width, childSize.height);
+            // 使用子控件的实际宽度，而不是 StackPanel 的完整宽度
+            childRect = Rect(baseX, baseY + position, childSize.width, childSize.height);
             position += childSize.height + m_spacing;
         } else {
-            childRect = Rect(baseX + position, baseY, childSize.width, finalSize.height);
+            childRect = Rect(baseX + position, baseY, childSize.width, childSize.height);
             position += childSize.width + m_spacing;
         }
         

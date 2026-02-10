@@ -84,18 +84,24 @@ void Panel::Render(IRenderContext* context) {
 }
 
 ControlPtr Panel::HitTestPoint(const Point& point) {
-    // Check children first (reverse order for Z-order: last on top)
+    // 先检查自身是否可见
+    if (!GetIsVisible() || m_opacity <= 0) {
+        return nullptr;
+    }
+    
+    // 先检查自身边界（如果点击不在自身范围内，直接返回）
+    if (!HitTest(point)) {
+        return nullptr;
+    }
+    
+    // 检查子控件（反向顺序，后面的在上层）
     for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
         auto hit = (*it)->HitTestPoint(point);
         if (hit) return hit;
     }
     
-    // Check self
-    if (HitTest(point)) {
-        return shared_from_this();
-    }
-    
-    return nullptr;
+    // 子控件没有命中，返回自身
+    return shared_from_this();
 }
 
 } // namespace controls
