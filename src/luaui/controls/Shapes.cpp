@@ -10,9 +10,7 @@ namespace controls {
 // ============================================================================
 // Rectangle
 // ============================================================================
-Rectangle::Rectangle() {
-    InitializeComponents();
-}
+Rectangle::Rectangle() {}
 
 void Rectangle::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -94,9 +92,7 @@ void Rectangle::OnRender(rendering::IRenderContext* context) {
 // ============================================================================
 // Ellipse
 // ============================================================================
-Ellipse::Ellipse() {
-    InitializeComponents();
-}
+Ellipse::Ellipse() {}
 
 void Ellipse::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -217,6 +213,22 @@ void Line::SetStrokeThickness(float thickness) {
     m_strokeThickness = thickness;
     if (auto* render = GetRender()) {
         render->Invalidate();
+    }
+}
+
+void Line::OnRender(rendering::IRenderContext* context) {
+    if (!context) return;
+    
+    if (m_strokeThickness <= 0 || m_stroke.a <= 0) return;
+    
+    auto strokeBrush = context->CreateSolidColorBrush(m_stroke);
+    if (strokeBrush) {
+        context->DrawLine(
+            rendering::Point(m_x1, m_y1),
+            rendering::Point(m_x2, m_y2),
+            strokeBrush.get(),
+            m_strokeThickness
+        );
     }
 }
 

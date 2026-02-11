@@ -10,9 +10,7 @@ namespace controls {
 // Panel
 // ============================================================================
 
-Panel::Panel() {
-    InitializeComponents();
-}
+Panel::Panel() {}
 
 void Panel::InitializeComponents() {
     

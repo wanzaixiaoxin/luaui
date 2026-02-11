@@ -56,6 +56,9 @@ class Control : public interfaces::IControl,
 public:
     Control();
     virtual ~Control();
+    
+    // 显式初始化方法 - 在派生类构造完成后调用
+    void EnsureInitialized();
 
     // ========== IControl 实现 ==========
     ControlID GetID() const override { return m_id; }
@@ -78,10 +81,13 @@ public:
     components::ComponentHolder& GetComponents() { return m_components; }
     const components::ComponentHolder& GetComponents() const { return m_components; }
     
-    // 便捷访问 - 实现在 cpp 文件中
+    // 便捷访问 - 带缓存优化
     components::LayoutComponent* GetLayout();
     components::RenderComponent* GetRender();
     components::InputComponent* GetInput();
+    
+    // 使组件缓存失效（当组件被添加/移除时调用）
+    void InvalidateComponentCache();
 
     // ========== 线程安全 ==========
     Dispatcher* GetDispatcher() const { return m_dispatcher; }
@@ -127,6 +133,14 @@ protected:
     Dispatcher* m_dispatcher = nullptr;
     
     components::ComponentHolder m_components;
+    
+    // 组件缓存（提升性能，避免每次遍历查找）
+    mutable components::LayoutComponent* m_cachedLayout = nullptr;
+    mutable components::RenderComponent* m_cachedRender = nullptr;
+    mutable components::InputComponent* m_cachedInput = nullptr;
+    
+    // 初始化标志（用于延迟初始化）
+    bool m_initialized = false;
     
     static std::atomic<ControlID> s_idCounter;
 };

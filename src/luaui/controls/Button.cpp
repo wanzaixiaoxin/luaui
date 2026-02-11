@@ -4,9 +4,7 @@
 namespace luaui {
 namespace controls {
 
-Button::Button() {
-    InitializeComponents();
-}
+Button::Button() {}
 
 void Button::InitializeComponents() {
     // 添加布局组件

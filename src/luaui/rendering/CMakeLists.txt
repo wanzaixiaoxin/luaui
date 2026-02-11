@@ -6,6 +6,8 @@ set(MODULE_NAME LuaUI_Rendering)
 
 # Source files
 set(SOURCES
+    ResourceCache.cpp
+    DirtyRegion.cpp
     d2d/D2DRenderContext.cpp
     d2d/D2DRenderEngine.cpp
     d2d/D2DRenderTarget.cpp
@@ -29,6 +31,7 @@ set(HEADERS
     ITextLayout.h
     IAnimation.h
     ResourceCache.h
+    DirtyRegion.h
     IFontManager.h
     d2d/D2DRenderContext.h
     d2d/D2DRenderEngine.h

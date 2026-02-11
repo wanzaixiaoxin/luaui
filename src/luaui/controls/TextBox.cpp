@@ -5,9 +5,7 @@
 namespace luaui {
 namespace controls {
 
-TextBox::TextBox() {
-    InitializeComponents();
-}
+TextBox::TextBox() {}
 
 void TextBox::InitializeComponents() {
     // 添加布局组件
@@ -93,28 +91,57 @@ void TextBox::OnRender(rendering::IRenderContext* context) {
     auto* input = GetInput();
     if (!render || !input) return;
     
-    const auto& rect = render->GetRenderRect();
+    rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
+    
+    // 绘制背景
+    auto bgBrush = context->CreateSolidColorBrush(rendering::Color::White());
+    if (bgBrush) {
+        context->FillRectangle(localRect, bgBrush.get());
+    }
     
     // 绘制边框
     auto borderColor = input->GetIsFocused() ? m_focusedBorderColor : m_borderColor;
-    // context->DrawRectangle(rect, brush.get(), 1.0f);
-    
-    // 绘制背景
-    // context->FillRectangle(rect, bgBrush.get());
-    
-    // 绘制文本
-    std::wstring displayText = GetDisplayText();
-    if (!displayText.empty()) {
-        // context->DrawTextString(displayText, format.get(), point, fgBrush.get());
-    } else if (!m_placeholder.empty() && !input->GetIsFocused()) {
-        // 绘制占位符
-        // context->DrawTextString(m_placeholder, format.get(), point, placeholderBrush.get());
+    auto borderBrush = context->CreateSolidColorBrush(borderColor);
+    if (borderBrush) {
+        context->DrawRectangle(localRect, borderBrush.get(), 1.0f);
     }
     
-    // 绘制光标
+    // 内边距
+    float padding = 4.0f;
+    rendering::Point textPos(padding, (localRect.height - m_fontSize) / 2);
+    
+    // 绘制文本或占位符
+    std::wstring displayText = GetDisplayText();
+    if (!displayText.empty()) {
+        auto fgBrush = context->CreateSolidColorBrush(m_foreground);
+        auto format = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
+        if (fgBrush && format) {
+            context->DrawTextString(displayText, format.get(), textPos, fgBrush.get());
+        }
+    } else if (!m_placeholder.empty() && !input->GetIsFocused()) {
+        // 绘制占位符（灰色）
+        auto placeholderBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0x999999));
+        auto format = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
+        if (placeholderBrush && format) {
+            context->DrawTextString(m_placeholder, format.get(), textPos, placeholderBrush.get());
+        }
+    }
+    
+    // 绘制光标（简化：在文本末尾）
     if (input->GetIsFocused()) {
-        // 计算光标位置并绘制
-        // context->DrawLine(caretTop, caretBottom, caretBrush.get(), 1.0f);
+        auto caretBrush = context->CreateSolidColorBrush(m_foreground);
+        if (caretBrush) {
+            // 简化的光标位置计算
+            float caretX = textPos.x + displayText.length() * m_fontSize * 0.6f;
+            float caretTopY = 4.0f;
+            float caretBottomY = localRect.height - 4.0f;
+            
+            context->DrawLine(
+                rendering::Point(caretX, caretTopY),
+                rendering::Point(caretX, caretBottomY),
+                caretBrush.get(), 1.0f
+            );
+        }
     }
 }
 

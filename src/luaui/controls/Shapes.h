@@ -110,6 +110,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     float m_x1 = 0.0f;

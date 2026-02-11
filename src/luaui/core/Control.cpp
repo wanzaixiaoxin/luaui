@@ -12,7 +12,16 @@ Control::Control()
     : m_id(s_idCounter.fetch_add(1, std::memory_order_relaxed))
     , m_visible(true)
     , m_enabled(true) {
-    InitializeComponents();
+    // 注意：不在构造函数中调用 InitializeComponents
+    // 因为虚函数在构造函数中调用不会调用到派生类版本
+}
+
+void Control::EnsureInitialized() {
+    if (!m_initialized) {
+        // 先设置标志，防止递归调用（InitializeComponents 中可能访问组件）
+        m_initialized = true;
+        InitializeComponents();
+    }
 }
 
 Control::~Control() {
@@ -50,15 +59,32 @@ void Control::VerifyUIThread() const {
 #endif
 }
 
-// 组件便捷访问
+// 组件便捷访问 - 带缓存优化
+void Control::InvalidateComponentCache() {
+    m_cachedLayout = nullptr;
+    m_cachedRender = nullptr;
+    m_cachedInput = nullptr;
+}
+
 components::LayoutComponent* Control::GetLayout() {
-    // 首先尝试获取 LayoutComponent
+    // 确保已初始化（延迟初始化）
+    EnsureInitialized();
+    
+    // 检查缓存
+    if (m_cachedLayout) {
+        return m_cachedLayout;
+    }
+    
+    // 首先尝试精确匹配
     if (auto* layout = m_components.GetComponent<components::LayoutComponent>()) {
+        m_cachedLayout = layout;
         return layout;
     }
+    
     // 如果没有找到，尝试查找派生类
     for (auto& [type, comp] : m_components.GetComponents()) {
         if (auto* layout = dynamic_cast<components::LayoutComponent*>(comp.get())) {
+            m_cachedLayout = layout;
             return layout;
         }
     }
@@ -66,15 +92,24 @@ components::LayoutComponent* Control::GetLayout() {
 }
 
 components::RenderComponent* Control::GetRender() {
-    // 首先尝试获取 RenderComponent
+    // 确保已初始化（延迟初始化）
+    EnsureInitialized();
+    
+    // 检查缓存
+    if (m_cachedRender) {
+        return m_cachedRender;
+    }
+    
+    // 首先尝试精确匹配
     if (auto* render = m_components.GetComponent<components::RenderComponent>()) {
+        m_cachedRender = render;
         return render;
     }
-    // 如果没有找到，尝试获取 PanelRenderComponent（用于 Panel 及其派生类）
-    // 注意：这是一个 workaround，因为 GetComponent 使用 typeid 精确匹配
+    
+    // 如果没有找到，尝试查找派生类
     for (auto& [type, comp] : m_components.GetComponents()) {
-        // 尝试 dynamic_cast 到 RenderComponent
         if (auto* render = dynamic_cast<components::RenderComponent*>(comp.get())) {
+            m_cachedRender = render;
             return render;
         }
     }
@@ -82,7 +117,19 @@ components::RenderComponent* Control::GetRender() {
 }
 
 components::InputComponent* Control::GetInput() {
-    return m_components.GetComponent<components::InputComponent>();
+    // 确保已初始化（延迟初始化）
+    EnsureInitialized();
+    
+    // 检查缓存
+    if (m_cachedInput) {
+        return m_cachedInput;
+    }
+    
+    if (auto* input = m_components.GetComponent<components::InputComponent>()) {
+        m_cachedInput = input;
+        return input;
+    }
+    return nullptr;
 }
 
 // 能力接口转换

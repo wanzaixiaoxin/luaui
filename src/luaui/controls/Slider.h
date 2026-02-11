@@ -44,6 +44,7 @@ public:
 protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     void ClampValue();
@@ -86,6 +87,7 @@ public:
 protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     double m_value = 0.0;

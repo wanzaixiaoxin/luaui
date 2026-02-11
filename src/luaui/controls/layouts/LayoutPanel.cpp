@@ -8,9 +8,7 @@
 namespace luaui {
 namespace controls {
 
-Panel::Panel() {
-    InitializeComponents();
-}
+Panel::Panel() {}
 
 void Panel::InitializeComponents() {
     Control::InitializeComponents();

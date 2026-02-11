@@ -32,6 +32,7 @@ public:
 protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     void Toggle();
@@ -79,6 +80,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     void OnChecked();

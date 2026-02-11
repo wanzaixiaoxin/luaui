@@ -19,8 +19,9 @@ void RenderComponent::Render(rendering::IRenderContext* context) {
     context->PushState();
     
     // 应用位置变换（基于 RenderRect 的位置）
+    // 使用 MultiplyTransform 累加变换，保持父级容器的变换
     rendering::Transform positionTransform = rendering::Transform::Translation(m_renderRect.x, m_renderRect.y);
-    context->SetTransform(positionTransform);
+    context->MultiplyTransform(positionTransform);
     
     // 执行实际渲染（使用相对于当前变换的本地坐标）
     std::cout << "    [Render] About to call RenderOverride..." << std::endl;
