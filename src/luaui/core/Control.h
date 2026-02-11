@@ -46,7 +46,7 @@ namespace components {
  * - RenderComponent: 渲染
  * - InputComponent: 输入处理
  * 
- * 符合 SOLID 原则：
+ * 符合原则：
  * - SRP: 职责分散到各组件
  * - ISP: 通过接口暴露功能
  * - DIP: 依赖组件抽象

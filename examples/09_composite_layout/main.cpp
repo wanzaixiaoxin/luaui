@@ -1,4 +1,4 @@
-// Composite Layout Demo - 使用新SOLID架构
+// Composite Layout Demo - 使用新架构
 // 展示如何将布局容器与普通控件结合使用
 
 #include "Controls.h"

@@ -1,4 +1,4 @@
-// LuaUI Controls Demo - 使用新SOLID架构API
+// LuaUI Controls Demo - 使用新架构API
 // 06_controls_demo的简化版本，展示新控件API
 
 #include "Controls.h"
@@ -83,35 +83,61 @@ private:
         m_rootPanel->SetName("root");
         m_rootPanel->SetOrientation(StackPanel::Orientation::Vertical);
         
-        // 设置根面板背景色（调试用）
+        // 设置根面板背景色
         if (auto* render = m_rootPanel->GetRender()) {
-            render->SetBackground(Color::FromRGBA(240, 240, 240, 255));
+            render->SetBackground(Color::FromRGBA(245, 245, 245, 255));
         }
         
-        // 标题
+        // ========== 标题区域 ==========
         auto title = std::make_shared<TextBlock>();
-        title->SetText(L"🎨 LuaUI Controls Demo - New Architecture");
+        title->SetText(L"LuaUI Controls Demo - New Architecture");
         title->SetFontSize(24);
+        title->SetForeground(Color::FromHex(0x333333));
         m_rootPanel->AddChild(title);
         
-        // 副标题
         auto subtitle = std::make_shared<TextBlock>();
-        subtitle->SetText(L"Using SOLID Architecture with Component Pattern");
+        subtitle->SetText(L"Using Architecture with Component Pattern");
         subtitle->SetFontSize(14);
+        subtitle->SetForeground(Color::FromHex(0x666666));
         m_rootPanel->AddChild(subtitle);
         
-        // 按钮区域
+        // ========== 按钮区域 ==========
+        auto buttonLabel = std::make_shared<TextBlock>();
+        buttonLabel->SetText(L"Buttons:");
+        buttonLabel->SetFontSize(12);
+        buttonLabel->SetForeground(Color::FromHex(0x999999));
+        m_rootPanel->AddChild(buttonLabel);
+        
         auto buttonPanel = std::make_shared<StackPanel>();
         buttonPanel->SetOrientation(StackPanel::Orientation::Horizontal);
         buttonPanel->SetSpacing(10);
         
+        // 默认按钮
         auto btn1 = std::make_shared<Button>();
+        btn1->SetStateColors(
+            Color::FromHex(0x2196F3),  // Normal
+            Color::FromHex(0x1976D2),  // Hover
+            Color::FromHex(0x0D47A1)   // Pressed
+        );
         buttonPanel->AddChild(btn1);
         
+        // 成功按钮
         auto btn2 = std::make_shared<Button>();
+        btn2->SetStateColors(
+            Color::FromHex(0x4CAF50),  // Normal
+            Color::FromHex(0x388E3C),  // Hover
+            Color::FromHex(0x1B5E20)   // Pressed
+        );
         buttonPanel->AddChild(btn2);
         
         m_rootPanel->AddChild(buttonPanel);
+        
+        // ========== 输入区域 ==========
+        auto inputLabel = std::make_shared<TextBlock>();
+        inputLabel->SetText(L"Input Controls:");
+        inputLabel->SetFontSize(12);
+        inputLabel->SetForeground(Color::FromHex(0x999999));
+        m_rootPanel->AddChild(inputLabel);
         
         // 文本框
         auto textBox = std::make_shared<TextBox>();
@@ -120,6 +146,13 @@ private:
         // 复选框
         auto checkBox = std::make_shared<CheckBox>();
         m_rootPanel->AddChild(checkBox);
+        
+        // ========== 滑块和进度条 ==========
+        auto valueLabel = std::make_shared<TextBlock>();
+        valueLabel->SetText(L"Value Controls:");
+        valueLabel->SetFontSize(12);
+        valueLabel->SetForeground(Color::FromHex(0x999999));
+        m_rootPanel->AddChild(valueLabel);
         
         // 滑块
         auto slider = std::make_shared<Slider>();
@@ -131,7 +164,36 @@ private:
         m_progressBar->SetValue(50);
         m_rootPanel->AddChild(m_progressBar);
         
-        // 形状展示
+        // ========== Border 容器示例 ==========
+        auto borderLabel = std::make_shared<TextBlock>();
+        borderLabel->SetText(L"Border Container:");
+        borderLabel->SetFontSize(12);
+        borderLabel->SetForeground(Color::FromHex(0x999999));
+        m_rootPanel->AddChild(borderLabel);
+        
+        auto border = std::make_shared<Border>();
+        border->SetBackground(Color::White());
+        border->SetBorderColor(Color::FromHex(0xCCCCCC));
+        border->SetBorderThickness(2);
+        if (auto* layout = border->GetLayout()) {
+            layout->SetHeight(80);
+        }
+        
+        // 在 Border 内添加内容
+        auto borderContent = std::make_shared<TextBlock>();
+        borderContent->SetText(L"Content inside Border");
+        borderContent->SetFontSize(14);
+        border->AddChild(borderContent);
+        
+        m_rootPanel->AddChild(border);
+        
+        // ========== 形状展示 ==========
+        auto shapesLabel = std::make_shared<TextBlock>();
+        shapesLabel->SetText(L"Shapes:");
+        shapesLabel->SetFontSize(12);
+        shapesLabel->SetForeground(Color::FromHex(0x999999));
+        m_rootPanel->AddChild(shapesLabel);
+        
         auto shapesPanel = std::make_shared<StackPanel>();
         shapesPanel->SetOrientation(StackPanel::Orientation::Horizontal);
         shapesPanel->SetSpacing(10);
@@ -154,14 +216,11 @@ private:
         
         m_rootPanel->AddChild(shapesPanel);
         
-        // 列表框
-        auto listBox = std::make_shared<ListBox>();
-        m_rootPanel->AddChild(listBox);
-        
-        // 状态文本
+        // ========== 状态栏 ==========
         m_statusText = std::make_shared<TextBlock>();
         m_statusText->SetText(L"Ready - New Architecture Demo");
         m_statusText->SetFontSize(12);
+        m_statusText->SetForeground(Color::FromHex(0x666666));
         m_rootPanel->AddChild(m_statusText);
     }
 

@@ -1,4 +1,4 @@
-// XML Layout Demo - 使用新SOLID架构
+// XML Layout Demo - 使用新架构
 // 展示XML布局解析（简化版本）
 
 #include "Controls.h"

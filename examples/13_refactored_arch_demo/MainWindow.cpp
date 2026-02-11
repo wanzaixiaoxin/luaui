@@ -75,7 +75,7 @@ void MainWindow::Run() {
     
     // 模拟文本输入
     std::cout << "Setting text in TextBox..." << std::endl;
-    m_textBox->SetText(L"Hello, SOLID Architecture!");
+    m_textBox->SetText(L"Hello, New Architecture!");
     
     std::cout << "TextBox content: ";
     std::wstring text = m_textBox->GetText();

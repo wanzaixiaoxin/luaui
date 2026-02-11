@@ -1,4 +1,4 @@
-// LuaUI Layout Demo - 使用新SOLID架构
+// LuaUI Layout Demo - 使用新架构
 // 演示集成的Panel布局系统
 
 #include "Controls.h"

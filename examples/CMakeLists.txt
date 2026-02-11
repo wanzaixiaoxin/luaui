@@ -139,7 +139,7 @@ if(TARGET LuaUI)
     )
 endif()
 
-# 13_refactored_arch_demo - SOLID重构后的架构演示
+# 13_refactored_arch_demo - 重构后的架构演示
 if(TARGET LuaUI_Core)
     add_executable(13_refactored_arch_demo 
         13_refactored_arch_demo/main.cpp

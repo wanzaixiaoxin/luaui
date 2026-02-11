@@ -1,4 +1,4 @@
-// Style Demo - 使用新SOLID架构
+// Style Demo - 使用新架构
 // 展示控件样式和主题
 
 #include "Controls.h"

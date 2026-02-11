@@ -37,7 +37,7 @@ std::shared_ptr<Control> MainWindow::CreateContent() {
     
     // Subtitle
     auto subtitle = std::make_shared<TextBlock>();
-    subtitle->SetText(L"Using SOLID Architecture with Component Pattern");
+    subtitle->SetText(L"Using Architecture with Component Pattern");
     subtitle->SetFontSize(14);
     content->AddChild(subtitle);
     

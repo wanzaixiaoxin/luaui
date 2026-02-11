@@ -1,4 +1,4 @@
-// Visual Layout Demo - 使用新SOLID架构
+// Visual Layout Demo - 使用新架构
 // 展示各种布局效果
 
 #include "Controls.h"

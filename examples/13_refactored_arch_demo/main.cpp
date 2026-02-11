@@ -1,10 +1,10 @@
-// 新架构演示 - 展示 SOLID 重构后的控件
+// 新架构演示 - 展示重构后的控件
 #include "MainWindow.h"
 #include <iostream>
 
 int main() {
     std::cout << "========================================" << std::endl;
-    std::cout << "  LuaUI SOLID Refactoring Demo" << std::endl;
+    std::cout << "  LuaUI Refactoring Demo" << std::endl;
     std::cout << "  New Architecture Showcase" << std::endl;
     std::cout << "========================================" << std::endl;
     std::cout << std::endl;

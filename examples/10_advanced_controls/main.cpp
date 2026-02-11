@@ -1,4 +1,4 @@
-// Advanced Controls Demo - 使用新SOLID架构
+// Advanced Controls Demo - 使用新架构
 // 展示高级控件功能
 
 #include "Controls.h"
