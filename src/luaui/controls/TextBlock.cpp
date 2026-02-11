@@ -53,27 +53,36 @@ void TextBlock::SetForeground(const rendering::Color& color) {
 }
 
 void TextBlock::OnRender(rendering::IRenderContext* context) {
-    if (!context || m_text.empty()) return;
+    if (!context) return;
     
     auto* render = GetRender();
     if (!render) return;
     
-    const auto& rect = render->GetRenderRect();
+    // 使用本地坐标（相对于 Render 设置的变换）
+    rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
-    // TODO: 实际文本渲染需要文本布局和画刷
-    // auto format = context->CreateTextFormat(L"Segoe UI", m_fontSize);
-    // auto brush = context->CreateSolidColorBrush(m_foreground);
-    // context->DrawTextString(m_text, format.get(), 
-    //                        rendering::Point(rect.x, rect.y), brush.get());
+    // 渲染背景（调试用）
+    auto bgBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0xE3F2FD));
+    if (bgBrush) {
+        context->FillRectangle(localRect, bgBrush.get());
+    }
     
-    // 简化：渲染背景表示文本区域
-    // context->FillRectangle(rect, brush.get());
+    if (m_text.empty()) return;
+    
+    // 创建文本格式和画刷
+    auto format = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
+    auto brush = context->CreateSolidColorBrush(m_foreground);
+    
+    if (format && brush) {
+        // 使用本地坐标 (0,0) 绘制文本
+        context->DrawTextString(m_text, format.get(), 
+                                rendering::Point(0, 0), brush.get());
+    }
 }
 
 rendering::Size TextBlock::OnMeasure(const rendering::Size& availableSize) {
-    if (m_textDirty) {
-        UpdateTextSize();
-    }
+    // 强制更新文本大小（确保在文本变化后正确测量）
+    UpdateTextSize();
     return m_textSize;
 }
 

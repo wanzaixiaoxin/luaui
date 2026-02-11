@@ -1,5 +1,6 @@
 #include "Components/LayoutComponent.h"
 #include "Control.h"
+#include "Components/RenderComponent.h"
 
 namespace luaui {
 namespace components {
@@ -19,6 +20,13 @@ rendering::Size LayoutComponent::Measure(const LayoutConstraint& constraint) {
 }
 
 void LayoutComponent::Arrange(const rendering::Rect& finalRect) {
+    // 总是更新渲染矩形（位置可能改变）
+    if (m_owner) {
+        if (auto* render = m_owner->GetRender()) {
+            render->GetRenderRect() = finalRect;
+        }
+    }
+    
     if (!IsArrangeValid()) {
         ArrangeOverride(rendering::Size(finalRect.width, finalRect.height));
         m_arrangeValid = true;
@@ -79,6 +87,12 @@ rendering::Size LayoutComponent::MeasureOverride(const rendering::Size& availabl
     if (m_width > 0 && m_height > 0) {
         return rendering::Size(m_width, m_height);
     }
+    
+    // 尝试调用 Control 的 OnMeasure 方法
+    if (m_owner) {
+        return m_owner->OnMeasure(availableSize);
+    }
+    
     return rendering::Size(0, 0);
 }
 

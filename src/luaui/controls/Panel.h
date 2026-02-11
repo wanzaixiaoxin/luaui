@@ -11,6 +11,33 @@
 namespace luaui {
 namespace controls {
 
+// 前向声明
+class Panel;
+
+/**
+ * @brief Panel 专用布局组件 - 会测量和排列子控件
+ */
+class PanelLayoutComponent : public components::LayoutComponent {
+public:
+    explicit PanelLayoutComponent(Control* owner) : LayoutComponent(owner) {}
+    
+protected:
+    rendering::Size MeasureOverride(const rendering::Size& availableSize) override;
+    rendering::Size ArrangeOverride(const rendering::Size& finalSize) override;
+};
+
+/**
+ * @brief Panel 专用渲染组件 - 会渲染子控件
+ */
+class PanelRenderComponent : public components::RenderComponent {
+public:
+    explicit PanelRenderComponent(Control* owner) : RenderComponent(owner) {}
+    
+protected:
+    void RenderOverride(rendering::IRenderContext* context) override;
+    void RenderOverride(rendering::IRenderContext* context, const rendering::Rect& localRect) override;
+};
+
 /**
  * @brief Panel 基类（新架构）
  * 
@@ -36,8 +63,13 @@ public:
 protected:
     void InitializeComponents() override;
     
-    // 渲染子控件
+    // 渲染子控件 - PanelRenderComponent 会调用此方法
     virtual void OnRenderChildren(rendering::IRenderContext* context);
+    
+    // 友元 - 组件需要调用 protected 方法
+    friend class PanelLayoutComponent;
+    friend class PanelRenderComponent;
+    friend class luaui::Control;
     
     // 布局覆盖
     virtual rendering::Size OnMeasureChildren(const rendering::Size& availableSize);

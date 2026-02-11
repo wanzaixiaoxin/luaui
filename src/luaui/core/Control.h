@@ -9,9 +9,26 @@
 #include <atomic>
 #include <string>
 
+// 前向声明
+namespace luaui {
+namespace rendering {
+    class IRenderContext;
+}
+namespace components {
+    class RenderComponent;
+}
+namespace controls {
+    class PanelLayoutComponent;
+}
+}
+
 namespace luaui {
 
 using ControlID = interfaces::ControlID;
+
+namespace rendering {
+    class IRenderContext;
+}
 
 class Dispatcher;
 
@@ -88,6 +105,17 @@ public:
 protected:
     // 子类重写以添加组件
     virtual void InitializeComponents();
+    
+    // 渲染回调 - 子类重写以实现自定义渲染
+    virtual void OnRender(rendering::IRenderContext* context);
+    
+    // 测量回调 - 子类重写以实现自定义测量
+    virtual rendering::Size OnMeasure(const rendering::Size& availableSize);
+    
+    // 友元 - 组件和 Panel 需要调用 protected 方法
+    friend class components::RenderComponent;
+    friend class components::LayoutComponent;
+    friend class controls::PanelLayoutComponent;
 
     // 成员变量
     ControlID m_id;

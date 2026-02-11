@@ -1,5 +1,7 @@
 #include "Panel.h"
 #include "Interfaces/IControl.h"
+#include "IRenderContext.h"
+#include <iostream>
 
 namespace luaui {
 namespace controls {
@@ -9,15 +11,94 @@ namespace controls {
 // ============================================================================
 
 Panel::Panel() {
+    std::cout << "[Panel] Constructor called" << std::endl;
     InitializeComponents();
 }
 
 void Panel::InitializeComponents() {
-    // 添加布局组件
-    GetComponents().AddComponent<components::LayoutComponent>(this);
+    std::cout << "[Panel] InitializeComponents started" << std::endl;
     
-    // 添加渲染组件
-    GetComponents().AddComponent<components::RenderComponent>(this);
+    // 调用基类初始化
+    Control::InitializeComponents();
+    
+    // 添加 Panel 专用布局组件（会测量和排列子控件）
+    // 注意：GetComponent 使用 typeid 查找，所以 AddComponent 和 GetComponent 必须使用相同类型
+    auto* layoutComp = GetComponents().AddComponent<PanelLayoutComponent>(this);
+    std::cout << "[Panel] PanelLayoutComponent added: " << (layoutComp ? "yes" : "no") << std::endl;
+    
+    // 添加 Panel 专用渲染组件（会渲染子控件）
+    auto* renderComp = GetComponents().AddComponent<PanelRenderComponent>(this);
+    std::cout << "[Panel] PanelRenderComponent added: " << (renderComp ? "yes" : "no") << std::endl;
+    
+    std::cout << "[Panel] InitializeComponents completed" << std::endl;
+}
+
+// ============================================================================
+// PanelLayoutComponent
+// ============================================================================
+
+rendering::Size PanelLayoutComponent::MeasureOverride(const rendering::Size& availableSize) {
+    // 如果 Panel 有固定大小，使用固定大小
+    float w = GetWidth();
+    float h = GetHeight();
+    if (w > 0 && h > 0) {
+        return rendering::Size(w, h);
+    }
+    
+    // 否则让 Panel 测量其子控件
+    if (m_owner) {
+        // 尝试转换为 Panel
+        if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
+            auto result = panel->OnMeasureChildren(availableSize);
+            
+            // 如果返回 0，使用可用大小
+            if (result.width == 0 && result.height == 0) {
+                return availableSize;
+            }
+            return result;
+        }
+    }
+    
+    return availableSize; // 默认使用可用大小
+}
+
+rendering::Size PanelLayoutComponent::ArrangeOverride(const rendering::Size& finalSize) {
+    // 让 Panel 排列其子控件
+    if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
+        return panel->OnArrangeChildren(finalSize);
+    }
+    
+    return finalSize;
+}
+
+// ============================================================================
+// PanelRenderComponent
+// ============================================================================
+
+void PanelRenderComponent::RenderOverride(rendering::IRenderContext* context) {
+    // 委托给带 localRect 参数的版本
+    rendering::Rect localRect(0, 0, m_renderRect.width, m_renderRect.height);
+    RenderOverride(context, localRect);
+}
+
+void PanelRenderComponent::RenderOverride(rendering::IRenderContext* context, const rendering::Rect& localRect) {
+    std::cout << "    [PanelRenderComponent] RenderOverride called" << std::endl;
+    
+    if (!m_owner || !context) {
+        std::cout << "    [PanelRenderComponent] Early return (no owner or context)" << std::endl;
+        return;
+    }
+    
+    // 1. 调用基类渲染（背景和 OnRender）- 使用本地坐标
+    RenderComponent::RenderOverride(context, localRect);
+    
+    // 2. 渲染子控件（如果 owner 是 Panel）
+    if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
+        std::cout << "    [PanelRenderComponent] Calling OnRenderChildren..." << std::endl;
+        panel->OnRenderChildren(context);
+    } else {
+        std::cout << "    [PanelRenderComponent] dynamic_cast to Panel failed!" << std::endl;
+    }
 }
 
 std::shared_ptr<interfaces::IControl> Panel::GetChild(size_t index) const {
@@ -94,13 +175,22 @@ void Panel::InsertChild(size_t index, const std::shared_ptr<IControl>& child) {
 }
 
 void Panel::OnRenderChildren(rendering::IRenderContext* context) {
+    std::cout << "  [OnRenderChildren] Panel has " << m_children.size() << " children" << std::endl;
+    
     // 渲染所有子控件
     for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
+        if (!child->GetIsVisible()) {
+            std::cout << "  [OnRenderChildren] Child invisible, skipping" << std::endl;
+            continue;
+        }
         
         // 尝试转换为可渲染接口
-        if (auto* renderable = static_cast<Control*>(child.get())->AsRenderable()) {
+        auto* renderable = static_cast<Control*>(child.get())->AsRenderable();
+        if (renderable) {
+            std::cout << "  [OnRenderChildren] Rendering child..." << std::endl;
             renderable->Render(context);
+        } else {
+            std::cout << "  [OnRenderChildren] Child not renderable" << std::endl;
         }
     }
 }
@@ -117,80 +207,6 @@ rendering::Size Panel::OnArrangeChildren(const rendering::Size& finalSize) {
             layoutable->Arrange(rendering::Rect(0, 0, finalSize.width, finalSize.height));
         }
     }
-    return finalSize;
-}
-
-// ============================================================================
-// StackPanel
-// ============================================================================
-
-StackPanel::StackPanel() {
-    // 初始化由 Panel 完成
-}
-
-rendering::Size StackPanel::OnMeasureChildren(const rendering::Size& availableSize) {
-    float totalWidth = 0;
-    float totalHeight = 0;
-    float maxWidth = 0;
-    float maxHeight = 0;
-    
-    for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
-        
-        auto* layoutable = static_cast<Control*>(child.get())->AsLayoutable();
-        if (!layoutable) continue;
-        
-        interfaces::LayoutConstraint constraint;
-        constraint.available = availableSize;
-        
-        auto childSize = layoutable->Measure(constraint);
-        
-        if (m_orientation == Orientation::Horizontal) {
-            totalWidth += childSize.width;
-            maxHeight = std::max(maxHeight, childSize.height);
-        } else {
-            totalHeight += childSize.height;
-            maxWidth = std::max(maxWidth, childSize.width);
-        }
-    }
-    
-    // 添加间距
-    if (!m_children.empty()) {
-        if (m_orientation == Orientation::Horizontal) {
-            totalWidth += m_spacing * (m_children.size() - 1);
-        } else {
-            totalHeight += m_spacing * (m_children.size() - 1);
-        }
-    }
-    
-    if (m_orientation == Orientation::Horizontal) {
-        return rendering::Size(totalWidth, maxHeight);
-    } else {
-        return rendering::Size(maxWidth, totalHeight);
-    }
-}
-
-rendering::Size StackPanel::OnArrangeChildren(const rendering::Size& finalSize) {
-    float currentX = 0;
-    float currentY = 0;
-    
-    for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
-        
-        auto* layoutable = static_cast<Control*>(child.get())->AsLayoutable();
-        if (!layoutable) continue;
-        
-        auto desiredSize = layoutable->GetDesiredSize();
-        
-        if (m_orientation == Orientation::Horizontal) {
-            layoutable->Arrange(rendering::Rect(currentX, 0, desiredSize.width, finalSize.height));
-            currentX += desiredSize.width + m_spacing;
-        } else {
-            layoutable->Arrange(rendering::Rect(0, currentY, finalSize.width, desiredSize.height));
-            currentY += desiredSize.height + m_spacing;
-        }
-    }
-    
     return finalSize;
 }
 

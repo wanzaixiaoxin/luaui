@@ -52,11 +52,33 @@ void Control::VerifyUIThread() const {
 
 // 组件便捷访问
 components::LayoutComponent* Control::GetLayout() {
-    return m_components.GetComponent<components::LayoutComponent>();
+    // 首先尝试获取 LayoutComponent
+    if (auto* layout = m_components.GetComponent<components::LayoutComponent>()) {
+        return layout;
+    }
+    // 如果没有找到，尝试查找派生类
+    for (auto& [type, comp] : m_components.GetComponents()) {
+        if (auto* layout = dynamic_cast<components::LayoutComponent*>(comp.get())) {
+            return layout;
+        }
+    }
+    return nullptr;
 }
 
 components::RenderComponent* Control::GetRender() {
-    return m_components.GetComponent<components::RenderComponent>();
+    // 首先尝试获取 RenderComponent
+    if (auto* render = m_components.GetComponent<components::RenderComponent>()) {
+        return render;
+    }
+    // 如果没有找到，尝试获取 PanelRenderComponent（用于 Panel 及其派生类）
+    // 注意：这是一个 workaround，因为 GetComponent 使用 typeid 精确匹配
+    for (auto& [type, comp] : m_components.GetComponents()) {
+        // 尝试 dynamic_cast 到 RenderComponent
+        if (auto* render = dynamic_cast<components::RenderComponent*>(comp.get())) {
+            return render;
+        }
+    }
+    return nullptr;
 }
 
 components::InputComponent* Control::GetInput() {
@@ -78,6 +100,17 @@ interfaces::IInputHandler* Control::AsInputHandler() {
 
 interfaces::IFocusable* Control::AsFocusable() {
     return GetInput();
+}
+
+// 默认渲染实现 - 空，子类可重写
+void Control::OnRender(rendering::IRenderContext* /*context*/) {
+    // 默认不执行任何操作，由子类实现自定义渲染
+}
+
+// 默认测量实现 - 返回 0,0，子类可重写
+rendering::Size Control::OnMeasure(const rendering::Size& /*availableSize*/) {
+    // 默认返回 0,0，由子类实现自定义测量
+    return rendering::Size(0, 0);
 }
 
 } // namespace luaui

@@ -40,7 +40,8 @@ endif()
 
 # 06_controls_demo - Control system demo (New Architecture)
 if(TARGET LuaUI)
-    add_executable(06_controls_demo WIN32 06_controls_demo/main.cpp)
+    # 使用控制台子系统以便查看日志
+    add_executable(06_controls_demo 06_controls_demo/main.cpp)
     target_link_libraries(06_controls_demo PRIVATE LuaUI)
     target_include_directories(06_controls_demo PRIVATE
         ${CMAKE_SOURCE_DIR}/src

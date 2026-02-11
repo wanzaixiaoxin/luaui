@@ -73,6 +73,11 @@ public:
         return m_components.find(typeid(T)) != m_components.end();
     }
     
+    // 获取所有组件（用于遍历）
+    const std::unordered_map<std::type_index, std::unique_ptr<Component>>& GetComponents() const {
+        return m_components;
+    }
+    
     void InitializeAll();
     void ShutdownAll();
     

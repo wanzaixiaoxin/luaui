@@ -48,15 +48,13 @@ void Button::OnRender(rendering::IRenderContext* context) {
         bgColor = m_hoverBackground;
     }
     
-    // 渲染背景
-    const auto& rect = render->GetRenderRect();
+    // 渲染背景（使用本地坐标 0,0）
+    rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
-    // TODO: 使用实际画刷
-    // auto brush = context->CreateSolidColorBrush(bgColor);
-    // context->FillRectangle(rect, brush.get());
-    
-    // 简单渲染：绘制矩形边框表示按钮
-    // context->DrawRectangle(rect, brush.get(), 1.0f);
+    auto brush = context->CreateSolidColorBrush(bgColor);
+    if (brush) {
+        context->FillRectangle(localRect, brush.get());
+    }
 }
 
 void Button::OnMouseDown(MouseEventArgs& args) {

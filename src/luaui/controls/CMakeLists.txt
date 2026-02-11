@@ -17,14 +17,12 @@ add_library(LuaUI_Controls STATIC
     Shapes.h
     Slider.cpp
     Slider.h
-    StackPanel.cpp
     TextBlock.cpp
     TextBlock.h
     TextBox.cpp
     TextBox.h
     Controls.h
     # Layouts
-    layouts/LayoutPanel.cpp
     layouts/StackPanel.cpp
     layouts/Grid.cpp
     layouts/Grid.h

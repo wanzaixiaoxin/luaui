@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <functional>
 
 using namespace luaui;
 using namespace luaui::controls;
@@ -81,6 +82,11 @@ private:
         m_rootPanel = std::make_shared<StackPanel>();
         m_rootPanel->SetName("root");
         m_rootPanel->SetOrientation(StackPanel::Orientation::Vertical);
+        
+        // 设置根面板背景色（调试用）
+        if (auto* render = m_rootPanel->GetRender()) {
+            render->SetBackground(Color::FromRGBA(240, 240, 240, 255));
+        }
         
         // 标题
         auto title = std::make_shared<TextBlock>();
@@ -160,37 +166,106 @@ private:
     }
 
     void Render() {
-        if (!m_engine->BeginFrame()) return;
+        static int frameCount = 0;
+        frameCount++;
+        std::cout << "[Frame " << frameCount << "] Render started" << std::endl;
+        
+        if (!m_engine->BeginFrame()) {
+            std::cout << "[Frame " << frameCount << "] BeginFrame failed" << std::endl;
+            return;
+        }
 
         auto* context = m_engine->GetContext();
         if (!context) {
+            std::cout << "[Frame " << frameCount << "] Context is null" << std::endl;
             m_engine->Present();
             return;
         }
 
         // 清空背景
         context->Clear(Color::White());
+        std::cout << "[Frame " << frameCount << "] Background cleared" << std::endl;
 
         // 测量和排列
         RECT rc;
         GetClientRect(m_hWnd, &rc);
         float width = static_cast<float>(rc.right - rc.left);
         float height = static_cast<float>(rc.bottom - rc.top);
+        std::cout << "[Frame " << frameCount << "] Window size: " << width << "x" << height << std::endl;
 
+        // 测量和排列 - 递归处理所有子控件
         interfaces::LayoutConstraint constraint;
         constraint.available = Size(width, height);
         
-        if (auto* layoutable = m_rootPanel->AsLayoutable()) {
-            layoutable->Measure(constraint);
-            layoutable->Arrange(Rect(0, 0, width, height));
-        }
+        // 递归测量和排列函数
+        std::function<void(luaui::Control*, const rendering::Rect&)> measureAndArrange;
+        measureAndArrange = [&](luaui::Control* control, const rendering::Rect& rect) {
+            std::cout << "  [Measure] Control: " << control->GetTypeName() 
+                      << " Rect: " << rect.x << "," << rect.y << " " << rect.width << "x" << rect.height << std::endl;
+            
+            if (auto* layoutable = control->AsLayoutable()) {
+                layoutable->InvalidateMeasure();
+                auto measured = layoutable->Measure(constraint);
+                std::cout << "  [Measure] Measured size: " << measured.width << "x" << measured.height << std::endl;
+                layoutable->Arrange(rect);
+            } else {
+                std::cout << "  [Measure] No layoutable interface" << std::endl;
+            }
+            
+            // 递归处理子控件
+            if (auto* panel = dynamic_cast<luaui::controls::Panel*>(control)) {
+                float pos = 0;
+                bool isHorizontal = false;
+                if (auto* stackPanel = dynamic_cast<luaui::controls::StackPanel*>(panel)) {
+                    isHorizontal = (stackPanel->GetOrientation() == luaui::controls::StackPanel::Orientation::Horizontal);
+                }
+                
+                for (size_t i = 0; i < panel->GetChildCount(); ++i) {
+                    auto* child = static_cast<luaui::Control*>(panel->GetChild(i).get());
+                    if (auto* childLayout = child->AsLayoutable()) {
+                        auto childDesired = childLayout->GetDesiredSize();
+                        
+                        rendering::Rect childRect;
+                        if (isHorizontal) {
+                            childRect = rendering::Rect(rect.x + pos, rect.y, childDesired.width, rect.height);
+                            pos += childDesired.width + 10; // spacing
+                        } else {
+                            childRect = rendering::Rect(rect.x, rect.y + pos, rect.width, childDesired.height);
+                            pos += childDesired.height + 10; // spacing
+                        }
+                        
+                        measureAndArrange(child, childRect);
+                    }
+                }
+            }
+        };
+        
+        // 从根面板开始递归测量和排列
+        std::cout << "[Frame " << frameCount << "] Starting measure and arrange..." << std::endl;
+        auto* rootControl = static_cast<luaui::Control*>(m_rootPanel.get());
+        measureAndArrange(rootControl, Rect(10, 10, width - 20, height - 20));
+        std::cout << "[Frame " << frameCount << "] Measure and arrange completed" << std::endl;
         
         // 渲染
-        if (auto* renderable = m_rootPanel->AsRenderable()) {
+        std::cout << "[Frame " << frameCount << "] Starting render..." << std::endl;
+        // 检查 GetRender
+        auto* renderComp = m_rootPanel->GetRender();
+        std::cout << "[Frame " << frameCount << "] GetRender: " << (renderComp ? "not null" : "null") << std::endl;
+        
+        // 检查 AsRenderable
+        auto* renderable = m_rootPanel->AsRenderable();
+        std::cout << "[Frame " << frameCount << "] AsRenderable: " << (renderable ? "not null" : "null") << std::endl;
+        
+        if (renderable) {
+            std::cout << "[Frame " << frameCount << "] Root panel renderable found" << std::endl;
             renderable->Render(context);
+            std::cout << "[Frame " << frameCount << "] Root panel render completed" << std::endl;
+        } else {
+            std::cout << "[Frame " << frameCount << "] Root panel renderable NOT found" << std::endl;
         }
 
         m_engine->Present();
+        std::cout << "[Frame " << frameCount << "] Present completed" << std::endl;
     }
 
     void Cleanup() {
@@ -247,15 +322,21 @@ private:
     std::shared_ptr<ProgressBar> m_progressBar;
 };
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
+int main() {
+    std::cout << "=== LuaUI Controls Demo Starting ===" << std::endl;
+    
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) {
-        MessageBoxW(nullptr, L"Failed to initialize COM", L"Error", MB_OK);
+        std::cerr << "Failed to initialize COM" << std::endl;
         return 1;
     }
 
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
+    int nCmdShow = SW_SHOWDEFAULT;
+
     ControlsDemoWindow demo;
     if (!demo.Initialize(hInstance, nCmdShow)) {
+        std::cerr << "Failed to initialize demo window" << std::endl;
         CoUninitialize();
         return 1;
     }

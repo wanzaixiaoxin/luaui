@@ -46,13 +46,14 @@ public:
 
     // ========== 扩展点 ==========
     virtual void RenderOverride(rendering::IRenderContext* context);
+    virtual void RenderOverride(rendering::IRenderContext* context, const rendering::Rect& localRect);
     
     // ========== 辅助方法 ==========
     void SetActualSize(float width, float height);
     float GetActualWidth() const { return m_actualWidth; }
     float GetActualHeight() const { return m_actualHeight; }
 
-private:
+protected:
     rendering::Rect m_renderRect;
     rendering::Color m_background = rendering::Color::Transparent();
     float m_opacity = 1.0f;
