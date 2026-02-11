@@ -16,7 +16,7 @@ using namespace luaui::controls;
 using namespace luaui::rendering;
 
 // 简化的彩色矩形控件
-class ColorRect : public ControlBase {
+class ColorRect : public Control {
 public:
     ColorRect(const Color& fillColor, const Color& strokeColor = Color::Transparent())
         : m_fillColor(fillColor), m_strokeColor(strokeColor) {
@@ -32,7 +32,7 @@ public:
 
 protected:
     void InitializeComponents() override {
-        ControlBase::InitializeComponents();
+        Control::InitializeComponents();
         if (auto* layout = GetLayout()) {
             layout->SetWidth(80);
             layout->SetHeight(60);

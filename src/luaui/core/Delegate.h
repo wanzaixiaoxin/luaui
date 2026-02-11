@@ -38,6 +38,14 @@ private:
         
         Entry(void* t, CallbackType cb, ID i, std::shared_ptr<void> s = nullptr) 
             : target(t), callback(cb), id(i), refCount(1), storage(std::move(s)) {}
+        
+        // 允许移动
+        Entry(Entry&&) = default;
+        Entry& operator=(Entry&&) = default;
+        
+        // 允许复制
+        Entry(const Entry&) = default;
+        Entry& operator=(const Entry&) = default;
     };
     
     std::vector<Entry> m_entries;  // 内存连续，缓存友好

@@ -5,7 +5,10 @@
 // 前向声明
 namespace luaui {
 namespace controls {
+class Button;
 class Slider;
+class ProgressBar;
+class TextBlock;
 }
 }
 
@@ -18,14 +21,13 @@ protected:
     void OnLoaded() override;
 
 private:
-    void LoadLayout();
-    std::shared_ptr<luaui::controls::Panel> CreateSidebar();
-    std::shared_ptr<luaui::controls::Panel> CreateMainContent();
-    
+    std::shared_ptr<luaui::Control> CreateContent();
     void BindEvents();
     
-    // 事件处理 - 使用新Delegate API
-    void OnPrimaryClicked(luaui::Control* sender);
-    void OnSecondaryClicked(luaui::Control* sender);
-    void OnSliderValueChanged(luaui::controls::Slider* sender, double value);
+    // Control references for event binding
+    std::shared_ptr<luaui::controls::Button> m_primaryBtn;
+    std::shared_ptr<luaui::controls::Button> m_secondaryBtn;
+    std::shared_ptr<luaui::controls::Slider> m_slider;
+    std::shared_ptr<luaui::controls::ProgressBar> m_progressBar;
+    std::shared_ptr<luaui::controls::TextBlock> m_sliderLabel;
 };

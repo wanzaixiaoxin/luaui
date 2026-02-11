@@ -102,7 +102,7 @@ void CompositeLayoutDemo::CreateUI() {
     buttonPanel->SetSpacing(10);
     
     auto btn1 = std::make_shared<Button>();
-    btn1->Click.Add([this](ControlBase*) {
+    btn1->Click.Add([this](Control*) {
         UpdateStatus(L"Button 1 clicked");
     });
     buttonPanel->AddChild(btn1);
@@ -113,13 +113,13 @@ void CompositeLayoutDemo::CreateUI() {
         Color::FromHex(0x45A049),
         Color::FromHex(0x3D8B40)
     );
-    btn2->Click.Add([this](ControlBase*) {
+    btn2->Click.Add([this](Control*) {
         UpdateStatus(L"Button 2 clicked");
     });
     buttonPanel->AddChild(btn2);
     
     auto btn3 = std::make_shared<Button>();
-    btn3->Click.Add([this](ControlBase*) {
+    btn3->Click.Add([this](Control*) {
         UpdateStatus(L"Button 3 clicked");
     });
     buttonPanel->AddChild(btn3);

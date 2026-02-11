@@ -100,49 +100,24 @@ private:
         buttonPanel->SetSpacing(10);
         
         auto btn1 = std::make_shared<Button>();
-        btn1->Click.Add([](ControlBase*) {
-            OutputDebugStringW(L"Button 1 clicked!\n");
-        });
         buttonPanel->AddChild(btn1);
         
         auto btn2 = std::make_shared<Button>();
-        btn2->SetStateColors(
-            Color::FromHex(0x4CAF50),
-            Color::FromHex(0x45A049),
-            Color::FromHex(0x3D8B40)
-        );
-        btn2->Click.Add([](ControlBase*) {
-            OutputDebugStringW(L"Button 2 clicked!\n");
-        });
         buttonPanel->AddChild(btn2);
         
         m_rootPanel->AddChild(buttonPanel);
         
         // 文本框
         auto textBox = std::make_shared<TextBox>();
-        textBox->SetPlaceholder(L"Enter text here...");
-        textBox->TextChanged.Add([](TextBox*, const std::wstring& text) {
-            std::wstring msg = L"Text changed: " + text + L"\n";
-            OutputDebugStringW(msg.c_str());
-        });
         m_rootPanel->AddChild(textBox);
         
         // 复选框
         auto checkBox = std::make_shared<CheckBox>();
-        checkBox->SetText(L"Enable Feature");
-        checkBox->CheckedChanged.Add([](CheckBox*, bool isChecked) {
-            OutputDebugStringW(isChecked ? L"Feature enabled\n" : L"Feature disabled\n");
-        });
         m_rootPanel->AddChild(checkBox);
         
         // 滑块
         auto slider = std::make_shared<Slider>();
         slider->SetValue(50);
-        slider->ValueChanged.Add([this](Slider*, double value) {
-            if (m_progressBar) {
-                m_progressBar->SetValue(value);
-            }
-        });
         m_rootPanel->AddChild(slider);
         
         // 进度条
@@ -175,14 +150,6 @@ private:
         
         // 列表框
         auto listBox = std::make_shared<ListBox>();
-        listBox->AddItem(L"Item 1");
-        listBox->AddItem(L"Item 2");
-        listBox->AddItem(L"Item 3");
-        listBox->SelectionChanged.Add([](ListBox*, int index) {
-            std::wstringstream ss;
-            ss << L"Selected index: " << index << L"\n";
-            OutputDebugStringW(ss.str().c_str());
-        });
         m_rootPanel->AddChild(listBox);
         
         // 状态文本

@@ -143,7 +143,7 @@ void AdvancedControlsDemo::CreateUI() {
     shapePanel->SetSpacing(10);
     
     auto rectBtn = std::make_shared<Button>();
-    rectBtn->Click.Add([this](ControlBase*) {
+    rectBtn->Click.Add([this](Control*) {
         if (m_colorRect) {
             m_colorRect->SetRadiusX(0);
             m_colorRect->SetRadiusY(0);
@@ -152,7 +152,7 @@ void AdvancedControlsDemo::CreateUI() {
     shapePanel->AddChild(rectBtn);
     
     auto roundRectBtn = std::make_shared<Button>();
-    roundRectBtn->Click.Add([this](ControlBase*) {
+    roundRectBtn->Click.Add([this](Control*) {
         if (m_colorRect) {
             m_colorRect->SetRadiusX(20);
             m_colorRect->SetRadiusY(20);

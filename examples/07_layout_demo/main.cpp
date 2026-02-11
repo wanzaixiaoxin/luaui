@@ -2,6 +2,7 @@
 // 演示集成的Panel布局系统
 
 #include "Controls.h"
+#include "Interfaces/IControl.h"
 #include "Interfaces/ILayoutable.h"
 #include <iostream>
 
@@ -9,7 +10,7 @@ using namespace luaui;
 using namespace luaui::controls;
 
 // 简单的演示控件
-class DemoControl : public ControlBase {
+class DemoControl : public Control {
 public:
     DemoControl(const char* n, float w, float h) : fixedWidth(w), fixedHeight(h) {
         SetName(n);
@@ -27,12 +28,12 @@ private:
     float fixedWidth, fixedHeight;
 };
 
-void PrintControl(const std::shared_ptr<IControl>& ctrl, int indent) {
+void PrintControl(const std::shared_ptr<interfaces::IControl>& ctrl, int indent) {
     std::string prefix(indent * 2, ' ');
     
     rendering::Rect rect;
-    if (auto* layoutable = ctrl->AsLayoutable()) {
-        rect = layoutable->GetRenderRect();
+    if (auto* renderable = ctrl->AsRenderable()) {
+        rect = renderable->GetRenderRect();
     }
     
     std::cout << prefix << ctrl->GetName() 
@@ -41,7 +42,8 @@ void PrintControl(const std::shared_ptr<IControl>& ctrl, int indent) {
               << std::endl;
     
     // 尝试作为Panel打印子控件
-    if (auto panel = std::dynamic_pointer_cast<Panel>(ctrl)) {
+    auto panel = std::dynamic_pointer_cast<Panel>(ctrl);
+    if (panel) {
         for (auto& child : panel->GetChildren()) {
             PrintControl(child, indent + 1);
         }
