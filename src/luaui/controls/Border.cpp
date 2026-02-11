@@ -81,17 +81,24 @@ void Border::OnRender(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
     
-    const auto& rect = render->GetRenderRect();
+    // 使用本地坐标 (0,0,width,height)
+    rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
     // 绘制背景
     auto bg = render->GetBackground();
     if (bg.a > 0) {
-        // context->FillRectangle(rect, bgBrush.get());
+        auto bgBrush = context->CreateSolidColorBrush(bg);
+        if (bgBrush) {
+            context->FillRectangle(localRect, bgBrush.get());
+        }
     }
     
     // 绘制边框
-    if (m_borderThickness > 0) {
-        // context->DrawRectangle(rect, borderBrush.get(), m_borderThickness);
+    if (m_borderThickness > 0 && m_borderColor.a > 0) {
+        auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
+        if (borderBrush) {
+            context->DrawRectangle(localRect, borderBrush.get(), m_borderThickness);
+        }
     }
     
     // 渲染子控件

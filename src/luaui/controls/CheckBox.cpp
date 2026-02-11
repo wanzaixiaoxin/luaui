@@ -9,17 +9,23 @@ namespace controls {
 // ============================================================================
 // CheckBox
 // ============================================================================
-CheckBox::CheckBox() {}
+CheckBox::CheckBox() {
+    InitializeComponents();
+}
 
 void CheckBox::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    layout->SetMinWidth(m_boxSize + m_spacing + 60);
-    layout->SetMinHeight(m_boxSize);
+    layout->SetWidth(m_boxSize + m_spacing + 80);
+    layout->SetHeight(m_boxSize);
     
     GetComponents().AddComponent<components::RenderComponent>(this);
     
     auto* input = GetComponents().AddComponent<components::InputComponent>(this);
     input->SetIsFocusable(true);
+}
+
+rendering::Size CheckBox::OnMeasure(const rendering::Size& availableSize) {
+    return rendering::Size(m_boxSize + m_spacing + 80, m_boxSize);
 }
 
 void CheckBox::SetText(const std::wstring& text) {

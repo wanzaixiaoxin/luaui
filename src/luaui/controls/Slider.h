@@ -43,6 +43,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
 
 private:
     void ClampValue();
@@ -84,6 +85,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
 
 private:
     double m_value = 0.0;

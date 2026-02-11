@@ -35,6 +35,8 @@ public:
 
 protected:
     void InitializeComponents() override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     rendering::Color m_fill = rendering::Color::White();
@@ -66,6 +68,8 @@ public:
 
 protected:
     void InitializeComponents() override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnRender(rendering::IRenderContext* context) override;
 
 private:
     rendering::Color m_fill = rendering::Color::White();

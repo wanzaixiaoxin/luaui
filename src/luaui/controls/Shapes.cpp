@@ -1,6 +1,8 @@
 #include "Shapes.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
+#include "IRenderContext.h"
+#include <iostream>
 
 namespace luaui {
 namespace controls {
@@ -8,11 +10,24 @@ namespace controls {
 // ============================================================================
 // Rectangle
 // ============================================================================
-Rectangle::Rectangle() {}
+Rectangle::Rectangle() {
+    InitializeComponents();
+}
 
 void Rectangle::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
     GetComponents().AddComponent<components::RenderComponent>(this);
+}
+
+rendering::Size Rectangle::OnMeasure(const rendering::Size& availableSize) {
+    if (auto* layout = GetLayout()) {
+        float w = layout->GetWidth();
+        float h = layout->GetHeight();
+        if (w > 0 && h > 0) {
+            return rendering::Size(w, h);
+        }
+    }
+    return rendering::Size(60, 60);
 }
 
 void Rectangle::SetFill(const rendering::Color& color) {
@@ -50,14 +65,81 @@ void Rectangle::SetRadiusY(float radius) {
     }
 }
 
+void Rectangle::OnRender(rendering::IRenderContext* context) {
+    if (!context) return;
+    
+    auto* render = GetRender();
+    if (!render) return;
+    
+    // 使用本地坐标
+    rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
+    
+    // 绘制填充
+    if (m_fill.a > 0) {
+        auto fillBrush = context->CreateSolidColorBrush(m_fill);
+        if (fillBrush) {
+            context->FillRectangle(localRect, fillBrush.get());
+        }
+    }
+    
+    // 绘制描边
+    if (m_strokeThickness > 0 && m_stroke.a > 0) {
+        auto strokeBrush = context->CreateSolidColorBrush(m_stroke);
+        if (strokeBrush) {
+            context->DrawRectangle(localRect, strokeBrush.get(), m_strokeThickness);
+        }
+    }
+}
+
 // ============================================================================
 // Ellipse
 // ============================================================================
-Ellipse::Ellipse() {}
+Ellipse::Ellipse() {
+    InitializeComponents();
+}
 
 void Ellipse::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
     GetComponents().AddComponent<components::RenderComponent>(this);
+}
+
+rendering::Size Ellipse::OnMeasure(const rendering::Size& availableSize) {
+    if (auto* layout = GetLayout()) {
+        float w = layout->GetWidth();
+        float h = layout->GetHeight();
+        if (w > 0 && h > 0) {
+            return rendering::Size(w, h);
+        }
+    }
+    return rendering::Size(60, 60);
+}
+
+void Ellipse::OnRender(rendering::IRenderContext* context) {
+    if (!context) return;
+    
+    auto* render = GetRender();
+    if (!render) return;
+    
+    // 使用本地坐标
+    float w = render->GetRenderRect().width;
+    float h = render->GetRenderRect().height;
+    rendering::Point center(w / 2, h / 2);
+    
+    // 绘制填充
+    if (m_fill.a > 0) {
+        auto fillBrush = context->CreateSolidColorBrush(m_fill);
+        if (fillBrush) {
+            context->FillEllipse(center, w / 2, h / 2, fillBrush.get());
+        }
+    }
+    
+    // 绘制描边
+    if (m_strokeThickness > 0 && m_stroke.a > 0) {
+        auto strokeBrush = context->CreateSolidColorBrush(m_stroke);
+        if (strokeBrush) {
+            context->DrawEllipse(center, w / 2, h / 2, strokeBrush.get(), m_strokeThickness);
+        }
+    }
 }
 
 void Ellipse::SetFill(const rendering::Color& color) {

@@ -197,6 +197,9 @@ private:
         auto shapesPanel = std::make_shared<StackPanel>();
         shapesPanel->SetOrientation(StackPanel::Orientation::Horizontal);
         shapesPanel->SetSpacing(10);
+        if (auto* layout = shapesPanel->GetLayout()) {
+            layout->SetHeight(70);
+        }
         
         auto rect = std::make_shared<luaui::controls::Rectangle>();
         if (auto* layout = rect->GetLayout()) {
@@ -252,57 +255,19 @@ private:
         float height = static_cast<float>(rc.bottom - rc.top);
         std::cout << "[Frame " << frameCount << "] Window size: " << width << "x" << height << std::endl;
 
-        // 测量和排列 - 递归处理所有子控件
+        // 测量和排列 - 使用控件的布局系统
         interfaces::LayoutConstraint constraint;
-        constraint.available = Size(width, height);
+        constraint.available = Size(width - 20, height - 20);
         
-        // 递归测量和排列函数
-        std::function<void(luaui::Control*, const rendering::Rect&)> measureAndArrange;
-        measureAndArrange = [&](luaui::Control* control, const rendering::Rect& rect) {
-            std::cout << "  [Measure] Control: " << control->GetTypeName() 
-                      << " Rect: " << rect.x << "," << rect.y << " " << rect.width << "x" << rect.height << std::endl;
-            
-            if (auto* layoutable = control->AsLayoutable()) {
-                layoutable->InvalidateMeasure();
-                auto measured = layoutable->Measure(constraint);
-                std::cout << "  [Measure] Measured size: " << measured.width << "x" << measured.height << std::endl;
-                layoutable->Arrange(rect);
-            } else {
-                std::cout << "  [Measure] No layoutable interface" << std::endl;
-            }
-            
-            // 递归处理子控件
-            if (auto* panel = dynamic_cast<luaui::controls::Panel*>(control)) {
-                float pos = 0;
-                bool isHorizontal = false;
-                if (auto* stackPanel = dynamic_cast<luaui::controls::StackPanel*>(panel)) {
-                    isHorizontal = (stackPanel->GetOrientation() == luaui::controls::StackPanel::Orientation::Horizontal);
-                }
-                
-                for (size_t i = 0; i < panel->GetChildCount(); ++i) {
-                    auto* child = static_cast<luaui::Control*>(panel->GetChild(i).get());
-                    if (auto* childLayout = child->AsLayoutable()) {
-                        auto childDesired = childLayout->GetDesiredSize();
-                        
-                        rendering::Rect childRect;
-                        if (isHorizontal) {
-                            childRect = rendering::Rect(rect.x + pos, rect.y, childDesired.width, rect.height);
-                            pos += childDesired.width + 10; // spacing
-                        } else {
-                            childRect = rendering::Rect(rect.x, rect.y + pos, rect.width, childDesired.height);
-                            pos += childDesired.height + 10; // spacing
-                        }
-                        
-                        measureAndArrange(child, childRect);
-                    }
-                }
-            }
-        };
-        
-        // 从根面板开始递归测量和排列
         std::cout << "[Frame " << frameCount << "] Starting measure and arrange..." << std::endl;
-        auto* rootControl = static_cast<luaui::Control*>(m_rootPanel.get());
-        measureAndArrange(rootControl, Rect(10, 10, width - 20, height - 20));
+        
+        // 只需要测量和排列根控件，Panel 会自动处理子控件
+        if (auto* layoutable = m_rootPanel->AsLayoutable()) {
+            layoutable->InvalidateMeasure();
+            auto measured = layoutable->Measure(constraint);
+            std::cout << "  [Measure] Root measured: " << measured.width << "x" << measured.height << std::endl;
+            layoutable->Arrange(Rect(10, 10, width - 20, height - 20));
+        }
         std::cout << "[Frame " << frameCount << "] Measure and arrange completed" << std::endl;
         
         // 渲染

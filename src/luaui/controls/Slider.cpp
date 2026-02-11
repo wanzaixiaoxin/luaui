@@ -11,7 +11,9 @@ namespace controls {
 // ============================================================================
 // Slider
 // ============================================================================
-Slider::Slider() {}
+Slider::Slider() {
+    InitializeComponents();
+}
 
 void Slider::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -21,11 +23,19 @@ void Slider::InitializeComponents() {
     input->SetIsFocusable(true);
     
     if (m_isVertical) {
-        layout->SetMinWidth(16);
-        layout->SetMinHeight(100);
+        layout->SetWidth(16);
+        layout->SetHeight(100);
     } else {
-        layout->SetMinWidth(100);
-        layout->SetMinHeight(16);
+        layout->SetWidth(200);
+        layout->SetHeight(16);
+    }
+}
+
+rendering::Size Slider::OnMeasure(const rendering::Size& availableSize) {
+    if (m_isVertical) {
+        return rendering::Size(16, 100);
+    } else {
+        return rendering::Size(200, 16);
     }
 }
 
@@ -88,7 +98,9 @@ void Slider::ClampValue() {
 // ============================================================================
 // ProgressBar
 // ============================================================================
-ProgressBar::ProgressBar() {}
+ProgressBar::ProgressBar() {
+    InitializeComponents();
+}
 
 void ProgressBar::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -96,10 +108,18 @@ void ProgressBar::InitializeComponents() {
     
     if (m_isVertical) {
         layout->SetWidth(8);
-        layout->SetMinHeight(100);
+        layout->SetHeight(100);
     } else {
-        layout->SetMinWidth(100);
+        layout->SetWidth(200);
         layout->SetHeight(8);
+    }
+}
+
+rendering::Size ProgressBar::OnMeasure(const rendering::Size& availableSize) {
+    if (m_isVertical) {
+        return rendering::Size(8, 100);
+    } else {
+        return rendering::Size(200, 8);
     }
 }
 

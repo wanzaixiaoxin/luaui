@@ -11,12 +11,10 @@ namespace controls {
 // ============================================================================
 
 Panel::Panel() {
-    std::cout << "[Panel] Constructor called" << std::endl;
     InitializeComponents();
 }
 
 void Panel::InitializeComponents() {
-    std::cout << "[Panel] InitializeComponents started" << std::endl;
     
     // 调用基类初始化
     Control::InitializeComponents();
@@ -27,10 +25,7 @@ void Panel::InitializeComponents() {
     std::cout << "[Panel] PanelLayoutComponent added: " << (layoutComp ? "yes" : "no") << std::endl;
     
     // 添加 Panel 专用渲染组件（会渲染子控件）
-    auto* renderComp = GetComponents().AddComponent<PanelRenderComponent>(this);
-    std::cout << "[Panel] PanelRenderComponent added: " << (renderComp ? "yes" : "no") << std::endl;
-    
-    std::cout << "[Panel] InitializeComponents completed" << std::endl;
+    GetComponents().AddComponent<PanelRenderComponent>(this);
 }
 
 // ============================================================================
@@ -38,25 +33,35 @@ void Panel::InitializeComponents() {
 // ============================================================================
 
 rendering::Size PanelLayoutComponent::MeasureOverride(const rendering::Size& availableSize) {
-    // 如果 Panel 有固定大小，使用固定大小
-    float w = GetWidth();
-    float h = GetHeight();
-    if (w > 0 && h > 0) {
-        return rendering::Size(w, h);
+    // 先让 Panel 测量其子控件
+    float childWidth = 0, childHeight = 0;
+    if (m_owner) {
+        if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
+            auto childSize = panel->OnMeasureChildren(availableSize);
+            childWidth = childSize.width;
+            childHeight = childSize.height;
+        }
     }
     
-    // 否则让 Panel 测量其子控件
-    if (m_owner) {
-        // 尝试转换为 Panel
-        if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
-            auto result = panel->OnMeasureChildren(availableSize);
-            
-            // 如果返回 0，使用可用大小
-            if (result.width == 0 && result.height == 0) {
-                return availableSize;
-            }
-            return result;
+    // 应用固定大小（如果有）
+    float w = GetWidth();
+    float h = GetHeight();
+    
+    if (w > 0) {
+        // 有固定宽度，使用固定宽度，高度使用子控件高度或固定高度
+        if (h > 0) {
+            return rendering::Size(w, h);
+        } else {
+            return rendering::Size(w, childHeight > 0 ? childHeight : availableSize.height);
         }
+    } else if (h > 0) {
+        // 只有固定高度，使用子控件宽度或可用宽度
+        return rendering::Size(childWidth > 0 ? childWidth : availableSize.width, h);
+    }
+    
+    // 没有固定大小，使用子控件测量结果
+    if (childWidth > 0 || childHeight > 0) {
+        return rendering::Size(childWidth, childHeight);
     }
     
     return availableSize; // 默认使用可用大小
@@ -82,22 +87,14 @@ void PanelRenderComponent::RenderOverride(rendering::IRenderContext* context) {
 }
 
 void PanelRenderComponent::RenderOverride(rendering::IRenderContext* context, const rendering::Rect& localRect) {
-    std::cout << "    [PanelRenderComponent] RenderOverride called" << std::endl;
-    
-    if (!m_owner || !context) {
-        std::cout << "    [PanelRenderComponent] Early return (no owner or context)" << std::endl;
-        return;
-    }
+    if (!m_owner || !context) return;
     
     // 1. 调用基类渲染（背景和 OnRender）- 使用本地坐标
     RenderComponent::RenderOverride(context, localRect);
     
     // 2. 渲染子控件（如果 owner 是 Panel）
     if (auto* panel = dynamic_cast<Panel*>(m_owner)) {
-        std::cout << "    [PanelRenderComponent] Calling OnRenderChildren..." << std::endl;
         panel->OnRenderChildren(context);
-    } else {
-        std::cout << "    [PanelRenderComponent] dynamic_cast to Panel failed!" << std::endl;
     }
 }
 
@@ -175,7 +172,6 @@ void Panel::InsertChild(size_t index, const std::shared_ptr<IControl>& child) {
 }
 
 void Panel::OnRenderChildren(rendering::IRenderContext* context) {
-    std::cout << "  [OnRenderChildren] Panel has " << m_children.size() << " children" << std::endl;
     
     // 渲染所有子控件
     for (auto& child : m_children) {
