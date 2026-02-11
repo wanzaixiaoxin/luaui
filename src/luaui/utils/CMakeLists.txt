@@ -6,11 +6,11 @@ set(MODULE_NAME LuaUI_Utils)
 
 # Source files
 set(SOURCES
-    src/Logger.cpp
+    Logger.cpp
 )
 
 set(HEADERS
-    include/Logger.h
+    Logger.h
 )
 
 add_library(${MODULE_NAME} STATIC ${SOURCES} ${HEADERS})
@@ -19,7 +19,7 @@ set_target_properties(${MODULE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 
 target_include_directories(${MODULE_NAME}
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include>
 )
 

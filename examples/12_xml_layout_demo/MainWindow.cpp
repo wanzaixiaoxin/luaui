@@ -1,275 +1,206 @@
 #include "MainWindow.h"
-#include "Logger.h"
-#include "Event.h"
-#include <functional>
+#include <iostream>
 
 using namespace luaui;
 using namespace luaui::controls;
-using namespace luaui::xml;
-using luaui::utils::Logger;
 
-namespace demo {
+MainWindow::MainWindow() {
+}
 
-MainWindow::MainWindow() = default;
 MainWindow::~MainWindow() = default;
 
-bool MainWindow::LoadLayout(const std::string& xmlPath) {
-    try {
-        // Create XML loader
-        m_xmlLoader = luaui::xml::CreateXmlLoader();
-        if (!m_xmlLoader) {
-            Logger::Error("Failed to create XML loader");
-            return false;
-        }
-        
-        // Load XML layout
-        auto root = m_xmlLoader->Load(xmlPath);
-        if (!root) {
-            Logger::Error("Failed to load layout: " + xmlPath);
-            return false;
-        }
-    
-    // Bind named controls - need to traverse and find named controls
-    std::function<void(const luaui::controls::ControlPtr&)> bindControls = [this, &bindControls](const luaui::controls::ControlPtr& ctrl) {
-        if (!ctrl) return;
-        
-        const std::string& name = ctrl->GetName();
-        if (!name.empty()) {
-            // Bind named control
-            luaui::controls::Control* c = ctrl.get();
-            if (name == "newBtn") m_newBtn = dynamic_cast<Button*>(c);
-            else if (name == "openBtn") m_openBtn = dynamic_cast<Button*>(c);
-            else if (name == "saveBtn") m_saveBtn = dynamic_cast<Button*>(c);
-            else if (name == "searchBtn") m_searchBtn = dynamic_cast<Button*>(c);
-            else if (name == "submitBtn") m_submitBtn = dynamic_cast<Button*>(c);
-            else if (name == "cancelBtn") m_cancelBtn = dynamic_cast<Button*>(c);
-            else if (name == "resetBtn") m_resetBtn = dynamic_cast<Button*>(c);
-            else if (name == "settingsBtn") m_settingsBtn = dynamic_cast<Button*>(c);
-            else if (name == "navHomeBtn") m_navHomeBtn = dynamic_cast<Button*>(c);
-            else if (name == "navProfileBtn") m_navProfileBtn = dynamic_cast<Button*>(c);
-            else if (name == "navMessagesBtn") m_navMessagesBtn = dynamic_cast<Button*>(c);
-            else if (name == "navSettingsBtn") m_navSettingsBtn = dynamic_cast<Button*>(c);
-            else if (name == "usernameBox") m_usernameBox = dynamic_cast<TextBox*>(c);
-            else if (name == "emailBox") m_emailBox = dynamic_cast<TextBox*>(c);
-            else if (name == "bioBox") m_bioBox = dynamic_cast<TextBox*>(c);
-            else if (name == "searchBox") m_searchBox = dynamic_cast<TextBox*>(c);
-            else if (name == "volumeSlider") m_volumeSlider = dynamic_cast<Slider*>(c);
-            else if (name == "profileProgress") m_profileProgress = dynamic_cast<ProgressBar*>(c);
-            else if (name == "statusText") m_statusText = dynamic_cast<TextBlock*>(c);
-            else if (name == "progressPercentText") m_progressPercentText = dynamic_cast<TextBlock*>(c);
-        }
-        
-        // Recurse into children
-        for (size_t i = 0; i < ctrl->GetChildCount(); ++i) {
-            bindControls(ctrl->GetChild(i));
-        }
-        
-        // Check ContentControl content (Border, etc.)
-        if (auto contentCtrl = std::dynamic_pointer_cast<luaui::controls::ContentControl>(ctrl)) {
-            bindControls(contentCtrl->GetContent());
-        }
-    };
-    
-    bindControls(root);
-    
-    // Set as root - OnLoaded() will be called automatically
-    SetRoot(root);
-    
-    return true;
-    } catch (const std::exception& e) {
-        Logger::Error(std::string("LoadLayout exception: ") + e.what());
-        return false;
-    }
-}
-
 void MainWindow::OnLoaded() {
-    // Bind button click events
-    if (m_newBtn) {
-        m_newBtn->AddClickHandler([this](Control* c) { OnNewClicked(c); });
-    }
-    if (m_openBtn) {
-        m_openBtn->AddClickHandler([this](Control* c) { OnOpenClicked(c); });
-    }
-    if (m_saveBtn) {
-        m_saveBtn->AddClickHandler([this](Control* c) { OnSaveClicked(c); });
-    }
-    if (m_searchBtn) {
-        m_searchBtn->AddClickHandler([this](Control* c) { OnSearchClicked(c); });
-    }
-    if (m_submitBtn) {
-        m_submitBtn->AddClickHandler([this](Control* c) { OnSubmitClicked(c); });
-    }
-    if (m_cancelBtn) {
-        m_cancelBtn->AddClickHandler([this](Control* c) { OnCancelClicked(c); });
-    }
-    if (m_resetBtn) {
-        m_resetBtn->AddClickHandler([this](Control* c) { OnResetClicked(c); });
-    }
-    if (m_settingsBtn) {
-        m_settingsBtn->AddClickHandler([this](Control* c) { OnSettingsClicked(c); });
+    // 加载布局
+    LoadLayout();
+    
+    // 绑定事件 - 使用新的Delegate API
+    BindEvents();
+}
+
+void MainWindow::LoadLayout() {
+    // 创建主布局
+    auto root = std::make_shared<StackPanel>();
+    root->SetOrientation(StackPanel::Orientation::Vertical);
+    
+    // 1. 标题栏
+    auto titleBar = std::make_shared<StackPanel>();
+    titleBar->SetOrientation(StackPanel::Orientation::Horizontal);
+    titleBar->SetPadding(20, 10, 20, 10);
+    
+    auto titleLabel = std::make_shared<TextBlock>();
+    titleLabel->SetText(L"LuaUI Demo");
+    titleBar->AddChild(titleLabel);
+    
+    root->AddChild(titleBar);
+    
+    // 2. 主内容区
+    auto contentArea = std::make_shared<StackPanel>();
+    contentArea->SetOrientation(StackPanel::Orientation::Horizontal);
+    
+    // 2.1 侧边栏
+    auto sidebar = CreateSidebar();
+    sidebar->SetName("sidebar");
+    contentArea->AddChild(sidebar);
+    
+    // 2.2 内容区
+    auto mainContent = CreateMainContent();
+    mainContent->SetName("mainContent");
+    contentArea->AddChild(mainContent);
+    
+    root->AddChild(contentArea);
+    
+    SetRoot(root);
+}
+
+std::shared_ptr<Panel> MainWindow::CreateSidebar() {
+    auto sidebar = std::make_shared<StackPanel>();
+    sidebar->SetOrientation(StackPanel::Orientation::Vertical);
+    sidebar->SetWidth(200);
+    sidebar->SetPadding(10, 10, 10, 10);
+    
+    // 导航按钮
+    const char* navItems[] = {"Controls", "Layout", "Styling", "Animation"};
+    for (const auto& item : navItems) {
+        auto btn = std::make_shared<Button>();
+        btn->SetName(item);
+        btn->SetHeight(40);
+        btn->SetMargin(0, 0, 0, 5);
+        sidebar->AddChild(btn);
     }
     
-    // Navigation buttons
-    if (m_navHomeBtn) {
-        m_navHomeBtn->AddClickHandler([this](Control* c) { OnNavHomeClicked(c); });
-    }
-    if (m_navProfileBtn) {
-        m_navProfileBtn->AddClickHandler([this](Control* c) { OnNavProfileClicked(c); });
-    }
-    if (m_navMessagesBtn) {
-        m_navMessagesBtn->AddClickHandler([this](Control* c) { OnNavMessagesClicked(c); });
-    }
-    if (m_navSettingsBtn) {
-        m_navSettingsBtn->AddClickHandler([this](Control* c) { OnNavSettingsClicked(c); });
+    return sidebar;
+}
+
+std::shared_ptr<Panel> MainWindow::CreateMainContent() {
+    auto content = std::make_shared<StackPanel>();
+    content->SetOrientation(StackPanel::Orientation::Vertical);
+    content->SetPadding(20, 20, 20, 20);
+    
+    // 控件展示区
+    auto section = std::make_shared<StackPanel>();
+    section->SetOrientation(StackPanel::Orientation::Vertical);
+    section->SetPadding(20, 20, 20, 20);
+    section->SetMargin(0, 0, 0, 20);
+    
+    // 标题
+    auto sectionTitle = std::make_shared<TextBlock>();
+    sectionTitle->SetText(L"Interactive Controls");
+    sectionTitle->SetMargin(0, 0, 0, 15);
+    section->AddChild(sectionTitle);
+    
+    // 按钮示例
+    auto btnRow = std::make_shared<StackPanel>();
+    btnRow->SetOrientation(StackPanel::Orientation::Horizontal);
+    
+    auto primaryBtn = std::make_shared<Button>();
+    primaryBtn->SetName("primaryBtn");
+    primaryBtn->SetWidth(120);
+    primaryBtn->SetHeight(36);
+    btnRow->AddChild(primaryBtn);
+    
+    auto secondaryBtn = std::make_shared<Button>();
+    secondaryBtn->SetName("secondaryBtn");
+    secondaryBtn->SetWidth(100);
+    secondaryBtn->SetHeight(36);
+    secondaryBtn->SetMargin(10, 0, 0, 0);
+    btnRow->AddChild(secondaryBtn);
+    
+    section->AddChild(btnRow);
+    
+    // Slider 示例
+    auto sliderRow = std::make_shared<StackPanel>();
+    sliderRow->SetOrientation(StackPanel::Orientation::Horizontal);
+    sliderRow->SetMargin(0, 15, 0, 0);
+    
+    auto sliderLabel = std::make_shared<TextBlock>();
+    sliderLabel->SetText(L"Value: 50");
+    sliderLabel->SetWidth(80);
+    sliderLabel->SetName("sliderLabel");
+    sliderRow->AddChild(sliderLabel);
+    
+    auto slider = std::make_shared<Slider>();
+    slider->SetWidth(200);
+    slider->SetHeight(20);
+    slider->SetValue(50);
+    slider->SetName("mainSlider");
+    sliderRow->AddChild(slider);
+    
+    section->AddChild(sliderRow);
+    
+    // 进度条示例
+    auto progressRow = std::make_shared<StackPanel>();
+    progressRow->SetOrientation(StackPanel::Orientation::Horizontal);
+    progressRow->SetMargin(0, 15, 0, 0);
+    
+    auto progressLabel = std::make_shared<TextBlock>();
+    progressLabel->SetText(L"Progress:");
+    progressLabel->SetWidth(80);
+    progressRow->AddChild(progressLabel);
+    
+    auto progressBar = std::make_shared<ProgressBar>();
+    progressBar->SetWidth(200);
+    progressBar->SetHeight(8);
+    progressBar->SetValue(65);
+    progressBar->SetName("progressBar");
+    progressRow->AddChild(progressBar);
+    
+    section->AddChild(progressRow);
+    
+    content->AddChild(section);
+    
+    return content;
+}
+
+void MainWindow::BindEvents() {
+    // 使用新的Delegate API绑定事件
+    
+    auto primaryBtn = FindControl<Button>("primaryBtn");
+    if (primaryBtn) {
+        primaryBtn->Click.Add(this, &MainWindow::OnPrimaryClicked);
     }
     
-    // Slider event
-    if (m_volumeSlider) {
-        m_volumeSlider->SetValueChangedHandler([this](Slider* s, float val) {
-            OnVolumeChanged(s, val);
+    auto secondaryBtn = FindControl<Button>("secondaryBtn");
+    if (secondaryBtn) {
+        secondaryBtn->Click.Add(this, &MainWindow::OnSecondaryClicked);
+    }
+    
+    // Lambda示例 - Delegate支持lambda
+    auto navBtn = FindControl<Button>("Controls");
+    if (navBtn) {
+        navBtn->Click.Add([this](Control*) {
+            std::cout << "Navigation clicked (lambda)" << std::endl;
         });
     }
     
-    // TextBox events
-    if (m_usernameBox) {
-        m_usernameBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
-            OnTextChanged(tb, text);
-        });
-    }
-    if (m_emailBox) {
-        m_emailBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
-            OnTextChanged(tb, text);
-        });
-    }
-    if (m_bioBox) {
-        m_bioBox->SetTextChangedHandler([this](TextBox* tb, const std::wstring& text) {
-            OnTextChanged(tb, text);
-        });
-    }
-    
-    // Set initial status
-    UpdateStatus(L"Application loaded. Ready.");
-}
-
-void MainWindow::OnClosing() {
-}
-
-// Event handler implementations
-void MainWindow::OnNewClicked(luaui::controls::Control* sender) {
-    Logger::Info("New button clicked");
-    UpdateStatus(L"Creating new document...");
-}
-
-void MainWindow::OnOpenClicked(luaui::controls::Control* sender) {
-    Logger::Info("Open button clicked");
-    UpdateStatus(L"Opening file...");
-}
-
-void MainWindow::OnSaveClicked(luaui::controls::Control* sender) {
-    Logger::Info("Save button clicked");
-    UpdateStatus(L"Saving document...");
-}
-
-void MainWindow::OnSearchClicked(luaui::controls::Control* sender) {
-    Logger::Info("Search button clicked");
-    if (m_searchBox && !m_searchBox->GetText().empty()) {
-        std::wstring msg = L"Searching for: " + m_searchBox->GetText();
-        UpdateStatus(msg);
-    } else {
-        UpdateStatus(L"Please enter search term");
+    // 查找Slider并绑定事件
+    auto slider = FindControl<Slider>("mainSlider");
+    if (slider) {
+        slider->ValueChanged.Add(this, &MainWindow::OnSliderValueChanged);
     }
 }
 
-void MainWindow::OnSubmitClicked(luaui::controls::Control* sender) {
-    Logger::Info("Submit button clicked");
+// 事件处理函数
+void MainWindow::OnPrimaryClicked(Control* sender) {
+    std::cout << "Primary button clicked!" << std::endl;
     
-    std::wstring username = m_usernameBox ? m_usernameBox->GetText() : L"";
-    std::wstring email = m_emailBox ? m_emailBox->GetText() : L"";
-    
-    if (username.empty() || email.empty()) {
-        UpdateStatus(L"Please fill in required fields");
-        return;
-    }
-    
-    UpdateStatus(L"Form submitted successfully!");
-    UpdateProgress();
-}
-
-void MainWindow::OnCancelClicked(luaui::controls::Control* sender) {
-    Logger::Info("Cancel button clicked");
-    UpdateStatus(L"Operation cancelled");
-}
-
-void MainWindow::OnResetClicked(luaui::controls::Control* sender) {
-    Logger::Info("Reset button clicked");
-    
-    if (m_usernameBox) m_usernameBox->SetText(L"");
-    if (m_emailBox) m_emailBox->SetText(L"");
-    if (m_bioBox) m_bioBox->SetText(L"");
-    if (m_searchBox) m_searchBox->SetText(L"");
-    
-    UpdateStatus(L"Form reset");
-}
-
-void MainWindow::OnSettingsClicked(luaui::controls::Control* sender) {
-    Logger::Info("Settings button clicked");
-    UpdateStatus(L"Opening settings...");
-}
-
-void MainWindow::OnNavHomeClicked(luaui::controls::Control* sender) {
-    Logger::Info("Home navigation clicked");
-    UpdateStatus(L"Navigating to Home");
-}
-
-void MainWindow::OnNavProfileClicked(luaui::controls::Control* sender) {
-    Logger::Info("Profile navigation clicked");
-    UpdateStatus(L"Navigating to Profile");
-}
-
-void MainWindow::OnNavMessagesClicked(luaui::controls::Control* sender) {
-    Logger::Info("Messages navigation clicked");
-    UpdateStatus(L"Navigating to Messages");
-}
-
-void MainWindow::OnNavSettingsClicked(luaui::controls::Control* sender) {
-    Logger::Info("Settings navigation clicked");
-    UpdateStatus(L"Navigating to Settings");
-}
-
-void MainWindow::OnVolumeChanged(Slider* sender, float value) {
-    std::wstring msg = L"Volume changed to: " + std::to_wstring((int)(value * 100)) + L"%";
-    UpdateStatus(msg);
-}
-
-void MainWindow::OnTextChanged(TextBox* sender, const std::wstring& text) {
-    // Optional: Update UI based on text changes
-    UpdateProgress();
-}
-
-void MainWindow::UpdateStatus(const std::wstring& message) {
-    if (m_statusText) {
-        m_statusText->SetText(message);
-    }
-    Logger::Info(std::string(message.begin(), message.end()));
-}
-
-void MainWindow::UpdateProgress() {
-    if (!m_profileProgress) return;
-    
-    // Calculate profile completion
-    float progress = 0.0f;
-    int fields = 0;
-    
-    if (m_usernameBox && !m_usernameBox->GetText().empty()) { progress += 0.3f; fields++; }
-    if (m_emailBox && !m_emailBox->GetText().empty()) { progress += 0.3f; fields++; }
-    if (m_bioBox && !m_bioBox->GetText().empty()) { progress += 0.4f; fields++; }
-    
-    m_profileProgress->SetValue(progress);
-    
-    if (m_progressPercentText) {
-        int percent = (int)(progress * 100);
-        m_progressPercentText->SetText(std::to_wstring(percent) + L"%");
+    // 更新进度条作为反馈
+    auto progressBar = FindControl<ProgressBar>("progressBar");
+    if (progressBar) {
+        double current = progressBar->GetValue();
+        progressBar->SetValue(std::min(100.0, current + 10.0));
     }
 }
 
-} // namespace demo
+void MainWindow::OnSecondaryClicked(Control* sender) {
+    std::cout << "Secondary button clicked!" << std::endl;
+}
+
+void MainWindow::OnSliderValueChanged(Slider* sender, double value) {
+    std::cout << "Slider value changed: " << value << std::endl;
+    
+    // 更新标签显示
+    auto label = FindControl<TextBlock>("sliderLabel");
+    if (label) {
+        label->SetText(L"Value: " + std::to_wstring((int)value));
+    }
+}

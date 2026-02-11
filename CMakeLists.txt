@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-# Windows 头文件优化 - 必须在任何项目定义之前
+# Windows header optimization
 if(WIN32)
     add_compile_options(/DNOMINMAX /DWIN32_LEAN_AND_MEAN)
 endif()
@@ -24,6 +24,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # Options
 option(LUAUI_BUILD_EXAMPLES "Build example applications" ON)
 option(LUAUI_BUILD_TESTS "Build tests" OFF)
+option(LUAUI_BUILD_OLD_EXAMPLES "Build old examples (06-12, not yet migrated)" OFF)
 
 # Platform check
 if(NOT WIN32)
@@ -33,24 +34,19 @@ endif()
 # Compiler options for MSVC
 if(MSVC)
     add_compile_options(/W4 /MP)
-    add_compile_options(/wd4819)  # Code page warning
+    add_compile_options(/wd4819)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(UNICODE _UNICODE)
-
-    # Static runtime linking
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 # ============================================
 # Third-party libraries
 # ============================================
-
-# Lua (header-only interface)
 set(LUA_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/third_party/lua)
 add_library(lua INTERFACE)
 target_include_directories(lua INTERFACE ${LUA_INCLUDE_DIR})
 
-# TinyXML2
 add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 
 # ============================================
@@ -58,72 +54,45 @@ add_subdirectory(third_party/tinyxml2 EXCLUDE_FROM_ALL)
 # ============================================
 add_subdirectory(src/luaui/utils)
 add_subdirectory(src/luaui/rendering)
-add_subdirectory(src/luaui/controls/layout)
+add_subdirectory(src/luaui/core)
+add_subdirectory(src/luaui/controls)
+add_subdirectory(src/luaui/controls/layouts)  # Interface library
 add_subdirectory(src/luaui/style)
 add_subdirectory(src/luaui/xml)
-add_subdirectory(src/luaui/core)
 
 # ============================================
-# LuaUI Library
+# LuaUI Main Library (Interface)
 # ============================================
+add_library(LuaUI INTERFACE)
 
-# Collect source files when they exist
-file(GLOB_RECURSE LUAUI_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/*.cpp
+target_include_directories(LuaUI
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/style>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/xml>
+
+        $<INSTALL_INTERFACE:include>
 )
 
-file(GLOB_RECURSE LUAUI_HEADERS
-    ${CMAKE_SOURCE_DIR}/src/*.h
-    ${CMAKE_SOURCE_DIR}/src/*.hpp
+target_link_libraries(LuaUI
+    INTERFACE
+        lua
+        tinyxml2
+        LuaUI_Core
+        LuaUI_Controls
+        LuaUI_Style
+        LuaUI_Xml
+
+        d2d1
+        dwrite
+        windowscodecs
+        winmm
+        ws2_32
 )
-
-# Exclude test files from main library
-list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/tests/.*")
-list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/tests/.*")
-
-# Exclude core module (built as separate LuaUI_Core library)
-list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*/core/.*")
-list(FILTER LUAUI_HEADERS EXCLUDE REGEX ".*/core/.*")
-
-# Exclude placeholder files that conflict with Control.h
-list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*TextInput\\.cpp$")
-list(FILTER LUAUI_SOURCES EXCLUDE REGEX ".*SelectorControls\\.cpp$")
-
-if(LUAUI_SOURCES)
-    add_library(LuaUI STATIC ${LUAUI_SOURCES} ${LUAUI_HEADERS})
-
-    target_include_directories(LuaUI
-        PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/rendering/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/core/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/controls/layout/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/style/include>
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/xml/include>
-            $<INSTALL_INTERFACE:include>
-    )
-
-    target_link_libraries(LuaUI
-        PUBLIC
-            lua
-            tinyxml2
-            LuaUI_Xml
-            d2d1
-            dwrite
-            windowscodecs
-            winmm
-            ws2_32
-    )
-
-    target_compile_definitions(LuaUI PRIVATE LUAUI_BUILD)
-
-    message(STATUS "LuaUI library created with ${LUAUI_SOURCES}")
-else()
-    message(STATUS "No source files found in src/, skipping LuaUI library creation")
-    add_library(LuaUI INTERFACE)
-endif()
 
 # ============================================
 # Examples
@@ -150,6 +119,5 @@ message(STATUS "Build Type:     ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ Standard:   ${CMAKE_CXX_STANDARD}")
 message(STATUS "Build Examples: ${LUAUI_BUILD_EXAMPLES}")
 message(STATUS "Build Tests:    ${LUAUI_BUILD_TESTS}")
-message(STATUS "Source Files:   ${LUAUI_SOURCES}")
 message(STATUS "========================================")
 message(STATUS "")

@@ -6,48 +6,48 @@ set(MODULE_NAME LuaUI_Rendering)
 
 # Source files
 set(SOURCES
-    src/d2d/D2DRenderContext.cpp
-    src/d2d/D2DRenderEngine.cpp
-    src/d2d/D2DRenderTarget.cpp
-    src/d2d/D2DBrush.cpp
-    src/d2d/D2DGeometry.cpp
-    src/d2d/D2DBitmap.cpp
-    src/d2d/D2DTextFormat.cpp
-    src/d2d/D2DTextLayoutAdvanced.cpp
-    src/d2d/D2DAnimation.cpp
+    d2d/D2DRenderContext.cpp
+    d2d/D2DRenderEngine.cpp
+    d2d/D2DRenderTarget.cpp
+    d2d/D2DBrush.cpp
+    d2d/D2DGeometry.cpp
+    d2d/D2DBitmap.cpp
+    d2d/D2DTextFormat.cpp
+    d2d/D2DTextLayoutAdvanced.cpp
+    d2d/D2DAnimation.cpp
 )
 
 set(HEADERS
-    include/Types.h
-    include/IBrush.h
-    include/IGeometry.h
-    include/IBitmap.h
-    include/ITextFormat.h
-    include/IRenderContext.h
-    include/IRenderEngine.h
-    include/IRenderTarget.h
-    include/ITextLayout.h
-    include/IAnimation.h
-    include/ResourceCache.h
-    include/IFontManager.h
-    src/d2d/D2DRenderContext.h
-    src/d2d/D2DRenderEngine.h
-    src/d2d/D2DRenderTarget.h
-    src/d2d/D2DBrush.h
-    src/d2d/D2DGeometry.h
-    src/d2d/D2DBitmap.h
-    src/d2d/D2DTextFormat.h
-    src/d2d/D2DTextLayoutAdvanced.h
-    src/d2d/D2DAnimation.h
-    src/d2d/D2DHelpers.h
+    Types.h
+    IBrush.h
+    IGeometry.h
+    IBitmap.h
+    ITextFormat.h
+    IRenderContext.h
+    IRenderEngine.h
+    IRenderTarget.h
+    ITextLayout.h
+    IAnimation.h
+    ResourceCache.h
+    IFontManager.h
+    d2d/D2DRenderContext.h
+    d2d/D2DRenderEngine.h
+    d2d/D2DRenderTarget.h
+    d2d/D2DBrush.h
+    d2d/D2DGeometry.h
+    d2d/D2DBitmap.h
+    d2d/D2DTextFormat.h
+    d2d/D2DTextLayoutAdvanced.h
+    d2d/D2DAnimation.h
+    d2d/D2DHelpers.h
 )
 
 add_library(${MODULE_NAME} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${MODULE_NAME}
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/d2d>
         $<INSTALL_INTERFACE:include>
 )
 
@@ -77,4 +77,4 @@ install(TARGETS ${MODULE_NAME}
     RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY include/ DESTINATION include)
+install(FILES ${HEADERS} DESTINATION include)

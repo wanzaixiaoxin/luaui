@@ -1,120 +1,21 @@
-#include "Control.h"
-#include "layout.h"
-#include "Shapes.h"
-#include "Image.h"
-#include "Event.h"
-#include "FocusManager.h"
-#include "CheckableControls.h"
-#include "RangeControls.h"
+// LuaUI Controls Demo - 使用新SOLID架构API
+// 06_controls_demo的简化版本，展示新控件API
+
+#include "Controls.h"
 #include "IRenderContext.h"
 #include "IRenderEngine.h"
 #include <windows.h>
 #include <windowsx.h>
-#include <objbase.h>  // For CoInitializeEx, CoUninitialize
+#include <objbase.h>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 using namespace luaui;
 using namespace luaui::controls;
 using namespace luaui::rendering;
 
-// 全局状态显示文�?
-std::wstring g_statusText = L"Ready";
-
-// 更新状态文�?
-void SetStatus(const std::wstring& text) {
-    g_statusText = text;
-    OutputDebugStringW((text + L"\n").c_str());
-}
-
-// Helper to track mouse state for button controls
-class ButtonInputTracker {
-public:
-    void HandleMouseMove(const Point& pt, Control* root) {
-        auto hitControl = root->HitTestPoint(pt);
-
-        // Handle mouse leave
-        if (m_hoveredControl && m_hoveredControl != hitControl) {
-            if (auto btn = dynamic_cast<Button*>(m_hoveredControl.get())) {
-                btn->OnMouseLeave();
-            }
-        }
-
-        // Handle mouse enter
-        if (hitControl && hitControl != m_hoveredControl) {
-            if (auto btn = dynamic_cast<Button*>(hitControl.get())) {
-                btn->OnMouseEnter();
-            }
-        }
-
-        m_hoveredControl = hitControl;
-    }
-
-    void HandleMouseDown(const Point& pt, Control* root) {
-        HandleMouseMove(pt, root);
-        m_mouseDownControl = m_hoveredControl;
-
-        if (auto btn = dynamic_cast<Button*>(m_hoveredControl.get())) {
-            MouseEventArgs args(pt.x, pt.y);
-            btn->OnMouseDown(args);
-        }
-
-        // 处理 CheckBox
-        if (auto cb = dynamic_cast<CheckBox*>(m_hoveredControl.get())) {
-            cb->SetIsChecked(!cb->GetIsChecked());
-            std::wstringstream ss;
-            ss << L"CheckBox: " << (cb->GetIsChecked() ? L"Checked" : L"Unchecked");
-            SetStatus(ss.str());
-        }
-
-        // 处理 RadioButton
-        if (auto rb = dynamic_cast<RadioButton*>(m_hoveredControl.get())) {
-            rb->SetIsSelected(true);
-            SetStatus(L"RadioButton selected");
-        }
-
-        // 处理 Slider - 调用 OnMouseDown 开始拖�?
-        if (auto slider = dynamic_cast<Slider*>(m_hoveredControl.get())) {
-            m_draggingSlider = slider;
-            slider->HandleMouseDown(pt);
-        }
-    }
-
-    void HandleMouseUp(const Point& pt, Control* /*root*/) {
-        if (auto btn = dynamic_cast<Button*>(m_hoveredControl.get())) {
-            MouseEventArgs args(pt.x, pt.y);
-            btn->OnMouseUp(args);
-        }
-
-        // 通知 Slider 鼠标释放
-        if (m_draggingSlider) {
-            m_draggingSlider->HandleMouseUp(pt);
-        }
-
-        m_draggingSlider = nullptr;
-        m_mouseDownControl = nullptr;
-    }
-
-    void HandleMouseMoveDrag(const Point& pt, Control* root) {
-        if (m_draggingSlider) {
-            // 直接传�?Point �?Slider
-            m_draggingSlider->HandleMouseMove(pt);
-        } else {
-            // 处理普通鼠标移�?
-            HandleMouseMove(pt, root);
-        }
-    }
-
-    bool IsDragging() const {
-        return m_draggingSlider != nullptr;
-    }
-
-private:
-    ControlPtr m_hoveredControl;
-    ControlPtr m_mouseDownControl;
-    Slider* m_draggingSlider = nullptr;
-};
-
+// 简化的演示窗口 - 使用新架构
 class ControlsDemoWindow {
 public:
     ControlsDemoWindow() = default;
@@ -128,12 +29,12 @@ public:
         wcex.hInstance = hInstance;
         wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszClassName = L"LuaUIControlsDemo";
+        wcex.lpszClassName = L"LuaUIControlsDemoNew";
 
         if (!RegisterClassExW(&wcex)) return false;
 
         m_hWnd = CreateWindowExW(
-            0, L"LuaUIControlsDemo", L"LuaUI Controls Demo - Complete",
+            0, L"LuaUIControlsDemoNew", L"LuaUI Controls Demo - New Architecture",
             WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME,
             CW_USEDEFAULT, CW_USEDEFAULT, 900, 700,
             nullptr, nullptr, hInstance, this
@@ -147,7 +48,6 @@ public:
             return false;
         }
 
-        // Create render target for window
         RenderTargetDesc desc;
         desc.type = RenderTargetType::Window;
         desc.nativeHandle = m_hWnd;
@@ -177,237 +77,119 @@ public:
 
 private:
     void CreateControls() {
-        // 创建根滚动面板
+        // 创建根面板 - 使用新StackPanel
         m_rootPanel = std::make_shared<StackPanel>();
         m_rootPanel->SetName("root");
-        m_rootPanel->SetMargin(15, 15, 15, 15);
-        m_rootPanel->SetSpacing(12);
-
-        // ===== 标题区域 =====
+        m_rootPanel->SetOrientation(StackPanel::Orientation::Vertical);
+        
+        // 标题
         auto title = std::make_shared<TextBlock>();
-        title->SetText(L"🎨 LuaUI Controls Demo");
-        title->SetFontSize(28);
-        title->SetForeground(Color::FromHex(0x1a1a1a));
+        title->SetText(L"🎨 LuaUI Controls Demo - New Architecture");
+        title->SetFontSize(24);
         m_rootPanel->AddChild(title);
-
-        // 副标�?
+        
+        // 副标题
         auto subtitle = std::make_shared<TextBlock>();
-        subtitle->SetText(L"Press Tab to navigate, Space to activate");
-        subtitle->SetFontSize(12);
-        subtitle->SetForeground(Color::FromHex(0x666666));
+        subtitle->SetText(L"Using SOLID Architecture with Component Pattern");
+        subtitle->SetFontSize(14);
         m_rootPanel->AddChild(subtitle);
-
-        // ===== 按钮区域 =====
-        auto btnSectionTitle = CreateSectionTitle(L"Buttons");
-        m_rootPanel->AddChild(btnSectionTitle);
-
+        
+        // 按钮区域
         auto buttonPanel = std::make_shared<StackPanel>();
         buttonPanel->SetOrientation(StackPanel::Orientation::Horizontal);
-        buttonPanel->SetSpacing(12);
-
-        // 普通按�?
+        buttonPanel->SetSpacing(10);
+        
         auto btn1 = std::make_shared<Button>();
-        auto btn1Text = std::make_shared<TextBlock>();
-        btn1Text->SetText(L"Click Me!");
-        btn1->SetContent(btn1Text);
-        btn1->AddClickHandler([](Control*) {
-            SetStatus(L"Button clicked!");
+        btn1->Click.Add([](ControlBase*) {
+            OutputDebugStringW(L"Button 1 clicked!\n");
         });
         buttonPanel->AddChild(btn1);
-
-        // 带边框的按钮
+        
         auto btn2 = std::make_shared<Button>();
-        auto btn2Text = std::make_shared<TextBlock>();
-        btn2Text->SetText(L"Another Button");
-        btn2->SetContent(btn2Text);
-        btn2->SetBackground(Color::FromHex(0x4CAF50));
-        btn2->AddClickHandler([](Control*) {
-            SetStatus(L"Green button clicked!");
+        btn2->SetStateColors(
+            Color::FromHex(0x4CAF50),
+            Color::FromHex(0x45A049),
+            Color::FromHex(0x3D8B40)
+        );
+        btn2->Click.Add([](ControlBase*) {
+            OutputDebugStringW(L"Button 2 clicked!\n");
         });
         buttonPanel->AddChild(btn2);
-
+        
         m_rootPanel->AddChild(buttonPanel);
-
-        // ===== 复选框和单选按钮区�?=====
-        auto checkSectionTitle = CreateSectionTitle(L"CheckBox & RadioButton");
-        m_rootPanel->AddChild(checkSectionTitle);
-
-        auto checkPanel = std::make_shared<StackPanel>();
-        checkPanel->SetOrientation(StackPanel::Orientation::Horizontal);
-        checkPanel->SetSpacing(30);
-
-        // 复选框�?
-        auto checkGroup = std::make_shared<StackPanel>();
-        checkGroup->SetSpacing(8);
-
-        auto cb1 = std::make_shared<CheckBox>();
-        cb1->SetText(L"Enable Feature A");
-        cb1->SetCheckChangedHandler([](CheckBox* /*sender*/, bool isChecked) {
-            std::wstringstream ss;
-            ss << L"Feature A: " << (isChecked ? L"ON" : L"OFF");
-            SetStatus(ss.str());
+        
+        // 文本框
+        auto textBox = std::make_shared<TextBox>();
+        textBox->SetPlaceholder(L"Enter text here...");
+        textBox->TextChanged.Add([](TextBox*, const std::wstring& text) {
+            std::wstring msg = L"Text changed: " + text + L"\n";
+            OutputDebugStringW(msg.c_str());
         });
-        checkGroup->AddChild(cb1);
-
-        auto cb2 = std::make_shared<CheckBox>();
-        cb2->SetText(L"Enable Feature B");
-        cb2->SetIsChecked(true);
-        checkGroup->AddChild(cb2);
-
-        auto cb3 = std::make_shared<CheckBox>();
-        cb3->SetText(L"Enable Feature C");
-        checkGroup->AddChild(cb3);
-
-        checkPanel->AddChild(checkGroup);
-
-        // 单选按钮组
-        auto radioGroup = std::make_shared<StackPanel>();
-        radioGroup->SetSpacing(8);
-
-        auto rb1 = std::make_shared<RadioButton>();
-        rb1->SetText(L"Option 1");
-        rb1->SetIsSelected(true);
-        radioGroup->AddChild(rb1);
-
-        auto rb2 = std::make_shared<RadioButton>();
-        rb2->SetText(L"Option 2");
-        radioGroup->AddChild(rb2);
-
-        auto rb3 = std::make_shared<RadioButton>();
-        rb3->SetText(L"Option 3");
-        radioGroup->AddChild(rb3);
-
-        checkPanel->AddChild(radioGroup);
-        m_rootPanel->AddChild(checkPanel);
-
-        // ===== 滑块和进度条区域 =====
-        auto rangeSectionTitle = CreateSectionTitle(L"Slider & ProgressBar");
-        m_rootPanel->AddChild(rangeSectionTitle);
-
-        auto rangePanel = std::make_shared<StackPanel>();
-        rangePanel->SetSpacing(15);
-
-        // 水平滑块
-        auto slider1 = std::make_shared<Slider>();
-        slider1->SetWidth(300);
-        slider1->SetValue(50);
-
-        // 设置重绘回调，实现拖拽时实时更新
-        HWND hwnd = m_hWnd;
-        slider1->SetRedrawCallback([hwnd]() {
-            InvalidateRect(hwnd, nullptr, FALSE);
+        m_rootPanel->AddChild(textBox);
+        
+        // 复选框
+        auto checkBox = std::make_shared<CheckBox>();
+        checkBox->SetText(L"Enable Feature");
+        checkBox->CheckedChanged.Add([](CheckBox*, bool isChecked) {
+            OutputDebugStringW(isChecked ? L"Feature enabled\n" : L"Feature disabled\n");
         });
-
-        slider1->SetValueChangedHandler([this](Slider* /*sender*/, double value) {
-            // 更新进度条
+        m_rootPanel->AddChild(checkBox);
+        
+        // 滑块
+        auto slider = std::make_shared<Slider>();
+        slider->SetValue(50);
+        slider->ValueChanged.Add([this](Slider*, double value) {
             if (m_progressBar) {
                 m_progressBar->SetValue(value);
             }
         });
-        rangePanel->AddChild(slider1);
-
+        m_rootPanel->AddChild(slider);
+        
         // 进度条
         m_progressBar = std::make_shared<ProgressBar>();
         m_progressBar->SetValue(50);
-        rangePanel->AddChild(m_progressBar);
-
-        m_rootPanel->AddChild(rangePanel);
-
-        // ===== 图形区域 =====
-        auto shapesSectionTitle = CreateSectionTitle(L"Shapes (Rectangle & Ellipse)");
-        m_rootPanel->AddChild(shapesSectionTitle);
-
+        m_rootPanel->AddChild(m_progressBar);
+        
+        // 形状展示
         auto shapesPanel = std::make_shared<StackPanel>();
         shapesPanel->SetOrientation(StackPanel::Orientation::Horizontal);
-        shapesPanel->SetSpacing(20);
-        shapesPanel->SetHeight(80);
-
-        // 圆角矩形
+        shapesPanel->SetSpacing(10);
+        
         auto rect = std::make_shared<luaui::controls::Rectangle>();
-        rect->SetWidth(80);
-        rect->SetHeight(60);
+        if (auto* layout = rect->GetLayout()) {
+            layout->SetWidth(60);
+            layout->SetHeight(60);
+        }
         rect->SetFill(Color::FromHex(0x4CAF50));
-        rect->SetStroke(Color::FromHex(0x2E7D32));
-        rect->SetStrokeThickness(2);
-        rect->SetRadiusX(10);
-        rect->SetRadiusY(10);
         shapesPanel->AddChild(rect);
-
-        // 椭圆
+        
         auto ellipse = std::make_shared<luaui::controls::Ellipse>();
-        ellipse->SetWidth(80);
-        ellipse->SetHeight(60);
+        if (auto* layout = ellipse->GetLayout()) {
+            layout->SetWidth(60);
+            layout->SetHeight(60);
+        }
         ellipse->SetFill(Color::FromHex(0x2196F3));
-        ellipse->SetStroke(Color::FromHex(0x1565C0));
-        ellipse->SetStrokeThickness(2);
         shapesPanel->AddChild(ellipse);
-
-        // 带边框矩�?
-        auto simpleRect = std::make_shared<luaui::controls::Rectangle>();
-        simpleRect->SetWidth(80);
-        simpleRect->SetHeight(60);
-        simpleRect->SetFill(Color::FromHex(0xFF5722));
-        simpleRect->SetStroke(Color::FromHex(0xD84315));
-        simpleRect->SetStrokeThickness(3);
-        shapesPanel->AddChild(simpleRect);
-
+        
         m_rootPanel->AddChild(shapesPanel);
-
-        // ===== Canvas 区域 =====
-        auto canvasSectionTitle = CreateSectionTitle(L"Canvas (Absolute Positioning)");
-        m_rootPanel->AddChild(canvasSectionTitle);
-
-        auto canvas = std::make_shared<Canvas>();
-        canvas->SetHeight(100);
-        canvas->SetBackground(Color::FromHex(0xF5F5F5));
-
-        auto canvasItem1 = std::make_shared<Border>();
-        canvasItem1->SetBackground(Color::FromHex(0xFF6B6B));
-        canvasItem1->SetWidth(50);
-        canvasItem1->SetHeight(50);
-        Canvas::SetLeft(canvasItem1.get(), 10);
-        Canvas::SetTop(canvasItem1.get(), 25);
-        canvas->AddChild(canvasItem1);
-
-        auto canvasItem2 = std::make_shared<Border>();
-        canvasItem2->SetBackground(Color::FromHex(0x4ECDC4));
-        canvasItem2->SetWidth(50);
-        canvasItem2->SetHeight(50);
-        Canvas::SetLeft(canvasItem2.get(), 70);
-        Canvas::SetTop(canvasItem2.get(), 25);
-        canvas->AddChild(canvasItem2);
-
-        auto canvasItem3 = std::make_shared<Border>();
-        canvasItem3->SetBackground(Color::FromHex(0x45B7D1));
-        canvasItem3->SetWidth(50);
-        canvasItem3->SetHeight(50);
-        Canvas::SetLeft(canvasItem3.get(), 130);
-        Canvas::SetTop(canvasItem3.get(), 25);
-        canvas->AddChild(canvasItem3);
-
-        m_rootPanel->AddChild(canvas);
-
-        // ===== 状态栏 =====
-        auto statusBorder = std::make_shared<Border>();
-        statusBorder->SetBackground(Color::FromHex(0xF0F0F0));
-        statusBorder->SetPadding(10, 5, 10, 5);
-        statusBorder->SetBorderThickness(1);
-
+        
+        // 列表框
+        auto listBox = std::make_shared<ListBox>();
+        listBox->AddItem(L"Item 1");
+        listBox->AddItem(L"Item 2");
+        listBox->AddItem(L"Item 3");
+        listBox->SelectionChanged.Add([](ListBox*, int index) {
+            std::wstringstream ss;
+            ss << L"Selected index: " << index << L"\n";
+            OutputDebugStringW(ss.str().c_str());
+        });
+        m_rootPanel->AddChild(listBox);
+        
+        // 状态文本
         m_statusText = std::make_shared<TextBlock>();
-        m_statusText->SetText(L"Ready");
+        m_statusText->SetText(L"Ready - New Architecture Demo");
         m_statusText->SetFontSize(12);
-        m_statusText->SetForeground(Color::FromHex(0x333333));
-        statusBorder->SetContent(m_statusText);
-
-        m_rootPanel->AddChild(statusBorder);
-    }
-
-    std::shared_ptr<TextBlock> CreateSectionTitle(const std::wstring& text) {
-        auto title = std::make_shared<TextBlock>();
-        title->SetText(text);
-        title->SetFontSize(14);
-        title->SetForeground(Color::FromHex(0x0078D4));
-        return title;
+        m_rootPanel->AddChild(m_statusText);
     }
 
     void Render() {
@@ -419,23 +201,27 @@ private:
             return;
         }
 
-        // 更新状态文�?
-        if (m_statusText) {
-            m_statusText->SetText(g_statusText);
-        }
-
         // 清空背景
         context->Clear(Color::White());
 
-        // 测量和排�?
+        // 测量和排列
         RECT rc;
         GetClientRect(m_hWnd, &rc);
         float width = static_cast<float>(rc.right - rc.left);
         float height = static_cast<float>(rc.bottom - rc.top);
 
-        m_rootPanel->Measure(Size(width, height));
-        m_rootPanel->Arrange(Rect(0, 0, width, height));
-        m_rootPanel->Render(context);
+        interfaces::LayoutConstraint constraint;
+        constraint.available = Size(width, height);
+        
+        if (auto* layoutable = m_rootPanel->AsLayoutable()) {
+            layoutable->Measure(constraint);
+            layoutable->Arrange(Rect(0, 0, width, height));
+        }
+        
+        // 渲染
+        if (auto* renderable = m_rootPanel->AsRenderable()) {
+            renderable->Render(context);
+        }
 
         m_engine->Present();
     }
@@ -478,84 +264,6 @@ private:
                     InvalidateRect(hWnd, nullptr, FALSE);
                     return 0;
                 }
-                case WM_MOUSEMOVE: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    pThis->m_inputTracker.HandleMouseMoveDrag(Point(x, y), pThis->m_rootPanel.get());
-                    // Slider 会通过回调自动触发重绘，但悬停效果需要这里重�?
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_LBUTTONDOWN: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    pThis->m_inputTracker.HandleMouseDown(Point(x, y), pThis->m_rootPanel.get());
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_LBUTTONUP: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    pThis->m_inputTracker.HandleMouseUp(Point(x, y), pThis->m_rootPanel.get());
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_KEYDOWN: {
-                    int keyCode = static_cast<int>(wParam);
-                    bool isRepeat = (lParam & 0x40000000) != 0;
-
-                    KeyEventArgs args(keyCode, isRepeat);
-                    args.Control = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                    args.Shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                    args.Alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-                    // Tab 键导�?
-                    if (keyCode == VK_TAB) {
-                        if (args.Shift) {
-                            FocusManager::GetInstance().MoveFocusPrevious();
-                        } else {
-                            FocusManager::GetInstance().MoveFocusNext();
-                        }
-                        SetStatus(L"Tab navigation");
-                        InvalidateRect(hWnd, nullptr, FALSE);
-                        return 0;
-                    }
-
-                    // Space 键激�?
-                    if (keyCode == VK_SPACE) {
-                        Control* focused = FocusManager::GetInstance().GetFocusedControl();
-                        if (auto btn = dynamic_cast<Button*>(focused)) {
-                            btn->RaiseClick();
-                        }
-                    }
-
-                    Control* focused = FocusManager::GetInstance().GetFocusedControl();
-                    if (focused) {
-                        EventRouter::RaiseEvent(focused, Events::KeyDown, args);
-                        if (args.Handled) {
-                            InvalidateRect(hWnd, nullptr, FALSE);
-                            return 0;
-                        }
-                    }
-                    break;
-                }
-                case WM_KEYUP: {
-                    int keyCode = static_cast<int>(wParam);
-                    KeyEventArgs args(keyCode, false);
-                    args.Control = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                    args.Shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                    args.Alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-                    Control* focused = FocusManager::GetInstance().GetFocusedControl();
-                    if (focused) {
-                        EventRouter::RaiseEvent(focused, Events::KeyUp, args);
-                        if (args.Handled) {
-                            InvalidateRect(hWnd, nullptr, FALSE);
-                            return 0;
-                        }
-                    }
-                    break;
-                }
                 case WM_DESTROY:
                     PostQuitMessage(0);
                     return 0;
@@ -570,7 +278,6 @@ private:
     std::shared_ptr<StackPanel> m_rootPanel;
     std::shared_ptr<TextBlock> m_statusText;
     std::shared_ptr<ProgressBar> m_progressBar;
-    ButtonInputTracker m_inputTracker;
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {

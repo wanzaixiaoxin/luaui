@@ -1,371 +1,300 @@
-// 10_advanced_controls - Advanced input controls demo
-// Demonstrates TextBox, ComboBox, ListBox, TabControl, ScrollViewer
+// Advanced Controls Demo - 使用新SOLID架构
+// 展示高级控件功能
 
-#include "Control.h"
-#include "layout.h"
+#include "Controls.h"
 #include "IRenderContext.h"
 #include "IRenderEngine.h"
-#include "Event.h"
-#include "FocusManager.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>
 #include <string>
-#include <sstream>
+#include <memory>
 
 using namespace luaui;
 using namespace luaui::controls;
 using namespace luaui::rendering;
 
-std::wstring g_statusText = L"Ready";
-
-void SetStatus(const std::wstring& text) {
-    g_statusText = text;
-    OutputDebugStringW((text + L"\n").c_str());
-}
-
-class AdvancedControlsWindow {
+// 高级控件演示窗口
+class AdvancedControlsDemo {
 public:
-    bool Initialize(HINSTANCE hInstance, int nCmdShow) {
-        WNDCLASSEXW wcex = {};
-        wcex.cbSize = sizeof(WNDCLASSEXW);
-        wcex.style = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc = WindowProc;
-        wcex.hInstance = hInstance;
-        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-        wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        wcex.lpszClassName = L"LuaUIAdvancedControls";
-
-        if (!RegisterClassExW(&wcex)) return false;
-
-        m_hWnd = CreateWindowExW(
-            0, L"LuaUIAdvancedControls", L"LuaUI Advanced Controls Demo",
-            WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, 1000, 700,
-            nullptr, nullptr, hInstance, this
-        );
-
-        if (!m_hWnd) return false;
-
-        m_engine = CreateRenderEngine();
-        if (!m_engine || !m_engine->Initialize()) {
-            MessageBoxW(m_hWnd, L"Failed to initialize rendering engine", L"Error", MB_OK);
-            return false;
-        }
-
-        RenderTargetDesc desc;
-        desc.type = RenderTargetType::Window;
-        desc.nativeHandle = m_hWnd;
-        desc.width = 1000;
-        desc.height = 700;
-
-        if (!m_engine->CreateRenderTarget(desc)) {
-            MessageBoxW(m_hWnd, L"Failed to create render target", L"Error", MB_OK);
-            return false;
-        }
-
-        CreateControls();
-
-        ShowWindow(m_hWnd, nCmdShow);
-        UpdateWindow(m_hWnd);
-        return true;
-    }
-
-    int Run() {
-        MSG msg;
-        while (GetMessage(&msg, nullptr, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        return (int)msg.wParam;
-    }
-
+    AdvancedControlsDemo() = default;
+    ~AdvancedControlsDemo() { Cleanup(); }
+    
+    bool Initialize(HINSTANCE hInstance, int nCmdShow);
+    int Run();
+    
 private:
-    void CreateControls() {
-        // Create root panel with padding
-        auto rootPanel = std::make_shared<StackPanel>();
-        rootPanel->SetName("rootPanel");
-        rootPanel->SetMargin(20, 20, 20, 20);  // Larger margin from window edges
-        rootPanel->SetSpacing(15);
-
-        // ===== Title =====
-        auto title = std::make_shared<TextBlock>();
-        title->SetText(L"Advanced Controls Demo");
-        title->SetFontSize(24);
-        title->SetForeground(Color::FromHex(0x333333));
-        rootPanel->AddChild(title);
-
-        // ===== Text Input Section =====
-        auto textSectionLabel = std::make_shared<TextBlock>();
-        textSectionLabel->SetText(L"Text Input:");
-        textSectionLabel->SetFontSize(14);
-        textSectionLabel->SetForeground(Color::FromHex(0x666666));
-        rootPanel->AddChild(textSectionLabel);
-
-        // Single-line TextBox
-        auto textBox = std::make_shared<TextBox>();
-        textBox->SetWidth(400);
-        textBox->SetHeight(32);
-        textBox->SetPlaceholder(L"Enter text here...");
-        textBox->SetTextChangedHandler([](TextBox* /*sender*/, const std::wstring& text) {
-            std::wstringstream ss;
-            ss << L"TextBox changed: " << text;
-            SetStatus(ss.str());
-        });
-        rootPanel->AddChild(textBox);
-
-        // Password TextBox
-        auto pwdLabel = std::make_shared<TextBlock>();
-        pwdLabel->SetText(L"Password:");
-        pwdLabel->SetFontSize(12);
-        pwdLabel->SetForeground(Color::FromHex(0x666666));
-        pwdLabel->SetMargin(0, 10, 0, 0);
-        rootPanel->AddChild(pwdLabel);
-
-        auto pwdBox = std::make_shared<TextBox>();
-        pwdBox->SetWidth(400);
-        pwdBox->SetHeight(32);
-        pwdBox->SetPlaceholder(L"Enter password...");
-        pwdBox->SetIsPassword(true);
-        rootPanel->AddChild(pwdBox);
-
-        // ===== ListBox Section =====
-        auto listSectionLabel = std::make_shared<TextBlock>();
-        listSectionLabel->SetText(L"ListBox:");
-        listSectionLabel->SetFontSize(14);
-        listSectionLabel->SetForeground(Color::FromHex(0x666666));
-        listSectionLabel->SetMargin(0, 10, 0, 0);
-        rootPanel->AddChild(listSectionLabel);
-
-        auto listBox = std::make_shared<ListBox>();
-        listBox->SetWidth(400);
-        listBox->SetHeight(150);
-        listBox->AddItem(L"Item 1");
-        listBox->AddItem(L"Item 2");
-        listBox->AddItem(L"Item 3");
-        listBox->AddItem(L"Item 4");
-        listBox->AddItem(L"Item 5");
-        rootPanel->AddChild(listBox);
-
-        // ===== ScrollViewer Section =====
-        auto scrollSectionLabel = std::make_shared<TextBlock>();
-        scrollSectionLabel->SetText(L"ScrollViewer:");
-        scrollSectionLabel->SetFontSize(14);
-        scrollSectionLabel->SetForeground(Color::FromHex(0x666666));
-        scrollSectionLabel->SetMargin(0, 10, 0, 0);
-        rootPanel->AddChild(scrollSectionLabel);
-
-        auto scrollViewer = std::make_shared<ScrollViewer>();
-        scrollViewer->SetWidth(600);
-        scrollViewer->SetHeight(200);
-
-        // Create content for scrolling with padding
-        auto scrollContent = std::make_shared<StackPanel>();
-        scrollContent->SetSpacing(10);
-        scrollContent->SetMargin(10, 10, 10, 10);  // Add padding inside scrollviewer
-        
-        for (int i = 0; i < 20; i++) {
-            auto item = std::make_shared<TextBlock>();
-            std::wstringstream ss;
-            ss << L"Scroll item " << (i + 1) << L" - This is scrollable content";
-            item->SetText(ss.str());
-            item->SetFontSize(12);
-            scrollContent->AddChild(item);
-        }
-        
-        scrollViewer->SetContent(scrollContent);
-        rootPanel->AddChild(scrollViewer);
-
-        m_root = rootPanel;
-    }
-
-    void Render() {
-        if (!m_engine->BeginFrame()) return;
-
-        auto* context = m_engine->GetContext();
-        if (!context) {
-            m_engine->Present();
-            return;
-        }
-
-        context->Clear(Color::White());
-
-        RECT rc;
-        GetClientRect(m_hWnd, &rc);
-        float width = static_cast<float>(rc.right - rc.left);
-        float height = static_cast<float>(rc.bottom - rc.top);
-
-        if (m_root) {
-            m_root->Measure(Size(width, height));
-            // Apply root control's margin to the arrange rect
-            float marginLeft = m_root->GetMarginLeft();
-            float marginTop = m_root->GetMarginTop();
-            float marginRight = m_root->GetMarginRight();
-            float marginBottom = m_root->GetMarginBottom();
-            m_root->Arrange(Rect(
-                marginLeft, 
-                marginTop, 
-                width - marginLeft - marginRight, 
-                height - marginTop - marginBottom
-            ));
-            m_root->Render(context);
-        }
-
-        m_engine->Present();
-    }
-
-    void Cleanup() {
-        m_root = nullptr;
-        if (m_engine) {
-            m_engine->Shutdown();
-            m_engine = nullptr;
-        }
-    }
-
-    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-        AdvancedControlsWindow* pThis = nullptr;
-
-        if (message == WM_NCCREATE) {
-            CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-            pThis = reinterpret_cast<AdvancedControlsWindow*>(pCreate->lpCreateParams);
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
-            pThis->m_hWnd = hWnd;
-        } else {
-            pThis = reinterpret_cast<AdvancedControlsWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-        }
-
-        if (pThis) {
-            switch (message) {
-                case WM_PAINT: {
-                    PAINTSTRUCT ps;
-                    BeginPaint(hWnd, &ps);
-                    pThis->Render();
-                    EndPaint(hWnd, &ps);
-                    return 0;
-                }
-                case WM_SIZE: {
-                    int width = LOWORD(lParam);
-                    int height = HIWORD(lParam);
-                    if (pThis->m_engine) {
-                        pThis->m_engine->ResizeRenderTarget(width, height);
-                    }
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_MOUSEMOVE: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    
-                    MouseEventArgs args(x, y);
-                    if (pThis->m_root) {
-                        auto hit = pThis->m_root->HitTestPoint(Point(x, y));
-                        if (hit) {
-                            hit->OnMouseMove(args);
-                        }
-                    }
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_LBUTTONDOWN: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    
-                    MouseEventArgs args(x, y);
-                    if (pThis->m_root) {
-                        auto hit = pThis->m_root->HitTestPoint(Point(x, y));
-                        if (hit) {
-                            hit->OnMouseDown(args);
-                        }
-                    }
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_LBUTTONUP: {
-                    float x = static_cast<float>(GET_X_LPARAM(lParam));
-                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
-                    
-                    MouseEventArgs args(x, y);
-                    if (pThis->m_root) {
-                        auto hit = pThis->m_root->HitTestPoint(Point(x, y));
-                        if (hit) {
-                            hit->OnMouseUp(args);
-                        }
-                    }
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_MOUSEWHEEL: {
-                    int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-                    // GET_X_LPARAM/GET_Y_LPARAM return screen coordinates for WM_MOUSEWHEEL
-                    POINT pt;
-                    pt.x = GET_X_LPARAM(lParam);
-                    pt.y = GET_Y_LPARAM(lParam);
-                    ScreenToClient(hWnd, &pt);
-                    
-                    MouseEventArgs args(static_cast<float>(pt.x), static_cast<float>(pt.y));
-                    args.Clicks = delta;
-                    
-                    if (pThis->m_root) {
-                        auto hit = pThis->m_root->HitTestPoint(Point(args.Position.X, args.Position.Y));
-                        if (hit) {
-                            hit->OnMouseWheel(args);
-                        }
-                    }
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
-                case WM_CHAR: {
-                    wchar_t ch = static_cast<wchar_t>(wParam);
-                    Control* focused = FocusManager::GetInstance().GetFocusedControl();
-                    if (auto textBox = dynamic_cast<TextBox*>(focused)) {
-                        textBox->OnChar(ch);
-                        InvalidateRect(hWnd, nullptr, FALSE);
-                    }
-                    return 0;
-                }
-                case WM_KEYDOWN: {
-                    int keyCode = static_cast<int>(wParam);
-                    bool isRepeat = (lParam & 0x40000000) != 0;
-
-                    KeyEventArgs args(keyCode, isRepeat);
-                    args.Control = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                    args.Shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                    args.Alt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-                    if (keyCode == VK_TAB) {
-                        if (args.Shift) {
-                            FocusManager::GetInstance().MoveFocusPrevious();
-                        } else {
-                            FocusManager::GetInstance().MoveFocusNext();
-                        }
-                        SetStatus(L"Tab navigation");
-                        InvalidateRect(hWnd, nullptr, FALSE);
-                        return 0;
-                    }
-
-                    Control* focused = FocusManager::GetInstance().GetFocusedControl();
-                    if (focused) {
-                        focused->OnKeyDown(args);
-                        if (args.Handled) {
-                            InvalidateRect(hWnd, nullptr, FALSE);
-                            return 0;
-                        }
-                    }
-                    break;
-                }
-                case WM_DESTROY:
-                    PostQuitMessage(0);
-                    return 0;
-            }
-        }
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-
+    void CreateUI();
+    void Render();
+    void Cleanup();
+    
+    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+    
 private:
     HWND m_hWnd = nullptr;
     IRenderEnginePtr m_engine;
-    ControlPtr m_root;
+    std::shared_ptr<StackPanel> m_rootPanel;
+    std::shared_ptr<TextBlock> m_statusText;
+    std::shared_ptr<Slider> m_colorSlider;
+    std::shared_ptr<luaui::controls::Rectangle> m_colorRect;
 };
+
+bool AdvancedControlsDemo::Initialize(HINSTANCE hInstance, int nCmdShow) {
+    WNDCLASSEXW wcex = {};
+    wcex.cbSize = sizeof(WNDCLASSEXW);
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = WindowProc;
+    wcex.hInstance = hInstance;
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszClassName = L"AdvancedControlsDemoNew";
+    
+    if (!RegisterClassExW(&wcex)) return false;
+    
+    m_hWnd = CreateWindowExW(
+        0, L"AdvancedControlsDemoNew", L"Advanced Controls Demo - New Architecture",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, 900, 700,
+        nullptr, nullptr, hInstance, this
+    );
+    
+    if (!m_hWnd) return false;
+    
+    m_engine = CreateRenderEngine();
+    if (!m_engine || !m_engine->Initialize()) {
+        MessageBoxW(m_hWnd, L"Failed to initialize rendering engine", L"Error", MB_OK);
+        return false;
+    }
+    
+    RenderTargetDesc desc;
+    desc.type = RenderTargetType::Window;
+    desc.nativeHandle = m_hWnd;
+    desc.width = 900;
+    desc.height = 700;
+    
+    if (!m_engine->CreateRenderTarget(desc)) {
+        MessageBoxW(m_hWnd, L"Failed to create render target", L"Error", MB_OK);
+        return false;
+    }
+    
+    CreateUI();
+    
+    ShowWindow(m_hWnd, nCmdShow);
+    UpdateWindow(m_hWnd);
+    return true;
+}
+
+void AdvancedControlsDemo::CreateUI() {
+    m_rootPanel = std::make_shared<StackPanel>();
+    m_rootPanel->SetName("Root");
+    m_rootPanel->SetOrientation(StackPanel::Orientation::Vertical);
+    
+    // 标题
+    auto title = std::make_shared<TextBlock>();
+    title->SetText(L"Advanced Controls Demo");
+    title->SetFontSize(24);
+    m_rootPanel->AddChild(title);
+    
+    // 说明
+    auto desc = std::make_shared<TextBlock>();
+    desc->SetText(L"Shape color control demo");
+    desc->SetFontSize(14);
+    m_rootPanel->AddChild(desc);
+    
+    // 颜色控制滑块
+    auto sliderLabel = std::make_shared<TextBlock>();
+    sliderLabel->SetText(L"Color Control");
+    sliderLabel->SetFontSize(16);
+    m_rootPanel->AddChild(sliderLabel);
+    
+    m_colorSlider = std::make_shared<Slider>();
+    m_colorSlider->SetValue(0);
+    m_colorSlider->ValueChanged.Add([this](Slider*, double value) {
+        // 根据滑块值改变颜色
+        float hue = static_cast<float>(value) / 100.0f;
+        // 简化的HSV到RGB转换
+        float r = std::abs(hue * 6.0f - 3.0f) - 1.0f;
+        float g = 2.0f - std::abs(hue * 6.0f - 2.0f);
+        float b = 2.0f - std::abs(hue * 6.0f - 4.0f);
+        r = std::clamp(r, 0.0f, 1.0f);
+        g = std::clamp(g, 0.0f, 1.0f);
+        b = std::clamp(b, 0.0f, 1.0f);
+        
+        if (m_colorRect) {
+            m_colorRect->SetFill(Color(r, g, b));
+        }
+    });
+    m_rootPanel->AddChild(m_colorSlider);
+    
+    // 显示颜色的矩形
+    m_colorRect = std::make_shared<luaui::controls::Rectangle>();
+    if (auto* layout = m_colorRect->GetLayout()) {
+        layout->SetWidth(200);
+        layout->SetHeight(150);
+    }
+    m_colorRect->SetFill(Color::FromHex(0xFF0000));
+    m_colorRect->SetStroke(Color::Black());
+    m_colorRect->SetStrokeThickness(2);
+    m_rootPanel->AddChild(m_colorRect);
+    
+    // 形状选择
+    auto shapePanel = std::make_shared<StackPanel>();
+    shapePanel->SetOrientation(StackPanel::Orientation::Horizontal);
+    shapePanel->SetSpacing(10);
+    
+    auto rectBtn = std::make_shared<Button>();
+    rectBtn->Click.Add([this](ControlBase*) {
+        if (m_colorRect) {
+            m_colorRect->SetRadiusX(0);
+            m_colorRect->SetRadiusY(0);
+        }
+    });
+    shapePanel->AddChild(rectBtn);
+    
+    auto roundRectBtn = std::make_shared<Button>();
+    roundRectBtn->Click.Add([this](ControlBase*) {
+        if (m_colorRect) {
+            m_colorRect->SetRadiusX(20);
+            m_colorRect->SetRadiusY(20);
+        }
+    });
+    shapePanel->AddChild(roundRectBtn);
+    
+    m_rootPanel->AddChild(shapePanel);
+    
+    // 各种形状展示
+    auto shapesTitle = std::make_shared<TextBlock>();
+    shapesTitle->SetText(L"Shapes Gallery");
+    shapesTitle->SetFontSize(16);
+    m_rootPanel->AddChild(shapesTitle);
+    
+    auto shapesPanel = std::make_shared<StackPanel>();
+    shapesPanel->SetOrientation(StackPanel::Orientation::Horizontal);
+    shapesPanel->SetSpacing(15);
+    
+    // 矩形
+    auto rect1 = std::make_shared<luaui::controls::Rectangle>();
+    if (auto* layout = rect1->GetLayout()) {
+        layout->SetWidth(60);
+        layout->SetHeight(60);
+    }
+    rect1->SetFill(Color::FromHex(0xFF6B6B));
+    shapesPanel->AddChild(rect1);
+    
+    // 圆角矩形
+    auto rect2 = std::make_shared<luaui::controls::Rectangle>();
+    if (auto* layout = rect2->GetLayout()) {
+        layout->SetWidth(60);
+        layout->SetHeight(60);
+    }
+    rect2->SetFill(Color::FromHex(0x4ECDC4));
+    rect2->SetRadiusX(15);
+    rect2->SetRadiusY(15);
+    shapesPanel->AddChild(rect2);
+    
+    // 椭圆
+    auto ellipse = std::make_shared<luaui::controls::Ellipse>();
+    if (auto* layout = ellipse->GetLayout()) {
+        layout->SetWidth(60);
+        layout->SetHeight(60);
+    }
+    ellipse->SetFill(Color::FromHex(0x45B7D1));
+    shapesPanel->AddChild(ellipse);
+    
+    m_rootPanel->AddChild(shapesPanel);
+    
+    // 状态文本
+    m_statusText = std::make_shared<TextBlock>();
+    m_statusText->SetText(L"Ready");
+    m_statusText->SetFontSize(12);
+    m_rootPanel->AddChild(m_statusText);
+}
+
+void AdvancedControlsDemo::Render() {
+    if (!m_engine->BeginFrame()) return;
+    
+    auto* context = m_engine->GetContext();
+    if (!context) {
+        m_engine->Present();
+        return;
+    }
+    
+    context->Clear(Color::White());
+    
+    RECT rc;
+    GetClientRect(m_hWnd, &rc);
+    float width = static_cast<float>(rc.right - rc.left);
+    float height = static_cast<float>(rc.bottom - rc.top);
+    
+    interfaces::LayoutConstraint constraint;
+    constraint.available = Size(width, height);
+    
+    if (auto* layoutable = m_rootPanel->AsLayoutable()) {
+        layoutable->Measure(constraint);
+        layoutable->Arrange(Rect(0, 0, width, height));
+    }
+    
+    if (auto* renderable = m_rootPanel->AsRenderable()) {
+        renderable->Render(context);
+    }
+    
+    m_engine->Present();
+}
+
+void AdvancedControlsDemo::Cleanup() {
+    m_rootPanel = nullptr;
+    if (m_engine) {
+        m_engine->Shutdown();
+        m_engine = nullptr;
+    }
+}
+
+LRESULT CALLBACK AdvancedControlsDemo::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    AdvancedControlsDemo* pThis = nullptr;
+    
+    if (message == WM_NCCREATE) {
+        CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+        pThis = reinterpret_cast<AdvancedControlsDemo*>(pCreate->lpCreateParams);
+        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
+        pThis->m_hWnd = hWnd;
+    } else {
+        pThis = reinterpret_cast<AdvancedControlsDemo*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    }
+    
+    if (pThis) {
+        switch (message) {
+            case WM_PAINT: {
+                PAINTSTRUCT ps;
+                BeginPaint(hWnd, &ps);
+                pThis->Render();
+                EndPaint(hWnd, &ps);
+                return 0;
+            }
+            case WM_SIZE: {
+                int width = LOWORD(lParam);
+                int height = HIWORD(lParam);
+                if (pThis->m_engine) {
+                    pThis->m_engine->ResizeRenderTarget(width, height);
+                }
+                InvalidateRect(hWnd, nullptr, FALSE);
+                return 0;
+            }
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                return 0;
+        }
+    }
+    return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+int AdvancedControlsDemo::Run() {
+    MSG msg;
+    while (GetMessage(&msg, nullptr, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    return (int)msg.wParam;
+}
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
@@ -373,13 +302,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
         MessageBoxW(nullptr, L"Failed to initialize COM", L"Error", MB_OK);
         return 1;
     }
-
-    AdvancedControlsWindow demo;
+    
+    AdvancedControlsDemo demo;
     if (!demo.Initialize(hInstance, nCmdShow)) {
         CoUninitialize();
         return 1;
     }
-
+    
     int result = demo.Run();
     CoUninitialize();
     return result;
