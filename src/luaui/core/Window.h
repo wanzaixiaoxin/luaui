@@ -109,7 +109,7 @@ private:
     void HandleChar(wchar_t ch);
     
     // ========== 命中测试 ==========
-    Control* HitTest(Control* root, float x, float y);
+    Control* HitTest(Control* root, float x, float y, float offsetX = 0, float offsetY = 0);
     
     // ========== 带裁剪的渲染 ==========
     void RenderWithClipping(Control* control, rendering::IRenderContext* context, 

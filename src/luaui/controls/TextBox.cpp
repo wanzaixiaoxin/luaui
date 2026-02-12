@@ -1,6 +1,7 @@
 #include "TextBox.h"
 #include "IRenderContext.h"
 #include "Control.h"  // For KeyEventArgs
+#include <windows.h>
 
 namespace luaui {
 namespace controls {
@@ -127,31 +128,37 @@ void TextBox::OnRender(rendering::IRenderContext* context) {
         }
     }
     
-    // 绘制光标
+    // 绘制光标（带闪烁）
     if (input->GetIsFocused()) {
-        auto caretBrush = context->CreateSolidColorBrush(m_foreground);
-        if (caretBrush) {
-            // 计算光标位置（考虑中英文字符宽度差异）
-            float caretX = textPos.x;
-            for (size_t i = 0; i < displayText.length() && i < static_cast<size_t>(m_caretPosition); ++i) {
-                wchar_t ch = displayText[i];
-                if (ch >= 0x4E00 && ch <= 0x9FFF) {
-                    // 中文字符
-                    caretX += m_fontSize;
-                } else {
-                    // 其他字符（英文字符等）
-                    caretX += m_fontSize * 0.6f;
+        // 更新光标闪烁状态
+        UpdateCaretBlink();
+        
+        // 只在光标可见时绘制
+        if (m_isCaretVisible) {
+            auto caretBrush = context->CreateSolidColorBrush(m_foreground);
+            if (caretBrush) {
+                // 计算光标位置（考虑中英文字符宽度差异）
+                float caretX = textPos.x;
+                for (size_t i = 0; i < displayText.length() && i < static_cast<size_t>(m_caretPosition); ++i) {
+                    wchar_t ch = displayText[i];
+                    if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                        // 中文字符
+                        caretX += m_fontSize;
+                    } else {
+                        // 其他字符（英文字符等）
+                        caretX += m_fontSize * 0.6f;
+                    }
                 }
+                
+                float caretTopY = 4.0f;
+                float caretBottomY = localRect.height - 4.0f;
+                
+                context->DrawLine(
+                    rendering::Point(caretX, caretTopY),
+                    rendering::Point(caretX, caretBottomY),
+                    caretBrush.get(), 1.0f
+                );
             }
-            
-            float caretTopY = 4.0f;
-            float caretBottomY = localRect.height - 4.0f;
-            
-            context->DrawLine(
-                rendering::Point(caretX, caretTopY),
-                rendering::Point(caretX, caretBottomY),
-                caretBrush.get(), 1.0f
-            );
         }
     }
 }
@@ -336,7 +343,23 @@ void TextBox::DeleteForward() {
 }
 
 void TextBox::UpdateCaretVisible() {
-    // TODO: 实现光标闪烁
+    // 重置光标可见状态
+    m_isCaretVisible = true;
+    m_lastCaretBlinkTime = GetTickCount64();
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void TextBox::UpdateCaretBlink() {
+    uint64_t currentTime = GetTickCount64();
+    if (currentTime - m_lastCaretBlinkTime >= CARET_BLINK_INTERVAL_MS) {
+        m_isCaretVisible = !m_isCaretVisible;
+        m_lastCaretBlinkTime = currentTime;
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    }
 }
 
 std::wstring TextBox::GetDisplayText() const {

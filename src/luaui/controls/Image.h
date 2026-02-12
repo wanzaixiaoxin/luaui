@@ -4,6 +4,7 @@
 #include "../core/Components/LayoutComponent.h"
 #include "../core/Components/RenderComponent.h"
 #include "../rendering/Types.h"
+#include "../rendering/IBitmap.h"
 #include <string>
 
 namespace luaui {
@@ -22,7 +23,7 @@ enum class Stretch {
 /**
  * @brief Image 图像控件（新架构）
  * 
- * 注意：这是一个框架实现，实际图像渲染需要渲染层支持IBitmap接口
+ * 支持从文件加载并渲染图像
  */
 class Image : public luaui::Control {
 public:
@@ -38,24 +39,43 @@ public:
     float GetOpacity() const { return m_opacity; }
     void SetOpacity(float opacity);
     
-    // 图像尺寸（模拟）
+    // 图像尺寸
     float GetNaturalWidth() const { return m_naturalWidth; }
     float GetNaturalHeight() const { return m_naturalHeight; }
     
-    // 设置图像源（简化版，使用路径）
-    void SetSourcePath(const std::wstring& path) { m_sourcePath = path; }
+    // 设置图像源
+    void SetSourcePath(const std::wstring& path);
     std::wstring GetSourcePath() const { return m_sourcePath; }
+    
+    // 加载图像
+    bool LoadFromFile(const std::wstring& filePath);
+    void Unload();
+    bool IsLoaded() const { return m_isLoaded && m_bitmap != nullptr; }
 
 protected:
     void InitializeComponents() override;
+    void OnRender(rendering::IRenderContext* context) override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
 
 private:
+    void DrawPlaceholder(rendering::IRenderContext* context, const rendering::Rect& rect);
+    void DrawBitmap(rendering::IRenderContext* context, const rendering::Rect& rect);
+    void UpdateNaturalSize();
+    
     std::wstring m_sourcePath;
     Stretch m_stretch = Stretch::Uniform;
     float m_opacity = 1.0f;
     float m_naturalWidth = 0.0f;
     float m_naturalHeight = 0.0f;
     bool m_isLoaded = false;
+    bool m_loadFailed = false;
+    
+    // 缓存的位图
+    rendering::IBitmapPtr m_bitmap;
+    
+    // 占位符颜色
+    rendering::Color m_placeholderColor = rendering::Color::FromHex(0xE0E0E0);
+    rendering::Color m_borderColor = rendering::Color::FromHex(0xAAAAAA);
 };
 
 } // namespace controls

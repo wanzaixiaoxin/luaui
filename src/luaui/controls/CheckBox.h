@@ -72,6 +72,7 @@ private:
 class RadioButton : public luaui::Control {
 public:
     RadioButton();
+    ~RadioButton();
     
     std::string GetTypeName() const override { return "RadioButton"; }
     
@@ -91,10 +92,20 @@ public:
 protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    
+    // 输入处理
+    void OnClick() override;
+    void OnMouseEnter() override;
+    void OnMouseLeave() override;
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
 
 private:
     void OnChecked();
     void UpdateVisualState();
+    void RegisterInGroup();
+    void UnregisterFromGroup();
     
     std::wstring m_text;
     bool m_isChecked = false;

@@ -33,16 +33,24 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void OnRender(rendering::IRenderContext* context) override;
+    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void OnClick() override;
 
 private:
+    int m_index = -1;  // 在ListBox中的索引
+    friend class ListBox;
     std::wstring m_content;
     bool m_isSelected = false;
     bool m_isHovered = false;
     
     float m_itemHeight = 24.0f;
+    float m_fontSize = 14.0f;
     rendering::Color m_normalBg = rendering::Color::White();
     rendering::Color m_hoverBg = rendering::Color::FromHex(0xE5F3FF);
     rendering::Color m_selectedBg = rendering::Color::FromHex(0x0078D4);
+    rendering::Color m_textColor = rendering::Color::Black();
+    rendering::Color m_selectedTextColor = rendering::Color::White();
 };
 
 /**
@@ -76,9 +84,14 @@ protected:
     void OnRenderChildren(rendering::IRenderContext* context) override;
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
+    
+    // 输入处理
+    void OnClick() override;
+    void OnMouseMove(MouseEventArgs& args) override;
 
 private:
     void UpdateItemStates();
+    int HitTestItem(float x, float y);
     
     std::vector<std::shared_ptr<ListBoxItem>> m_items;
     int m_selectedIndex = -1;

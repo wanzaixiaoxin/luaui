@@ -108,6 +108,12 @@ private:
     void BindListBox(std::shared_ptr<luaui::controls::ListBox> listBox,
                      const std::string& propertyName,
                      const BindingExpression& expression);
+    void BindCheckBox(std::shared_ptr<luaui::controls::CheckBox> checkBox,
+                      const std::string& propertyName,
+                      const BindingExpression& expression);
+    void BindRadioButton(std::shared_ptr<luaui::controls::RadioButton> radioButton,
+                         const std::string& propertyName,
+                         const BindingExpression& expression);
 };
 
 // 创建 MVVM XML 加载器

@@ -19,7 +19,7 @@
 #include "Panel.h"
 
 // Checkable controls
-#include "CheckBox.h"
+#include "CheckBox.h"  // Also includes RadioButton
 
 // Range controls
 #include "Slider.h"

@@ -93,19 +93,19 @@ void MvvmXmlLoader::ExtractBindings(const tinyxml2::XMLElement* element, const s
     }
     
     // 遍历所有属性，查找绑定表达式
-    for (const tinyxml2::XMLAttribute* attr = element->FirstAttribute(); 
+    for (const tinyxml2::XMLAttribute* attr = element->FirstAttribute();
          attr; attr = attr->Next()) {
-        std::string attrName = attr->Name();
-        std::string attrValue = attr->Value();
+        const char* attrName = attr->Name();
+        const char* attrValue = attr->Value();
         
-        if (IsBindingExpression(attrValue)) {
+        if (attrValue && IsBindingExpression(attrValue)) {
             utils::Logger::DebugF("[MVVM] Found binding: %s.%s = %s", 
-                controlName.c_str(), attrName.c_str(), attrValue.c_str());
+                controlName.c_str(), attrName, attrValue);
             
             // 存储绑定信息，等待控件加载完成后解析
             PendingBindingInfo info;
             info.elementName = controlName;
-            info.propertyName = attrName;
+            info.propertyName = attrName ? attrName : "";
             info.expressionString = attrValue;
             m_pendingBindingInfos.push_back(info);
         }
@@ -225,6 +225,13 @@ static bool IsBindingValidForControl(const PendingBindingInfo& bindingInfo,
         
         if (isTwoWay && isSlider) return true;
         if (!isTwoWay && isProgressBar) return true;
+        return false;
+    } else if (propertyName == "IsChecked") {
+        // 对于 IsChecked 属性，检查控件类型
+        bool isCheckBox = std::dynamic_pointer_cast<luaui::controls::CheckBox>(control) != nullptr;
+        bool isRadioButton = std::dynamic_pointer_cast<luaui::controls::RadioButton>(control) != nullptr;
+        
+        if (isCheckBox || isRadioButton) return true;
         return false;
     }
     
@@ -371,6 +378,16 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
     else if (auto listBox = std::dynamic_pointer_cast<luaui::controls::ListBox>(control)) {
         if (propertyName == "ItemsSource") {
             BindListBox(listBox, propertyName, expression);
+        }
+    }
+    else if (auto checkBox = std::dynamic_pointer_cast<luaui::controls::CheckBox>(control)) {
+        if (propertyName == "IsChecked") {
+            BindCheckBox(checkBox, propertyName, expression);
+        }
+    }
+    else if (auto radioButton = std::dynamic_pointer_cast<luaui::controls::RadioButton>(control)) {
+        if (propertyName == "IsChecked") {
+            BindRadioButton(radioButton, propertyName, expression);
         }
     }
 }
@@ -593,6 +610,121 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
     // 4. 支持 SelectedItem 双向绑定
     
     (void)listBox;
+}
+
+// ============================================================================
+// CheckBox 绑定 - IsChecked（支持 TwoWay）
+// ============================================================================
+void MvvmXmlLoader::BindCheckBox(std::shared_ptr<luaui::controls::CheckBox> checkBox,
+                                 const std::string& /*propertyName*/,
+                                 const BindingExpression& expression) {
+    auto converter = expression.converter;
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    auto converterParameter = expression.converterParameter;
+    
+    utils::Logger::InfoF("[MVVM] Binding CheckBox.IsChecked to %s, mode=%d", 
+        boundPropertyName.c_str(), static_cast<int>(expression.mode));
+    
+    // 更新函数：ViewModel -> View
+    auto updateView = [checkBox, dataContext, boundPropertyName, converter, converterParameter]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+        
+        bool boolValue = false;
+        if (value.type() == typeid(bool)) {
+            boolValue = std::any_cast<bool>(value);
+        } else if (converter) {
+            // 使用转换器
+            auto result = converter->ConvertBack(value, converterParameter);
+            if (result.has_value() && result.type() == typeid(bool)) {
+                boolValue = std::any_cast<bool>(result);
+            }
+        }
+        
+        checkBox->SetIsChecked(boolValue);
+    };
+    
+    // 应用初始值
+    updateView();
+    
+    // 订阅属性变化通知
+    if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+        dataContext->SubscribePropertyChanged(
+            [dataContext, boundPropertyName, updateView](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+                updateView();
+            }
+        });
+    }
+    
+    // TwoWay：监听控件状态变化并更新 ViewModel
+    if (expression.mode == BindingMode::TwoWay) {
+        checkBox->CheckedChanged.Add([dataContext, boundPropertyName, converter, converterParameter](luaui::controls::CheckBox*, bool isChecked) {
+            std::any value = isChecked;
+            if (converter) {
+                value = converter->Convert(value, converterParameter);
+            }
+            dataContext->SetPropertyValue(boundPropertyName, value);
+        });
+    }
+}
+
+// ============================================================================
+// RadioButton 绑定 - IsChecked（支持 TwoWay）
+// ============================================================================
+void MvvmXmlLoader::BindRadioButton(std::shared_ptr<luaui::controls::RadioButton> radioButton,
+                                    const std::string& /*propertyName*/,
+                                    const BindingExpression& expression) {
+    auto converter = expression.converter;
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    auto converterParameter = expression.converterParameter;
+    
+    utils::Logger::InfoF("[MVVM] Binding RadioButton.IsChecked to %s, mode=%d", 
+        boundPropertyName.c_str(), static_cast<int>(expression.mode));
+    
+    // 更新函数：ViewModel -> View
+    auto updateView = [radioButton, dataContext, boundPropertyName, converter, converterParameter]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+        
+        bool boolValue = false;
+        if (value.type() == typeid(bool)) {
+            boolValue = std::any_cast<bool>(value);
+        } else if (converter) {
+            auto result = converter->ConvertBack(value, converterParameter);
+            if (result.has_value() && result.type() == typeid(bool)) {
+                boolValue = std::any_cast<bool>(result);
+            }
+        }
+        
+        radioButton->SetIsChecked(boolValue);
+    };
+    
+    // 应用初始值
+    updateView();
+    
+    // 订阅属性变化通知
+    if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+        dataContext->SubscribePropertyChanged(
+            [dataContext, boundPropertyName, updateView](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+                updateView();
+            }
+        });
+    }
+    
+    // TwoWay：监听控件状态变化并更新 ViewModel
+    if (expression.mode == BindingMode::TwoWay) {
+        radioButton->CheckedChanged.Add([dataContext, boundPropertyName, converter, converterParameter](luaui::controls::RadioButton*, bool isChecked) {
+            std::any value = isChecked;
+            if (converter) {
+                value = converter->Convert(value, converterParameter);
+            }
+            dataContext->SetPropertyValue(boundPropertyName, value);
+        });
+    }
 }
 
 // ============================================================================

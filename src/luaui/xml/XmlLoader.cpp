@@ -7,6 +7,9 @@
 #include "Slider.h"
 #include "Button.h"
 #include "Border.h"
+#include "CheckBox.h"      // CheckBox and RadioButton
+#include "ListBox.h"       // ListBox and ListBoxItem
+#include "Image.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -89,9 +92,12 @@ private:
         RegisterElement("TextBox", []() { return std::make_shared<TextBox>(); });
         RegisterElement("Border", []() { return std::make_shared<Border>(); });
         RegisterElement("CheckBox", []() { return std::make_shared<CheckBox>(); });
+        RegisterElement("RadioButton", []() { return std::make_shared<RadioButton>(); });
         RegisterElement("Slider", []() { return std::make_shared<Slider>(); });
         RegisterElement("ProgressBar", []() { return std::make_shared<ProgressBar>(); });
         RegisterElement("ListBox", []() { return std::make_shared<ListBox>(); });
+        RegisterElement("ListBoxItem", []() { return std::make_shared<ListBoxItem>(); });
+        RegisterElement("Image", []() { return std::make_shared<Image>(); });
         RegisterElement("Rectangle", []() { return std::make_shared<Rectangle>(); });
         RegisterElement("Ellipse", []() { return std::make_shared<Ellipse>(); });
     }
@@ -170,8 +176,36 @@ private:
             else if (name == "Background") {
                 Color color;
                 if (TypeConverter::ToColor(value, color)) {
-                    if (auto* render = control->GetRender()) {
+                    // For Button, use SetStateColors to set all states
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        // Auto-generate hover (lighter) and pressed (darker) colors
+                        auto hover = Color(color.r * 1.15f, color.g * 1.15f, color.b * 1.15f, color.a);
+                        auto pressed = Color(color.r * 0.85f, color.g * 0.85f, color.b * 0.85f, color.a);
+                        btn->SetStateColors(color, hover, pressed);
+                    } else if (auto* render = control->GetRender()) {
                         render->SetBackground(color);
+                    }
+                }
+            }
+            // SourcePath (Image)
+            else if (name == "SourcePath") {
+                std::wstring wpath(value.begin(), value.end());
+                if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
+                    img->SetSourcePath(wpath);
+                }
+            }
+            // Stretch (Image)
+            else if (name == "Stretch") {
+                if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
+                    if (value == "None") {
+                        img->SetStretch(controls::Stretch::None);
+                    } else if (value == "Fill") {
+                        img->SetStretch(controls::Stretch::Fill);
+                    } else if (value == "UniformToFill") {
+                        img->SetStretch(controls::Stretch::UniformToFill);
+                    } else {
+                        // 默认 Uniform
+                        img->SetStretch(controls::Stretch::Uniform);
                     }
                 }
             }
@@ -194,13 +228,17 @@ private:
                     }
                 }
             }
-            // Text (TextBlock, TextBox)
+            // Text (TextBlock, TextBox, CheckBox, RadioButton)
             else if (name == "Text") {
                 std::wstring wtext(value.begin(), value.end());
                 if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
                     tb->SetText(wtext);
                 } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
                     tx->SetText(wtext);
+                } else if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
+                    cb->SetText(wtext);
+                } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
+                    rb->SetText(wtext);
                 }
             }
             // FontSize
@@ -238,6 +276,22 @@ private:
                 if (TypeConverter::ToFloat(value, max)) {
                     if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
                         s->SetMaximum(max);
+                    }
+                }
+            }
+            // GroupName (RadioButton)
+            else if (name == "GroupName") {
+                if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
+                    rb->SetGroupName(value);
+                }
+            }
+            // IsChecked (CheckBox, RadioButton)
+            else if (name == "IsChecked") {
+                if (value == "True" || value == "true" || value == "1") {
+                    if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
+                        cb->SetIsChecked(true);
+                    } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
+                        rb->SetIsChecked(true);
                     }
                 }
             }

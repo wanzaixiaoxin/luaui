@@ -373,27 +373,31 @@ void Window::ClearFocus() {
 // 命中测试
 // ============================================================================
 
-Control* Window::HitTest(Control* root, float x, float y) {
+Control* Window::HitTest(Control* root, float x, float y, float offsetX, float offsetY) {
     if (!root) return nullptr;
     
     auto* render = root->GetRender();
     if (!render) return nullptr;
     
     const auto& rect = render->GetRenderRect();
+    // 计算全局坐标
+    float globalX = rect.x + offsetX;
+    float globalY = rect.y + offsetY;
     
-    // 检查点是否在矩形内
-    if (x >= rect.x && x < rect.x + rect.width &&
-        y >= rect.y && y < rect.y + rect.height) {
+    // 检查点是否在矩形内（使用全局坐标）
+    if (x >= globalX && x < globalX + rect.width &&
+        y >= globalY && y < globalY + rect.height) {
         
         // 如果是 Panel，递归测试子控件
         if (auto* panel = dynamic_cast<controls::Panel*>(root)) {
-            float localX = x - rect.x;
-            float localY = y - rect.y;
+            // 子控件使用父控件的全局坐标作为偏移
+            float childOffsetX = globalX;
+            float childOffsetY = globalY;
             
             // 从后向前遍历（后添加的在上面）
             for (int i = static_cast<int>(panel->GetChildCount()) - 1; i >= 0; --i) {
                 auto* child = static_cast<Control*>(panel->GetChild(i).get());
-                if (auto* result = HitTest(child, localX, localY)) {
+                if (auto* result = HitTest(child, x, y, childOffsetX, childOffsetY)) {
                     return result;
                 }
             }
@@ -446,7 +450,7 @@ void Window::HandleMouseMove(float x, float y) {
 }
 
 void Window::HandleMouseDown(float x, float y, int button) {
-    auto* control = HitTest(m_root.get(), x, y);
+    auto* control = HitTest(m_root.get(), x, y, 0, 0);
     
     utils::Logger::TraceF("[Window] MouseDown: %s at (%.1f,%.1f)",
         control ? control->GetTypeName().c_str() : "null", x, y);
@@ -482,7 +486,7 @@ void Window::HandleMouseUp(float x, float y, int button) {
             inputComp->RaiseMouseUp(args);
             
             // 如果鼠标仍在控件上，触发点击
-            auto* hitControl = HitTest(m_root.get(), x, y);
+            auto* hitControl = HitTest(m_root.get(), x, y, 0, 0);
             utils::Logger::DebugF("[Window] HitTest result: %s", 
                 hitControl ? hitControl->GetTypeName().c_str() : "null");
             if (hitControl == m_capturedControl) {
@@ -493,7 +497,7 @@ void Window::HandleMouseUp(float x, float y, int button) {
         m_capturedControl = nullptr;
     } else {
         // 没有捕获的控件，正常处理
-        auto* control = HitTest(m_root.get(), x, y);
+        auto* control = HitTest(m_root.get(), x, y, 0, 0);
         if (control) {
             if (auto* inputComp = control->GetInput()) {
                 controls::MouseEventArgs args{x, y, button, false};
@@ -507,7 +511,7 @@ void Window::HandleMouseUp(float x, float y, int button) {
 }
 
 void Window::HandleMouseWheel(float x, float y, int delta) {
-    auto* control = m_capturedControl ? m_capturedControl : HitTest(m_root.get(), x, y);
+    auto* control = m_capturedControl ? m_capturedControl : HitTest(m_root.get(), x, y, 0, 0);
     
     if (control) {
         if (auto* inputComp = control->GetInput()) {

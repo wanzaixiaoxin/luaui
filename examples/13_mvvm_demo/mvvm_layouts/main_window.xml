@@ -39,26 +39,41 @@
     <TextBox Text="{Binding UserName, Mode=TwoWay}"
              Width="300"/>
 
+    <!-- 单选按钮组 - 选择性别 -->
+    <StackPanel Orientation="Horizontal" Spacing="20">
+        <RadioButton Name="rbMale" Text="Male" GroupName="Gender" IsChecked="True"/>
+        <RadioButton Name="rbFemale" Text="Female" GroupName="Gender"/>
+        <RadioButton Name="rbOther" Text="Other" GroupName="Gender"/>
+    </StackPanel>
+
+    <!-- 复选框 -->
+    <CheckBox Name="cbPremium" Text="Premium Member" IsChecked="{Binding IsPremium, Mode=TwoWay}"/>
+
+    <!-- 图像占位符 -->
+    <Image Width="100" Height="100" SourcePath="placeholder.png"/>
+
     <!-- 按钮 - 命令绑定 -->
-    <Button Text="Save Profile"
-            Click="OnSaveClick"
-            Width="300"
-            Height="40"
-            Background="#4CAF50"
-            Foreground="White"/>
+    <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+        <Button Text="Save"
+                Click="OnSaveClick"
+                Width="90"
+                Height="32"
+                Background="#22C55E"
+                Foreground="White"/>
 
-    <Button Text="Increment Progress"
-            Click="OnIncrementClick"
-            Width="300"
-            Height="40"
-            Background="#2196F3"
-            Foreground="White"/>
+        <Button Text="+Progress"
+                Click="OnIncrementClick"
+                Width="90"
+                Height="32"
+                Background="#3B82F6"
+                Foreground="White"/>
 
-    <Button Text="Reset"
-            Click="OnResetClick"
-            Width="300"
-            Height="40"
-            Background="#FF9800"
-            Foreground="White"/>
+        <Button Text="Reset"
+                Click="OnResetClick"
+                Width="90"
+                Height="32"
+                Background="#F97316"
+                Foreground="White"/>
+    </StackPanel>
 
 </StackPanel>

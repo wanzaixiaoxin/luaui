@@ -3,9 +3,64 @@
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
+#include "Window.h"
+#include <unordered_map>
+#include <vector>
 
 namespace luaui {
 namespace controls {
+
+// ============================================================================
+// RadioButton 分组管理器（全局单例）
+// ============================================================================
+class RadioButtonGroupManager {
+public:
+    static RadioButtonGroupManager& Instance() {
+        static RadioButtonGroupManager instance;
+        return instance;
+    }
+    
+    void Register(RadioButton* button, const std::string& groupName) {
+        if (groupName.empty()) return;
+        
+        // 从旧组移除
+        Unregister(button);
+        
+        // 添加到新组
+        m_groups[groupName].push_back(button);
+    }
+    
+    void Unregister(RadioButton* button) {
+        for (auto& [name, buttons] : m_groups) {
+            auto it = std::find(buttons.begin(), buttons.end(), button);
+            if (it != buttons.end()) {
+                buttons.erase(it);
+                break;
+            }
+        }
+    }
+    
+    void OnButtonChecked(RadioButton* checkedButton, const std::string& groupName) {
+        if (groupName.empty()) return;
+        
+        auto it = m_groups.find(groupName);
+        if (it == m_groups.end()) return;
+        
+        // 取消同组其他按钮的选中状态
+        for (auto* button : it->second) {
+            if (button != checkedButton && button->GetIsChecked()) {
+                button->SetIsChecked(false);
+            }
+        }
+    }
+    
+private:
+    std::unordered_map<std::string, std::vector<RadioButton*>> m_groups;
+};
+
+// ============================================================================
+// CheckBox
+// ============================================================================
 
 // ============================================================================
 // CheckBox
@@ -176,17 +231,23 @@ void CheckBox::UpdateVisualState() {
 // ============================================================================
 // RadioButton
 // ============================================================================
-RadioButton::RadioButton() {}
-
 void RadioButton::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    layout->SetMinWidth(m_circleSize + m_spacing + 60);
-    layout->SetMinHeight(m_circleSize);
+    layout->SetWidth(m_circleSize + m_spacing + 60);
+    layout->SetHeight(m_circleSize);
     
     GetComponents().AddComponent<components::RenderComponent>(this);
     
     auto* input = GetComponents().AddComponent<components::InputComponent>(this);
     input->SetIsFocusable(true);
+    
+    // 注册到分组
+    RegisterInGroup();
+}
+
+rendering::Size RadioButton::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
+    return rendering::Size(m_circleSize + m_spacing + 60, m_circleSize);
 }
 
 void RadioButton::SetText(const std::wstring& text) {
@@ -212,8 +273,62 @@ void RadioButton::SetIsChecked(bool checked) {
     }
 }
 
+RadioButton::RadioButton() {}
+
+RadioButton::~RadioButton() {
+    UnregisterFromGroup();
+}
+
+void RadioButton::RegisterInGroup() {
+    RadioButtonGroupManager::Instance().Register(this, m_groupName);
+}
+
+void RadioButton::UnregisterFromGroup() {
+    RadioButtonGroupManager::Instance().Unregister(this);
+}
+
+void RadioButton::SetGroupName(const std::string& name) {
+    if (m_groupName != name) {
+        UnregisterFromGroup();
+        m_groupName = name;
+        RegisterInGroup();
+    }
+}
+
 void RadioButton::OnChecked() {
-    // TODO: 取消同组其他RadioButton的选中状态
+    // 通知分组管理器，取消同组其他按钮的选中状态
+    RadioButtonGroupManager::Instance().OnButtonChecked(this, m_groupName);
+}
+
+void RadioButton::OnMouseEnter() {
+    m_isHovered = true;
+    UpdateVisualState();
+}
+
+void RadioButton::OnMouseLeave() {
+    m_isHovered = false;
+    m_isPressed = false;
+    UpdateVisualState();
+}
+
+void RadioButton::OnMouseDown(MouseEventArgs& args) {
+    (void)args;
+    m_isPressed = true;
+    UpdateVisualState();
+}
+
+void RadioButton::OnMouseUp(MouseEventArgs& args) {
+    (void)args;
+    if (m_isPressed) {
+        m_isPressed = false;
+        UpdateVisualState();
+    }
+}
+
+void RadioButton::OnClick() {
+    utils::Logger::Debug("[RadioButton] OnClick called");
+    // RadioButton 点击后总是变为选中
+    SetIsChecked(true);
 }
 
 void RadioButton::OnRender(rendering::IRenderContext* context) {

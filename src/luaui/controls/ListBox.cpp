@@ -4,6 +4,7 @@
 #include "Components/InputComponent.h"
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
+#include "IRenderContext.h"
 
 namespace luaui {
 namespace controls {
@@ -48,6 +49,56 @@ void ListBoxItem::SetIsHovered(bool hovered) {
     }
 }
 
+rendering::Size ListBoxItem::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
+    // 简单测量：固定高度，宽度根据内容或可用空间
+    return rendering::Size(availableSize.width > 0 ? availableSize.width : 100, m_itemHeight);
+}
+
+void ListBoxItem::OnClick() {
+    // 通知父 ListBox 选中此项
+    if (auto parent = GetParent()) {
+        if (auto* listBox = dynamic_cast<ListBox*>(parent.get())) {
+            listBox->SetSelectedIndex(m_index);
+        }
+    }
+}
+
+void ListBoxItem::OnRender(rendering::IRenderContext* context) {
+    if (!context) return;
+    
+    auto* render = GetRender();
+    if (!render) return;
+    
+    auto rect = render->GetRenderRect();
+    
+    // 选择背景色
+    rendering::Color bgColor = m_normalBg;
+    if (m_isSelected) {
+        bgColor = m_selectedBg;
+    } else if (m_isHovered) {
+        bgColor = m_hoverBg;
+    }
+    
+    // 绘制背景
+    auto bgBrush = context->CreateSolidColorBrush(bgColor);
+    if (bgBrush) {
+        context->FillRectangle(rect, bgBrush.get());
+    }
+    
+    // 绘制文本
+    if (!m_content.empty()) {
+        rendering::Color textColor = m_isSelected ? m_selectedTextColor : m_textColor;
+        auto textBrush = context->CreateSolidColorBrush(textColor);
+        auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
+        
+        if (textBrush && textFormat) {
+            rendering::Point textPos(8, (rect.height - m_fontSize) / 2);
+            context->DrawTextString(m_content, textFormat.get(), textPos, textBrush.get());
+        }
+    }
+}
+
 // ============================================================================
 // ListBox
 // ============================================================================
@@ -69,6 +120,7 @@ void ListBox::AddItem(const std::wstring& item) {
 }
 
 void ListBox::AddItem(const std::shared_ptr<ListBoxItem>& item) {
+    item->m_index = static_cast<int>(m_items.size());
     m_items.push_back(item);
     AddChild(item);
     if (auto* layout = GetLayout()) {
@@ -131,6 +183,40 @@ void ListBox::UpdateItemStates() {
     for (size_t i = 0; i < m_items.size(); ++i) {
         m_items[i]->SetIsSelected(static_cast<int>(i) == m_selectedIndex);
     }
+}
+
+int ListBox::HitTestItem(float x, float y) {
+    rendering::Rect contentRect;
+    if (auto* renderable = AsRenderable()) {
+        contentRect = renderable->GetRenderRect();
+    }
+    
+    float itemY = contentRect.y - m_scrollOffset;
+    for (size_t i = 0; i < m_items.size(); ++i) {
+        if (auto* layoutable = m_items[i]->AsLayoutable()) {
+            auto desired = layoutable->GetDesiredSize();
+            if (y >= itemY && y < itemY + desired.height) {
+                return static_cast<int>(i);
+            }
+            itemY += desired.height;
+        }
+    }
+    return -1;
+}
+
+void ListBox::OnClick() {
+    // 点击处理通过子项的点击事件处理
+    // 这里可以添加额外的点击逻辑
+}
+
+void ListBox::OnMouseMove(MouseEventArgs& args) {
+    // 更新悬停状态
+    int index = HitTestItem(args.x, args.y);
+    for (size_t i = 0; i < m_items.size(); ++i) {
+        m_items[i]->SetIsHovered(static_cast<int>(i) == index);
+    }
+    
+    args.Handled = true;
 }
 
 rendering::Size ListBox::OnMeasureChildren(const rendering::Size& availableSize) {

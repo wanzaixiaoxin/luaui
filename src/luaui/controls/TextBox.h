@@ -91,7 +91,13 @@ private:
     rendering::Color m_borderColor = rendering::Color::FromHex(0x808080);
     rendering::Color m_focusedBorderColor = rendering::Color::FromHex(0x0078D4);
     
+    // 光标闪烁
+    bool m_isCaretVisible = true;
+    uint64_t m_lastCaretBlinkTime = 0;
+    static constexpr uint64_t CARET_BLINK_INTERVAL_MS = 530;  // 光标闪烁间隔
+    
     void UpdateCaretVisible();
+    void UpdateCaretBlink();
     std::wstring GetDisplayText() const;
 };
 
