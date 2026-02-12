@@ -5,6 +5,7 @@
 #include "Components/InputComponent.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace luaui {
 namespace controls {
@@ -92,6 +93,92 @@ void Slider::SetIsVertical(bool vertical) {
 void Slider::ClampValue() {
     if (m_value < m_minimum) m_value = m_minimum;
     if (m_value > m_maximum) m_value = m_maximum;
+}
+
+void Slider::UpdateValueFromPosition(float x, float y) {
+    auto* render = GetRender();
+    if (!render) {
+        std::cout << "[Slider UpdateValue] No render component!" << std::endl;
+        return;
+    }
+    
+    // 计算控件的全局位置（累加所有父容器的位置）
+    float globalX = 0, globalY = 0;
+    Control* current = this;
+    int depth = 0;
+    while (current) {
+        if (auto* r = current->GetRender()) {
+            globalX += r->GetRenderRect().x;
+            globalY += r->GetRenderRect().y;
+        }
+        auto parent = current->GetParent();
+        if (parent) {
+            current = dynamic_cast<Control*>(parent.get());
+        } else {
+            current = nullptr;
+        }
+        depth++;
+    }
+    
+    // 传入的是全局坐标，转换为本地坐标
+    float localX = x - globalX;
+    float localY = y - globalY;
+    
+    static int count = 0;
+    if (++count % 10 == 0) {
+        std::cout << "[Slider] Value=" << m_value << " localX=" << localX << std::endl;
+    }
+    
+    float thumbSize = 12.0f;
+    
+    if (m_isVertical) {
+        float trackLength = render->GetRenderRect().height - thumbSize;
+        float trackY = thumbSize / 2;
+        
+        // 限制在轨道范围内
+        localY = std::max(trackY, std::min(localY, trackY + trackLength));
+        
+        // 计算比例（从底部开始）
+        double ratio = 1.0 - (localY - trackY) / trackLength;
+        ratio = std::max(0.0, std::min(1.0, ratio));
+        
+        double newValue = m_minimum + ratio * (m_maximum - m_minimum);
+        SetValue(newValue);
+    } else {
+        float trackLength = render->GetRenderRect().width - thumbSize;
+        float trackX = thumbSize / 2;
+        
+        // 限制在轨道范围内
+        localX = std::max(trackX, std::min(localX, trackX + trackLength));
+        
+        // 计算比例
+        double ratio = (localX - trackX) / trackLength;
+        ratio = std::max(0.0, std::min(1.0, ratio));
+        
+        double newValue = m_minimum + ratio * (m_maximum - m_minimum);
+        SetValue(newValue);
+    }
+}
+
+void Slider::OnMouseDown(MouseEventArgs& args) {
+    std::cout << "[Slider] MouseDown -> Drag START" << std::endl;
+    m_isDragging = true;
+    UpdateValueFromPosition(args.x, args.y);
+}
+
+void Slider::OnMouseUp(MouseEventArgs& args) {
+    std::cout << "[Slider] MouseUp -> Drag STOP" << std::endl;
+    m_isDragging = false;
+}
+
+void Slider::OnMouseMove(MouseEventArgs& args) {
+    if (m_isDragging) {
+        static int count = 0;
+        if (++count % 5 == 0) {
+            std::cout << "[Slider OnMouseMove] x=" << args.x << " y=" << args.y << std::endl;
+        }
+        UpdateValueFromPosition(args.x, args.y);
+    }
 }
 
 void Slider::OnRender(rendering::IRenderContext* context) {

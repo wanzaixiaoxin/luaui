@@ -2,9 +2,9 @@
 
 namespace luaui {
 namespace controls {
-    class MouseEventArgs;
-    class KeyEventArgs;
-    class FocusEventArgs;
+    struct MouseEventArgs;
+    struct KeyEventArgs;
+    struct FocusEventArgs;
 }
 
 namespace interfaces {

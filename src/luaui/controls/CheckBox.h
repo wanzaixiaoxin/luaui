@@ -33,6 +33,12 @@ protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
+    
+    void OnClick() override;
+    void OnMouseEnter() override;
+    void OnMouseLeave() override;
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
 
 private:
     void Toggle();

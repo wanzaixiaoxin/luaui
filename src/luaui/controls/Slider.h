@@ -45,9 +45,18 @@ protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
+    
+    // 鼠标处理
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseMove(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
 
 private:
     void ClampValue();
+    void UpdateValueFromPosition(float x, float y);
+    bool IsPointOnThumb(float x, float y);
+    
+    bool m_isDragging = false;
     
     double m_value = 0.0;
     double m_minimum = 0.0;

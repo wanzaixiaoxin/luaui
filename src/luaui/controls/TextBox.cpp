@@ -127,12 +127,23 @@ void TextBox::OnRender(rendering::IRenderContext* context) {
         }
     }
     
-    // 绘制光标（简化：在文本末尾）
+    // 绘制光标
     if (input->GetIsFocused()) {
         auto caretBrush = context->CreateSolidColorBrush(m_foreground);
         if (caretBrush) {
-            // 简化的光标位置计算
-            float caretX = textPos.x + displayText.length() * m_fontSize * 0.6f;
+            // 计算光标位置（考虑中英文字符宽度差异）
+            float caretX = textPos.x;
+            for (size_t i = 0; i < displayText.length() && i < static_cast<size_t>(m_caretPosition); ++i) {
+                wchar_t ch = displayText[i];
+                if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                    // 中文字符
+                    caretX += m_fontSize;
+                } else {
+                    // 其他字符（英文字符等）
+                    caretX += m_fontSize * 0.6f;
+                }
+            }
+            
             float caretTopY = 4.0f;
             float caretBottomY = localRect.height - 4.0f;
             
@@ -151,7 +162,28 @@ void TextBox::OnMouseDown(MouseEventArgs& args) {
         input->Focus();
     }
     
-    // TODO: 根据点击位置计算光标位置
+    // 根据点击位置计算光标位置
+    float padding = 4.0f;
+    float clickX = args.x - padding;
+    
+    std::wstring displayText = GetDisplayText();
+    float currentX = 0;
+    int newPosition = 0;
+    
+    for (size_t i = 0; i < displayText.length(); ++i) {
+        wchar_t ch = displayText[i];
+        float charWidth = (ch >= 0x4E00 && ch <= 0x9FFF) ? m_fontSize : m_fontSize * 0.6f;
+        
+        // 如果点击位置在当前字符中间，选择更近的一边
+        if (currentX + charWidth / 2 >= clickX) {
+            break;
+        }
+        
+        currentX += charWidth;
+        newPosition = static_cast<int>(i) + 1;
+    }
+    
+    SetCaretPosition(newPosition);
 }
 
 void TextBox::OnKeyDown(KeyEventArgs& args) {

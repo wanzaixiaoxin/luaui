@@ -65,6 +65,39 @@ void CheckBox::Toggle() {
     }
 }
 
+void CheckBox::OnClick() {
+    Toggle();
+}
+
+void CheckBox::OnMouseEnter() {
+    m_isHovered = true;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void CheckBox::OnMouseLeave() {
+    m_isHovered = false;
+    m_isPressed = false;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void CheckBox::OnMouseDown(MouseEventArgs& args) {
+    m_isPressed = true;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void CheckBox::OnMouseUp(MouseEventArgs& args) {
+    m_isPressed = false;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
 void CheckBox::OnRender(rendering::IRenderContext* context) {
     if (!context) return;
     

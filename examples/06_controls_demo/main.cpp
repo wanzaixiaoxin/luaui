@@ -4,6 +4,9 @@
 #include "Controls.h"
 #include "IRenderContext.h"
 #include "IRenderEngine.h"
+#include "Control.h"
+#include "Panel.h"
+#include "Components/InputComponent.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>
@@ -11,6 +14,7 @@
 #include <sstream>
 #include <iostream>
 #include <functional>
+#include <iomanip>
 
 using namespace luaui;
 using namespace luaui::controls;
@@ -119,6 +123,13 @@ private:
             Color::FromHex(0x1976D2),  // Hover
             Color::FromHex(0x0D47A1)   // Pressed
         );
+        btn1->Click.Add([this](luaui::Control*) {
+            m_statusText->SetText(L"Blue button clicked!");
+            // 增加进度条值
+            double newValue = m_progressBar->GetValue() + 10;
+            if (newValue > 100) newValue = 0;
+            m_progressBar->SetValue(newValue);
+        });
         buttonPanel->AddChild(btn1);
         
         // 成功按钮
@@ -128,6 +139,13 @@ private:
             Color::FromHex(0x388E3C),  // Hover
             Color::FromHex(0x1B5E20)   // Pressed
         );
+        btn2->Click.Add([this](luaui::Control*) {
+            m_statusText->SetText(L"Green button clicked!");
+            // 减少进度条值
+            double newValue = m_progressBar->GetValue() - 10;
+            if (newValue < 0) newValue = 100;
+            m_progressBar->SetValue(newValue);
+        });
         buttonPanel->AddChild(btn2);
         
         m_rootPanel->AddChild(buttonPanel);
@@ -145,6 +163,11 @@ private:
         
         // 复选框
         auto checkBox = std::make_shared<CheckBox>();
+        checkBox->SetText(L"Enable Feature");
+        checkBox->CheckedChanged.Add([this](CheckBox* sender, bool isChecked) {
+            std::wstring text = isChecked ? L"CheckBox checked!" : L"CheckBox unchecked!";
+            m_statusText->SetText(text);
+        });
         m_rootPanel->AddChild(checkBox);
         
         // ========== 滑块和进度条 ==========
@@ -157,6 +180,14 @@ private:
         // 滑块
         auto slider = std::make_shared<Slider>();
         slider->SetValue(50);
+        slider->ValueChanged.Add([this](Slider* sender, double value) {
+            // 滑块值变化时同步更新进度条
+            m_progressBar->SetValue(value);
+            // 更新状态栏显示当前值
+            std::wstringstream ss;
+            ss << L"Slider value: " << static_cast<int>(value);
+            m_statusText->SetText(ss.str());
+        });
         m_rootPanel->AddChild(slider);
         
         // 进度条
@@ -228,68 +259,48 @@ private:
     }
 
     void Render() {
-        static int frameCount = 0;
-        frameCount++;
-        std::cout << "[Frame " << frameCount << "] Render started" << std::endl;
-        
         if (!m_engine->BeginFrame()) {
-            std::cout << "[Frame " << frameCount << "] BeginFrame failed" << std::endl;
             return;
         }
 
         auto* context = m_engine->GetContext();
         if (!context) {
-            std::cout << "[Frame " << frameCount << "] Context is null" << std::endl;
             m_engine->Present();
             return;
         }
 
         // 清空背景
         context->Clear(Color::White());
-        std::cout << "[Frame " << frameCount << "] Background cleared" << std::endl;
 
-        // 测量和排列
+        // 获取窗口大小
         RECT rc;
         GetClientRect(m_hWnd, &rc);
         float width = static_cast<float>(rc.right - rc.left);
         float height = static_cast<float>(rc.bottom - rc.top);
-        std::cout << "[Frame " << frameCount << "] Window size: " << width << "x" << height << std::endl;
 
-        // 测量和排列 - 使用控件的布局系统
-        interfaces::LayoutConstraint constraint;
-        constraint.available = Size(width - 20, height - 20);
-        
-        std::cout << "[Frame " << frameCount << "] Starting measure and arrange..." << std::endl;
-        
-        // 只需要测量和排列根控件，Panel 会自动处理子控件
-        if (auto* layoutable = m_rootPanel->AsLayoutable()) {
-            layoutable->InvalidateMeasure();
-            auto measured = layoutable->Measure(constraint);
-            std::cout << "  [Measure] Root measured: " << measured.width << "x" << measured.height << std::endl;
-            layoutable->Arrange(Rect(10, 10, width - 20, height - 20));
+        // 仅在需要时进行测量和排列（性能优化）
+        if (m_layoutDirty) {
+            if (auto* layoutable = m_rootPanel->AsLayoutable()) {
+                interfaces::LayoutConstraint constraint;
+                constraint.available = Size(width - 20, height - 20);
+                layoutable->Measure(constraint);
+                layoutable->Arrange(Rect(10, 10, width - 20, height - 20));
+            }
+            m_layoutDirty = false;
         }
-        std::cout << "[Frame " << frameCount << "] Measure and arrange completed" << std::endl;
         
         // 渲染
-        std::cout << "[Frame " << frameCount << "] Starting render..." << std::endl;
-        // 检查 GetRender
-        auto* renderComp = m_rootPanel->GetRender();
-        std::cout << "[Frame " << frameCount << "] GetRender: " << (renderComp ? "not null" : "null") << std::endl;
-        
-        // 检查 AsRenderable
-        auto* renderable = m_rootPanel->AsRenderable();
-        std::cout << "[Frame " << frameCount << "] AsRenderable: " << (renderable ? "not null" : "null") << std::endl;
-        
-        if (renderable) {
-            std::cout << "[Frame " << frameCount << "] Root panel renderable found" << std::endl;
+        if (auto* renderable = m_rootPanel->AsRenderable()) {
             renderable->Render(context);
-            std::cout << "[Frame " << frameCount << "] Root panel render completed" << std::endl;
-        } else {
-            std::cout << "[Frame " << frameCount << "] Root panel renderable NOT found" << std::endl;
         }
 
         m_engine->Present();
-        std::cout << "[Frame " << frameCount << "] Present completed" << std::endl;
+    }
+    
+    // 标记布局需要重新计算
+    void InvalidateLayout() {
+        m_layoutDirty = true;
+        InvalidateRect(m_hWnd, nullptr, FALSE);
     }
 
     void Cleanup() {
@@ -298,6 +309,183 @@ private:
             m_engine->Shutdown();
             m_engine = nullptr;
         }
+    }
+
+    // 获取控件的全局位置
+    void GetControlGlobalPosition(luaui::Control* control, float& outX, float& outY) {
+        outX = 0;
+        outY = 0;
+        auto* current = control;
+        while (current) {
+            auto* render = current->GetRender();
+            if (render) {
+                outX += render->GetRenderRect().x;
+                outY += render->GetRenderRect().y;
+            }
+            auto parent = current->GetParent();
+            current = parent ? static_cast<luaui::Control*>(parent.get()) : nullptr;
+        }
+    }
+    
+    // 输入事件处理
+    void HandleMouseMove(float x, float y) {
+        // 如果有捕获的控件（拖动中），发送全局坐标
+        if (m_capturedControl) {
+            static int count = 0;
+            if (++count % 10 == 0) {  // 每10次打印一次，避免刷屏
+                std::cout << "[Drag] " << m_capturedControl->GetTypeName() 
+                          << " at (" << x << "," << y << ")" << std::endl;
+            }
+            if (auto* inputComp = m_capturedControl->GetInput()) {
+                MouseEventArgs args{x, y, 0, false};
+                inputComp->RaiseMouseMove(args);
+            }
+            // 拖动时需要持续重绘
+            InvalidateRect(m_hWnd, nullptr, FALSE);
+            return;
+        }
+        
+        auto* control = HitTest(m_rootPanel.get(), x, y);
+        
+        // 处理 MouseLeave
+        if (m_lastMouseOver && m_lastMouseOver != control) {
+            if (auto* inputComp = m_lastMouseOver->GetInput()) {
+                inputComp->RaiseMouseLeave();
+                m_lastMouseOver = nullptr;
+                InvalidateRect(m_hWnd, nullptr, FALSE);
+            }
+        }
+        
+        // 处理 MouseEnter/MouseMove
+        if (control) {
+            if (auto* inputComp = control->GetInput()) {
+                if (m_lastMouseOver != control) {
+                    inputComp->RaiseMouseEnter();
+                    m_lastMouseOver = control;
+                    InvalidateRect(m_hWnd, nullptr, FALSE);
+                }
+                MouseEventArgs args{x, y, 0, false};
+                inputComp->RaiseMouseMove(args);
+            }
+        }
+    }
+    
+    void HandleMouseDown(float x, float y, int button) {
+        auto* control = HitTest(m_rootPanel.get(), x, y);
+        
+        std::cout << "[MouseDown] Hit: " << (control ? control->GetTypeName() : "null") 
+                  << " at (" << x << "," << y << ")" << std::endl;
+        
+        if (control) {
+            // 记录捕获的控件
+            m_capturedControl = control;
+            
+            // 设置焦点
+            if (auto* inputComp = control->GetInput()) {
+                if (inputComp->GetIsFocusable() && !inputComp->GetIsFocused()) {
+                    // 清除之前的焦点
+                    if (m_focusedControl && m_focusedControl != control) {
+                        if (auto* oldInputComp = m_focusedControl->GetInput()) {
+                            oldInputComp->KillFocus();
+                            oldInputComp->RaiseLostFocus();
+                        }
+                    }
+                    // 设置新焦点
+                    m_focusedControl = control;
+                    inputComp->Focus();
+                    inputComp->RaiseGotFocus();
+                    InvalidateRect(m_hWnd, nullptr, FALSE);
+                }
+                
+                MouseEventArgs args{x, y, button, false};
+                inputComp->RaiseMouseDown(args);
+                InvalidateRect(m_hWnd, nullptr, FALSE);
+            }
+        }
+    }
+    
+    void HandleMouseUp(float x, float y, int button) {
+        std::cout << "[MouseUp] captured=" << (m_capturedControl ? m_capturedControl->GetTypeName() : "null") << std::endl;
+        
+        // 如果有捕获的控件，先发送给它
+        if (m_capturedControl) {
+            if (auto* inputComp = m_capturedControl->GetInput()) {
+                MouseEventArgs args{x, y, button, false};
+                inputComp->RaiseMouseUp(args);
+                // 如果鼠标在控件上，触发点击
+                auto* hitControl = HitTest(m_rootPanel.get(), x, y);
+                if (hitControl == m_capturedControl) {
+                    inputComp->RaiseClick();
+                }
+            }
+            m_capturedControl = nullptr;
+            InvalidateRect(m_hWnd, nullptr, FALSE);
+            return;
+        }
+        
+        auto* control = HitTest(m_rootPanel.get(), x, y);
+        if (control) {
+            if (auto* inputComp = control->GetInput()) {
+                MouseEventArgs args{x, y, button, false};
+                inputComp->RaiseMouseUp(args);
+                inputComp->RaiseClick();
+                InvalidateRect(m_hWnd, nullptr, FALSE);
+            }
+        }
+    }
+    
+    void HandleChar(wchar_t ch) {
+        if (m_focusedControl) {
+            if (auto* inputComp = m_focusedControl->GetInput()) {
+                inputComp->RaiseChar(ch);
+                InvalidateRect(m_hWnd, nullptr, FALSE);
+            }
+        }
+    }
+    
+    void HandleKeyDown(int keyCode) {
+        if (m_focusedControl) {
+            if (auto* inputComp = m_focusedControl->GetInput()) {
+                KeyEventArgs args{keyCode, false, false, false, false, false};
+                inputComp->RaiseKeyDown(args);
+                InvalidateRect(m_hWnd, nullptr, FALSE);
+            }
+        }
+    }
+    
+    // 命中测试 - 查找鼠标位置下的控件
+    luaui::Control* HitTest(luaui::Control* root, float x, float y) {
+        if (!root) return nullptr;
+        
+        // 获取控件的渲染矩形（全局坐标）
+        auto* render = root->GetRender();
+        if (!render) return nullptr;
+        
+        const auto& rect = render->GetRenderRect();
+        
+        // 检查点是否在矩形内
+        if (x >= rect.x && x < rect.x + rect.width &&
+            y >= rect.y && y < rect.y + rect.height) {
+            
+            // 如果是 Panel，递归测试子控件
+            if (auto* panel = dynamic_cast<luaui::controls::Panel*>(root)) {
+                // 转换到 Panel 的本地坐标
+                float localX = x - rect.x;
+                float localY = y - rect.y;
+                
+                // 从后向前遍历子控件（后添加的在上面）
+                for (int i = static_cast<int>(panel->GetChildCount()) - 1; i >= 0; --i) {
+                    auto* child = static_cast<luaui::Control*>(panel->GetChild(i).get());
+                    if (auto* result = HitTest(child, localX, localY)) {
+                        return result;
+                    }
+                }
+            }
+            
+            return root;
+        }
+        
+        return nullptr;
     }
 
     static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -327,7 +515,35 @@ private:
                     if (pThis->m_engine) {
                         pThis->m_engine->ResizeRenderTarget(width, height);
                     }
-                    InvalidateRect(hWnd, nullptr, FALSE);
+                    pThis->InvalidateLayout();  // 窗口大小变化需要重新布局
+                    return 0;
+                }
+                case WM_MOUSEMOVE: {
+                    float x = static_cast<float>(GET_X_LPARAM(lParam));
+                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
+                    pThis->HandleMouseMove(x, y);
+                    return 0;
+                }
+                case WM_LBUTTONDOWN: {
+                    float x = static_cast<float>(GET_X_LPARAM(lParam));
+                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
+                    pThis->HandleMouseDown(x, y, 0);
+                    SetCapture(hWnd);
+                    return 0;
+                }
+                case WM_LBUTTONUP: {
+                    float x = static_cast<float>(GET_X_LPARAM(lParam));
+                    float y = static_cast<float>(GET_Y_LPARAM(lParam));
+                    pThis->HandleMouseUp(x, y, 0);
+                    ReleaseCapture();
+                    return 0;
+                }
+                case WM_KEYDOWN: {
+                    pThis->HandleKeyDown(static_cast<int>(wParam));
+                    return 0;
+                }
+                case WM_CHAR: {
+                    pThis->HandleChar(static_cast<wchar_t>(wParam));
                     return 0;
                 }
                 case WM_DESTROY:
@@ -344,6 +560,16 @@ private:
     std::shared_ptr<StackPanel> m_rootPanel;
     std::shared_ptr<TextBlock> m_statusText;
     std::shared_ptr<ProgressBar> m_progressBar;
+    
+    // 输入状态跟踪
+    luaui::Control* m_lastMouseOver = nullptr;
+    luaui::Control* m_focusedControl = nullptr;
+    
+    // 布局脏标记 - 避免每帧重测量
+    bool m_layoutDirty = true;
+    
+    // 鼠标捕获的控件（用于拖动）
+    luaui::Control* m_capturedControl = nullptr;
 };
 
 int main() {

@@ -52,6 +52,7 @@ namespace components {
  * - DIP: 依赖组件抽象
  */
 class Control : public interfaces::IControl,
+                public interfaces::IInputHandler,
                 public std::enable_shared_from_this<Control> {
 public:
     Control();

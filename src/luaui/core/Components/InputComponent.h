@@ -8,9 +8,9 @@ namespace luaui {
 class Control;
 
 namespace controls {
-    class MouseEventArgs;
-    class KeyEventArgs;
-    class FocusEventArgs;
+    struct MouseEventArgs;
+    struct KeyEventArgs;
+    struct FocusEventArgs;
 }
 
 namespace components {
@@ -47,6 +47,7 @@ public:
     void RaiseGotFocus();
     void RaiseLostFocus();
     void RaiseClick();
+    void RaiseChar(wchar_t ch);
     
     // ========== 状态查询 ==========
     bool IsMouseOver() const { return m_mouseOver; }
