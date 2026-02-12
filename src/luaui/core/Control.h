@@ -146,7 +146,4 @@ protected:
     static std::atomic<ControlID> s_idCounter;
 };
 
-// 向后兼容别名
-using ControlBase = Control;
-
 } // namespace luaui

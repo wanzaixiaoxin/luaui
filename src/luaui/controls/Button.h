@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../core/Components/InputComponent.h"
+#include "../rendering/Types.h"
 #include <string>
-#include "Components/LayoutComponent.h"
-#include "Components/RenderComponent.h"
-#include "Components/InputComponent.h"
 
 namespace luaui {
 namespace controls {
@@ -17,7 +18,7 @@ namespace controls {
  * - RenderComponent: 渲染外观
  * - InputComponent: 处理点击和悬停
  */
-class Button : public Control {
+class Button : public luaui::Control {
 public:
     Button();
     

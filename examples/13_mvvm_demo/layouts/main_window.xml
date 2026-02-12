@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MVVM Data Binding Demo Layout -->
+<StackPanel xmlns="http://luaui.io/schema"
+            xmlns:x="http://luaui.io/schema/x"
+            x:Name="rootPanel"
+            Spacing="20"
+            Margin="20">
+    
+    <!-- 标题 -->
+    <TextBlock Text="MVVM Data Binding Demo"
+               FontSize="24"
+               FontWeight="Bold"/>
+    
+    <!-- 状态显示 - 绑定到 Status 属性 -->
+    <TextBlock Text="{Binding Status}"
+               Foreground="Gray"
+               FontSize="12"/>
+    
+    <!-- 用户名 - 双向绑定 -->
+    <StackPanel Spacing="5">
+        <TextBlock Text="User Name:"/>
+        <TextBox Text="{Binding UserName, Mode=TwoWay}"
+                 Padding="10,5"/>
+    </StackPanel>
+    
+    <!-- 年龄 - 双向绑定到滑块 -->
+    <StackPanel Spacing="5">
+        <TextBlock Text="{Binding Age, Converter=ToString, ConverterParameter='Age: {0}'}"/>
+        <Slider Minimum="18" 
+                Maximum="100"
+                Value="{Binding Age, Mode=TwoWay}"/>
+    </StackPanel>
+    
+    <!-- 是否高级用户 - 绑定到前景色 -->
+    <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Text="Premium Status:"/>
+        <TextBlock Text="{Binding IsPremium, Converter=BooleanToText}"
+                   Foreground="{Binding IsPremium, Converter=BooleanToColor}"/>
+    </StackPanel>
+    
+    <!-- 进度 - 绑定到进度条和文本 -->
+    <StackPanel Spacing="5">
+        <TextBlock Text="{Binding Progress, Converter=Format, ConverterParameter='Progress: {0}%'}"/>
+        <ProgressBar Value="{Binding Progress}"
+                    Maximum="100"
+                    Height="10"/>
+    </StackPanel>
+    
+    <!-- 按钮 - 命令绑定 -->
+    <StackPanel Orientation="Horizontal" Spacing="10">
+        <Button Text="Save"
+                Click="OnSaveClick"
+                SetStateColors="#4CAF50,#43A047,#2E7D32"
+                Padding="20,10"
+                Width="100"/>
+        
+        <Button Text="Reset"
+                Click="OnResetClick"
+                SetStateColors="#FF9800,#F57C00,#E65100"
+                Padding="20,10"
+                Width="100"/>
+        
+        <Button Text="+10%"
+                Click="OnIncrementClick"
+                SetStateColors="#2196F3,#1976D2,#0D47A1"
+                Padding="20,10"
+                Width="100"/>
+    </StackPanel>
+    
+</StackPanel>

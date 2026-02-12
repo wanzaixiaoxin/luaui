@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Panel.h"
+#include "../core/Interfaces/IControl.h"
+#include "../rendering/Types.h"
 #include <string>
 #include <memory>
 
@@ -19,8 +21,8 @@ public:
     std::string GetTypeName() const override { return "Border"; }
     
     // 子内容
-    std::shared_ptr<IControl> GetChild() const;
-    void SetChild(const std::shared_ptr<IControl>& child);
+    std::shared_ptr<interfaces::IControl> GetChild() const;
+    void SetChild(const std::shared_ptr<interfaces::IControl>& child);
     
     // 边框厚度
     float GetBorderThickness() const { return m_borderThickness; }
@@ -48,7 +50,7 @@ private:
     float m_borderThickness = 1.0f;
     rendering::Color m_borderColor = rendering::Color::FromHex(0x808080);
     
-    std::shared_ptr<IControl> m_content;
+    std::shared_ptr<interfaces::IControl> m_content;
 };
 
 } // namespace controls

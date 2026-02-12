@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../core/Components/InputComponent.h"
+#include "../rendering/Types.h"
 #include <string>
 #include <memory>
 
@@ -10,7 +14,7 @@ namespace controls {
 /**
  * @brief CheckBox 复选框（新架构）
  */
-class CheckBox : public Control {
+class CheckBox : public luaui::Control {
 public:
     CheckBox();
     
@@ -65,7 +69,7 @@ private:
 /**
  * @brief RadioButton 单选按钮（新架构）
  */
-class RadioButton : public Control {
+class RadioButton : public luaui::Control {
 public:
     RadioButton();
     

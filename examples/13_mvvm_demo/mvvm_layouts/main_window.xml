@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MVVM Demo - 声明式数据绑定 -->
+<StackPanel xmlns="http://luaui.io/schema"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Spacing="15"
+            Margin="20">
+
+    <!-- 标题 -->
+    <TextBlock Text="MVVM Data Binding Demo"
+               FontSize="24"
+               FontWeight="Bold"
+               Foreground="#333333"/>
+
+    <!-- 状态显示 - 单向绑定到 ViewModel.Status -->
+    <TextBlock Text="{Binding Status}"
+               FontSize="14"
+               Foreground="#666666"/>
+
+    <!-- 进度显示 - 使用 Format 转换器 -->
+    <TextBlock Text="{Binding Progress, Converter=Format, ConverterParameter='Progress: {0}%'}"
+               FontSize="16"
+               Foreground="#0066CC"/>
+
+    <!-- 进度条 - 单向绑定到 ViewModel.Progress -->
+    <ProgressBar Value="{Binding Progress}"
+                 Width="300"
+                 Height="20"
+                 Minimum="0"
+                 Maximum="100"/>
+
+    <!-- 进度滑块 - 双向绑定，自动同步 -->
+    <Slider Value="{Binding Progress, Mode=TwoWay}"
+            Width="300"
+            Minimum="0"
+            Maximum="100"/>
+
+    <!-- 用户名 - 双向绑定 -->
+    <TextBox Text="{Binding UserName, Mode=TwoWay}"
+             Width="300"/>
+
+    <!-- 按钮 - 命令绑定 -->
+    <Button Text="Save Profile"
+            Click="OnSaveClick"
+            Width="300"
+            Height="40"
+            Background="#4CAF50"
+            Foreground="White"/>
+
+    <Button Text="Increment Progress"
+            Click="OnIncrementClick"
+            Width="300"
+            Height="40"
+            Background="#2196F3"
+            Foreground="White"/>
+
+    <Button Text="Reset"
+            Click="OnResetClick"
+            Width="300"
+            Height="40"
+            Background="#FF9800"
+            Foreground="White"/>
+
+</StackPanel>

@@ -59,6 +59,7 @@ add_subdirectory(src/luaui/controls)
 add_subdirectory(src/luaui/controls/layouts)  # Interface library
 add_subdirectory(src/luaui/style)
 add_subdirectory(src/luaui/xml)
+add_subdirectory(src/luaui/mvvm)
 
 # ============================================
 # LuaUI Main Library (Interface)
@@ -74,6 +75,7 @@ target_include_directories(LuaUI
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/utils>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/style>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/xml>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/luaui/mvvm>
 
         $<INSTALL_INTERFACE:include>
 )
@@ -86,6 +88,7 @@ target_link_libraries(LuaUI
         LuaUI_Controls
         LuaUI_Style
         LuaUI_Xml
+        LuaUI_MVVM
 
         d2d1
         dwrite

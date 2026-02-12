@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../rendering/Types.h"
 #include <string>
-#include "Components/LayoutComponent.h"
-#include "Components/RenderComponent.h"
 
 namespace luaui {
 namespace controls {
@@ -13,7 +14,7 @@ namespace controls {
  * 
  * 只负责显示文本，不处理输入
  */
-class TextBlock : public Control {
+class TextBlock : public luaui::Control {
 public:
     TextBlock();
     

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../rendering/Types.h"
 #include <string>
 
 namespace luaui {
@@ -9,7 +12,7 @@ namespace controls {
 /**
  * @brief Rectangle 矩形形状（新架构）
  */
-class Rectangle : public Control {
+class Rectangle : public luaui::Control {
 public:
     Rectangle();
     
@@ -49,7 +52,7 @@ private:
 /**
  * @brief Ellipse 椭圆形状（新架构）
  */
-class Ellipse : public Control {
+class Ellipse : public luaui::Control {
 public:
     Ellipse();
     
@@ -80,7 +83,7 @@ private:
 /**
  * @brief Line 线条形状（新架构）
  */
-class Line : public Control {
+class Line : public luaui::Control {
 public:
     Line();
     

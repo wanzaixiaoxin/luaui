@@ -43,6 +43,7 @@ add_library(LuaUI_Controls STATIC
 target_include_directories(LuaUI_Controls
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
         ${CMAKE_SOURCE_DIR}/src/luaui/core
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering
         ${CMAKE_SOURCE_DIR}/src/luaui/utils

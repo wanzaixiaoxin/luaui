@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Interfaces/IControl.h"
 #include "Control.h"
-#include "Components/LayoutComponent.h"
-#include "Components/RenderComponent.h"
+#include "../core/Interfaces/IControl.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../rendering/Types.h"
 #include <vector>
 #include <string>
 #include <memory>
@@ -19,7 +20,7 @@ class Panel;
  */
 class PanelLayoutComponent : public components::LayoutComponent {
 public:
-    explicit PanelLayoutComponent(Control* owner) : LayoutComponent(owner) {}
+    explicit PanelLayoutComponent(luaui::Control* owner) : LayoutComponent(owner) {}
     
 protected:
     rendering::Size MeasureOverride(const rendering::Size& availableSize) override;
@@ -31,7 +32,7 @@ protected:
  */
 class PanelRenderComponent : public components::RenderComponent {
 public:
-    explicit PanelRenderComponent(Control* owner) : RenderComponent(owner) {}
+    explicit PanelRenderComponent(luaui::Control* owner) : RenderComponent(owner) {}
     
 protected:
     void RenderOverride(rendering::IRenderContext* context) override;
@@ -43,7 +44,7 @@ protected:
  * 
  * 容器控件，可以包含子控件
  */
-class Panel : public Control {
+class Panel : public luaui::Control {
 public:
     Panel();
     

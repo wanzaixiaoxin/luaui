@@ -4,6 +4,14 @@
 #include <memory>
 #include <vector>
 
+// 前向声明
+namespace luaui {
+namespace interfaces {
+    class IControl;
+}
+using interfaces::IControl;
+}
+
 namespace luaui {
 namespace controls {
 

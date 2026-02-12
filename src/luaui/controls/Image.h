@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../rendering/Types.h"
 #include <string>
 
 namespace luaui {
@@ -21,7 +24,7 @@ enum class Stretch {
  * 
  * 注意：这是一个框架实现，实际图像渲染需要渲染层支持IBitmap接口
  */
-class Image : public Control {
+class Image : public luaui::Control {
 public:
     Image();
     

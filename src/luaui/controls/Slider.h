@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Control.h"
+#include "../core/Components/LayoutComponent.h"
+#include "../core/Components/RenderComponent.h"
+#include "../core/Components/InputComponent.h"
+#include "../rendering/Types.h"
 #include <string>
 
 namespace luaui {
@@ -9,7 +13,7 @@ namespace controls {
 /**
  * @brief Slider 滑块控件（新架构）
  */
-class Slider : public Control {
+class Slider : public luaui::Control {
 public:
     Slider();
     
@@ -71,7 +75,7 @@ private:
 /**
  * @brief ProgressBar 进度条（新架构）
  */
-class ProgressBar : public Control {
+class ProgressBar : public luaui::Control {
 public:
     ProgressBar();
     

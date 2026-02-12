@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Panel.h"
+#include "../core/Interfaces/IControl.h"
+#include "../rendering/Types.h"
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace luaui {
 namespace controls {
@@ -13,7 +16,7 @@ class ListBoxItem;
 /**
  * @brief ListBoxItem 列表项（新架构）
  */
-class ListBoxItem : public Control {
+class ListBoxItem : public luaui::Control {
 public:
     ListBoxItem();
     
