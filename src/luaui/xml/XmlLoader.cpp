@@ -1,6 +1,12 @@
 #include "XmlLayout.h"
 #include "tinyxml2.h"
 #include "Logger.h"
+#include "layouts/Grid.h"
+#include "TextBlock.h"
+#include "TextBox.h"
+#include "Slider.h"  // Also contains ProgressBar
+#include "Button.h"
+#include "Border.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -56,6 +62,7 @@ private:
         // 注册基本控件
         RegisterElement("StackPanel", []() { return std::make_shared<StackPanel>(); });
         RegisterElement("Panel", []() { return std::make_shared<Panel>(); });
+        RegisterElement("Grid", []() { return std::make_shared<Grid>(); });
         RegisterElement("Button", []() { return std::make_shared<Button>(); });
         RegisterElement("TextBlock", []() { return std::make_shared<TextBlock>(); });
         RegisterElement("TextBox", []() { return std::make_shared<TextBox>(); });
@@ -108,6 +115,7 @@ private:
                 if (TypeConverter::ToFloat(value, width)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetWidth(width);
+                        // Width set
                     }
                 }
             }
@@ -117,6 +125,7 @@ private:
                 if (TypeConverter::ToFloat(value, height)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetHeight(height);
+                        // Height set
                     }
                 }
             }
@@ -129,11 +138,129 @@ private:
                     }
                 }
             }
+            // 外边距 Margin (简化为统一值)
+            else if (name == "Margin") {
+                float margin;
+                if (TypeConverter::ToFloat(value, margin)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetMargin(margin, margin, margin, margin);
+                        // Margin set
+                    }
+                }
+            }
+            // 内边距 Padding (简化为统一值)
+            else if (name == "Padding") {
+                float padding;
+                if (TypeConverter::ToFloat(value, padding)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetPadding(padding, padding, padding, padding);
+                        // Padding set
+                    }
+                }
+            }
+            // Spacing (StackPanel)
+            else if (name == "Spacing") {
+                float spacing;
+                if (TypeConverter::ToFloat(value, spacing)) {
+                    if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
+                        stack->SetSpacing(spacing);
+                    }
+                }
+            }
+            // Orientation (StackPanel)
+            else if (name == "Orientation") {
+                if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
+                    if (value == "Horizontal") {
+                        stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
+                    } else if (value == "Vertical") {
+                        stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
+                    }
+                }
+            }
+            // Text (TextBlock, TextBox, Button)
+            else if (name == "Text") {
+                std::wstring wtext(value.begin(), value.end());
+                if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                    tb->SetText(wtext);
+                } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                    tx->SetText(wtext);
+                }
+            }
+            // FontSize
+            else if (name == "FontSize") {
+                float size;
+                if (TypeConverter::ToFloat(value, size)) {
+                    if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                        tb->SetFontSize(size);
+                    }
+                }
+            }
+            // Value (Slider, ProgressBar)
+            else if (name == "Value") {
+                float val;
+                if (TypeConverter::ToFloat(value, val)) {
+                    if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
+                        s->SetValue(val);
+                    } else if (auto p = std::dynamic_pointer_cast<controls::ProgressBar>(control)) {
+                        p->SetValue(val);
+                    }
+                }
+            }
+            // Minimum (Slider)
+            else if (name == "Minimum") {
+                float min;
+                if (TypeConverter::ToFloat(value, min)) {
+                    if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
+                        s->SetMinimum(min);
+                    }
+                }
+            }
+            // Maximum (Slider)
+            else if (name == "Maximum") {
+                float max;
+                if (TypeConverter::ToFloat(value, max)) {
+                    if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
+                        s->SetMaximum(max);
+                    }
+                }
+            }
+            // SetStateColors (Button) - 格式: "normal,hover,pressed"
+            else if (name == "SetStateColors") {
+                // Parse comma-separated colors
+                std::stringstream ss(value);
+                std::string colorStr;
+                std::vector<Color> colors;
+                while (std::getline(ss, colorStr, ',')) {
+                    Color c;
+                    if (TypeConverter::ToColor(Trim(colorStr), c)) {
+                        colors.push_back(c);
+                    }
+                }
+                if (colors.size() >= 3) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetStateColors(colors[0], colors[1], colors[2]);
+                    }
+                }
+            }
         }
     }
     
     void LoadChildren(const std::shared_ptr<luaui::Control>& parent, 
                       const tinyxml2::XMLElement* element) {
+        // 特殊处理 Border - 使用 SetChild
+        if (auto border = std::dynamic_pointer_cast<controls::Border>(parent)) {
+            // Border 只能有一个子元素，取第一个
+            if (const tinyxml2::XMLElement* childElem = element->FirstChildElement()) {
+                auto child = LoadElement(childElem);
+                if (child) {
+                    border->SetChild(child);
+                    // 递归加载子元素的子元素
+                    LoadChildren(child, childElem);
+                }
+            }
+            return;
+        }
+        
         // 尝试作为 Panel 添加子元素
         auto panel = std::dynamic_pointer_cast<controls::Panel>(parent);
         if (!panel) return;

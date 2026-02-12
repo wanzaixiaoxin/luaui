@@ -1,281 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- LuaUI XML Layout - Main Window -->
-<Grid xmlns="http://luaui.io/schema"
-      xmlns:x="http://luaui.io/schema/x"
-      x:Name="rootGrid"
-      Margin="10"
-      Background="#F5F5F5">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <!-- Header Section -->
-        <Border Grid.Row="0" 
-                Background="#2196F3" 
-                Padding="20,15"
-                Margin="0,0,0,10">
-            <StackPanel Orientation="Horizontal" Spacing="20">
-                <TextBlock x:Name="titleText"
-                          Text="XML Layout System"
-                          FontSize="28"
-                          Foreground="White"
-                          FontWeight="Bold"/>
-                <Button x:Name="settingsBtn"
-                       Content="Settings"
-                       SetStateColors="#1976D2,#1565C0,#0D47A1"
-                       Padding="15,8"/>
+<!-- LuaUI XML Layout - Main Window (Simplified) -->
+<StackPanel xmlns="http://luaui.io/schema"
+            xmlns:x="http://luaui.io/schema/x"
+            x:Name="rootPanel"
+            Spacing="10"
+            Margin="10">
+    
+    <!-- Header Section -->
+    <Border Background="#2196F3" 
+            Padding="20,15"
+            Margin="0,0,0,10">
+        <StackPanel Orientation="Horizontal" Spacing="20">
+            <TextBlock x:Name="titleText"
+                      Text="XML Layout System"
+                      FontSize="28"
+                      Foreground="White"/>
+            <Button x:Name="settingsBtn"
+                   SetStateColors="#1976D2,#1565C0,#0D47A1"
+                   Padding="15,8"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Toolbar Section -->
+    <Border Background="White"
+            Padding="10"
+            Margin="0,0,0,10"
+            BorderBrush="#E0E0E0"
+            BorderThickness="1">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button x:Name="newBtn"
+                   SetStateColors="#4CAF50,#43A047,#2E7D32"
+                   Padding="12,6"
+                   Width="80"/>
+            
+            <Button x:Name="openBtn"
+                   SetStateColors="#FF9800,#F57C00,#E65100"
+                   Padding="12,6"
+                   Width="80"/>
+            
+            <Button x:Name="saveBtn"
+                   SetStateColors="#2196F3,#1976D2,#0D47A1"
+                   Padding="12,6"
+                   Width="80"/>
+            
+            <Button x:Name="searchBtn"
+                   SetStateColors="#9E9E9E,#757575,#424242"
+                   Padding="12,6"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Content Area -->
+    <Border Background="White"
+            Padding="20"
+            BorderBrush="#E0E0E0"
+            BorderThickness="1">
+        <StackPanel Spacing="15">
+            <!-- Welcome Section -->
+            <Border Background="#E8F5E9" 
+                   Padding="15"
+                   BorderBrush="#C8E6C9"
+                   BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Welcome to XML Layout!"
+                              FontSize="20"
+                              Foreground="#2E7D32"/>
+                    <TextBlock Text="This UI is loaded from XML configuration."
+                              FontSize="13"
+                              Foreground="#388E3C"
+                              Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Form Section -->
+            <StackPanel>
+                <TextBlock Text="Username" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
+                <TextBox x:Name="usernameBox"
+                        Padding="10,8"/>
             </StackPanel>
-        </Border>
-        
-        <!-- Toolbar Section -->
-        <Border Grid.Row="1"
-                Background="White"
-                Padding="10"
-                Margin="0,0,0,10"
-                BorderBrush="#E0E0E0"
-                BorderThickness="1"
-                CornerRadius="4">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button x:Name="newBtn"
-                       Content="New"
+            
+            <StackPanel>
+                <TextBlock Text="Email" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
+                <TextBox x:Name="emailBox"
+                        Padding="10,8"/>
+            </StackPanel>
+            
+            <StackPanel>
+                <TextBlock Text="Bio" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
+                <TextBox x:Name="bioBox"
+                        Height="80"
+                        Padding="10,8"/>
+            </StackPanel>
+            
+            <!-- Progress Section -->
+            <StackPanel>
+                <TextBlock Text="Profile Completion" FontSize="13" Foreground="#555"/>
+                <ProgressBar x:Name="profileProgress"
+                            Value="65"
+                            Maximum="100"
+                            Height="8"
+                            Margin="0,5,0,0"/>
+            </StackPanel>
+            
+            <!-- Volume Section -->
+            <StackPanel>
+                <TextBlock Text="Volume" FontSize="13" Foreground="#555"/>
+                <Slider x:Name="volumeSlider"
+                       Minimum="0"
+                       Maximum="100"
+                       Value="75"
+                       Height="30"/>
+            </StackPanel>
+            
+            <!-- Action Buttons -->
+            <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Right"
+                       Spacing="10"
+                       Margin="0,10,0,0">
+                <Button x:Name="resetBtn"
+                       SetStateColors="#F5F5F5,#E0E0E0,#BDBDBD"
+                       Padding="20,10"
+                       Width="100"/>
+                
+                <Button x:Name="cancelBtn"
+                       SetStateColors="White,#F5F5F5,#E0E0E0"
+                       Padding="20,10"
+                       Width="100"/>
+                
+                <Button x:Name="submitBtn"
                        SetStateColors="#4CAF50,#43A047,#2E7D32"
-                       Padding="12,6"
-                       Width="80"/>
-                
-                <Button x:Name="openBtn"
-                       Content="Open"
-                       SetStateColors="#FF9800,#F57C00,#E65100"
-                       Padding="12,6"
-                       Width="80"/>
-                
-                <Button x:Name="saveBtn"
-                       Content="Save"
-                       SetStateColors="#2196F3,#1976D2,#0D47A1"
-                       Padding="12,6"
-                       Width="80"/>
-                
-                <Border Width="1" 
-                       Background="#E0E0E0" 
-                       Margin="10,0"/>
-                
-                <TextBox x:Name="searchBox"
-                        Width="200"
-                        Padding="8,5"
-                        Placeholder="Search..."/>
-                
-                <Button x:Name="searchBtn"
-                       Content="Search"
-                       SetStateColors="#9E9E9E,#757575,#424242"
-                       Padding="12,6"/>
+                       Padding="20,10"
+                       Width="120"/>
             </StackPanel>
-        </Border>
-        
-        <!-- Main Content -->
-        <Grid Grid.Row="2" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <!-- Sidebar -->
-            <Border Grid.Column="0"
-                   Background="White"
-                   Padding="10"
-                   Margin="0,0,10,0"
-                   BorderBrush="#E0E0E0"
-                   BorderThickness="1"
-                   CornerRadius="4">
-                <StackPanel Spacing="5">
-                    <TextBlock Text="Navigation"
-                              FontSize="16"
-                              Foreground="#333"
-                              FontWeight="Bold"
-                              Margin="0,0,0,10"/>
-                    
-                    <Button x:Name="navHomeBtn"
-                           Content="Home"
-                           HorizontalAlignment="Stretch"
-                           SetStateColors="Transparent,#E3F2FD,#BBDEFB"
-                           Foreground="#333"
-                           Padding="10,8"
-                           Margin="0,2"/>
-                    
-                    <Button x:Name="navProfileBtn"
-                           Content="Profile"
-                           HorizontalAlignment="Stretch"
-                           SetStateColors="Transparent,#E3F2FD,#BBDEFB"
-                           Foreground="#333"
-                           Padding="10,8"
-                           Margin="0,2"/>
-                    
-                    <Button x:Name="navMessagesBtn"
-                           Content="Messages"
-                           HorizontalAlignment="Stretch"
-                           SetStateColors="Transparent,#E3F2FD,#BBDEFB"
-                           Foreground="#333"
-                           Padding="10,8"
-                           Margin="0,2"/>
-                    
-                    <Button x:Name="navSettingsBtn"
-                           Content="Settings"
-                           HorizontalAlignment="Stretch"
-                           SetStateColors="Transparent,#E3F2FD,#BBDEFB"
-                           Foreground="#333"
-                           Padding="10,8"
-                           Margin="0,2"/>
-                    
-                    <Border Height="1" Background="#E0E0E0" Margin="0,10"/>
-                    
-                    <TextBlock Text="Options"
-                              FontSize="14"
-                              Foreground="#666"
-                              Margin="0,0,0,5"/>
-                    
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="Dark Mode" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="Notifications" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <TextBlock Text="Volume" FontSize="12" Foreground="#666" Margin="0,10,0,5"/>
-                    <Slider x:Name="volumeSlider"
-                           Minimum="0"
-                           Maximum="100"
-                           Value="75"
-                           Height="30"/>
-                </StackPanel>
-            </Border>
-            
-            <!-- Content Area -->
-            <Border Grid.Column="1"
-                   Background="White"
-                   Padding="20"
-                   BorderBrush="#E0E0E0"
-                   BorderThickness="1"
-                   CornerRadius="4">
-                <StackPanel Spacing="15">
-                    <!-- Welcome Section -->
-                    <Border Background="#E8F5E9" 
-                           Padding="15" 
-                           CornerRadius="4"
-                           BorderBrush="#C8E6C9"
-                           BorderThickness="1">
-                        <StackPanel>
-                            <TextBlock Text="Welcome to XML Layout!"
-                                      FontSize="20"
-                                      Foreground="#2E7D32"
-                                      FontWeight="Bold"/>
-                            <TextBlock Text="This UI is completely defined in XML with full property support."
-                                      FontSize="13"
-                                      Foreground="#388E3C"
-                                      Margin="0,5,0,0"/>
-                        </StackPanel>
-                    </Border>
-                    
-                    <!-- Form Section -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                            <TextBlock Text="Username" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
-                            <TextBox x:Name="usernameBox"
-                                    Width="200"
-                                    Padding="10,8"
-                                    Placeholder="Enter username"/>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                            <TextBlock Text="Email" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
-                            <TextBox x:Name="emailBox"
-                                    Width="200"
-                                    Padding="10,8"
-                                    Placeholder="Enter email"/>
-                        </StackPanel>
-                    </Grid>
-                    
-                    <StackPanel>
-                        <TextBlock Text="Bio" FontSize="13" Foreground="#555" Margin="0,0,0,5"/>
-                        <TextBox x:Name="bioBox"
-                                Height="80"
-                                Padding="10,8"
-                                Placeholder="Tell us about yourself..."/>
-                    </StackPanel>
-                    
-                    <!-- Progress Section -->
-                    <StackPanel>
-                        <Grid>
-                            <TextBlock Text="Profile Completion" FontSize="13" Foreground="#555"/>
-                            <TextBlock x:Name="progressPercentText"
-                                      Text="65%"
-                                      FontSize="13"
-                                      Foreground="#2196F3"
-                                      HorizontalAlignment="Right"/>
-                        </Grid>
-                        <ProgressBar x:Name="profileProgress"
-                                    Value="65"
-                                    Maximum="100"
-                                    Height="8"
-                                    Margin="0,5,0,0"/>
-                    </StackPanel>
-                    
-                    <!-- Action Buttons -->
-                    <StackPanel Orientation="Horizontal" 
-                               HorizontalAlignment="Right"
-                               Spacing="10"
-                               Margin="0,10,0,0">
-                        <Button x:Name="resetBtn"
-                               Content="Reset"
-                               SetStateColors="#F5F5F5,#E0E0E0,#BDBDBD"
-                               Foreground="#555"
-                               Padding="20,10"
-                               Width="100"/>
-                        
-                        <Button x:Name="cancelBtn"
-                               Content="Cancel"
-                               SetStateColors="White,#F5F5F5,#E0E0E0"
-                               Foreground="#555"
-                               Padding="20,10"
-                               Width="100"/>
-                        
-                        <Button x:Name="submitBtn"
-                               Content="Save Changes"
-                               SetStateColors="#4CAF50,#43A047,#2E7D32"
-                               Padding="20,10"
-                               Width="120"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </Grid>
-        
-        <!-- Footer -->
-        <Border Grid.Row="3"
-               Background="#424242"
-               Padding="15,10"
-               CornerRadius="4">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                
-                <TextBlock Grid.Column="0"
-                          x:Name="statusText"
-                          Text="Ready"
-                          FontSize="12"
-                          Foreground="#BDBDBD"/>
-                
-                <TextBlock Grid.Column="1"
-                          Text="2026 LuaUI Framework"
-                          FontSize="11"
-                          Foreground="#757575"/>
-            </Grid>
-        </Border>
-</Grid>
+        </StackPanel>
+    </Border>
+    
+    <!-- Footer -->
+    <Border Background="#424242"
+            Padding="15,10">
+        <StackPanel>
+            <TextBlock x:Name="statusText"
+                      Text="Ready"
+                      FontSize="12"
+                      Foreground="#BDBDBD"/>
+        </StackPanel>
+    </Border>
+</StackPanel>

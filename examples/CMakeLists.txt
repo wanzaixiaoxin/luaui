@@ -90,3 +90,13 @@ endif()
 if(EXISTS ${CMAKE_SOURCE_DIR}/resources)
     file(COPY ${CMAKE_SOURCE_DIR}/resources DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
+
+# Copy 12_xml_layout_demo layouts to output directory
+if(TARGET 12_xml_layout_demo AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/12_xml_layout_demo/layouts)
+    add_custom_command(TARGET 12_xml_layout_demo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/12_xml_layout_demo/layouts
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/layouts
+        COMMENT "Copying XML layouts to output directory"
+    )
+endif()
