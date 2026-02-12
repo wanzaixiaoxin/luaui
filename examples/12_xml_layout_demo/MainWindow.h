@@ -1,15 +1,19 @@
 #pragma once
 
 #include <luaui.h>
+#include <unordered_map>
+#include <functional>
 
 // 前向声明
 namespace luaui {
 namespace controls {
-class Button;
-class Slider;
 class ProgressBar;
+class Slider;
 class TextBlock;
 class TextBox;
+}
+namespace xml {
+class IXmlLoader;
 }
 }
 
@@ -22,52 +26,33 @@ protected:
     void OnLoaded() override;
 
 private:
-    // 从 XML 加载布局
-    std::shared_ptr<luaui::Control> LoadLayoutFromXml();
+    // 资源路径管理
+    std::string FindResourcePath(const std::string& filename);
     
-    // 回退内容（XML 加载失败时使用）
-    std::shared_ptr<luaui::Control> CreateFallbackContent();
+    // 注册所有事件处理器到 XML 加载器
+    void RegisterEventHandlers(const std::shared_ptr<luaui::xml::IXmlLoader>& loader);
     
-    // 查找命名控件
-    void FindNamedControls();
+    // 获取命名控件（用于业务逻辑中访问）
+    template<typename T>
+    std::shared_ptr<T> FindControl(const std::string& name);
     
-    // 绑定事件
-    void BindEvents();
+    // ========== 事件处理器（由 XML 中的声明自动绑定）==========
+    void OnNewClick();
+    void OnOpenClick();
+    void OnSaveClick();
+    void OnSearchClick();
+    void OnSubmitClick();
+    void OnCancelClick();
+    void OnResetClick();
+    void OnVolumeChanged(double value);
     
-    // 更新状态栏
+    // 辅助方法
     void UpdateStatus(const std::wstring& message);
-    
-    // 更新进度文本
     void UpdateProgressText();
     
-    // Toolbar buttons
-    std::shared_ptr<luaui::controls::Button> m_newBtn;
-    std::shared_ptr<luaui::controls::Button> m_openBtn;
-    std::shared_ptr<luaui::controls::Button> m_saveBtn;
-    std::shared_ptr<luaui::controls::Button> m_searchBtn;
+    // 回退内容
+    std::shared_ptr<luaui::Control> CreateFallbackContent();
     
-    // Action buttons
-    std::shared_ptr<luaui::controls::Button> m_submitBtn;
-    std::shared_ptr<luaui::controls::Button> m_cancelBtn;
-    std::shared_ptr<luaui::controls::Button> m_resetBtn;
-    
-    // Navigation buttons
-    std::shared_ptr<luaui::controls::Button> m_navHomeBtn;
-    std::shared_ptr<luaui::controls::Button> m_navProfileBtn;
-    std::shared_ptr<luaui::controls::Button> m_navMessagesBtn;
-    std::shared_ptr<luaui::controls::Button> m_navSettingsBtn;
-    std::shared_ptr<luaui::controls::Button> m_settingsBtn;
-    
-    // Form controls
-    std::shared_ptr<luaui::controls::TextBox> m_usernameBox;
-    std::shared_ptr<luaui::controls::TextBox> m_emailBox;
-    std::shared_ptr<luaui::controls::TextBox> m_bioBox;
-    std::shared_ptr<luaui::controls::TextBox> m_searchBox;
-    
-    // Other controls
-    std::shared_ptr<luaui::controls::Slider> m_volumeSlider;
-    std::shared_ptr<luaui::controls::ProgressBar> m_profileProgress;
-    std::shared_ptr<luaui::controls::TextBlock> m_statusText;
-    std::shared_ptr<luaui::controls::TextBlock> m_progressPercentText;
-    std::shared_ptr<luaui::controls::TextBlock> m_titleText;
+    // 控件缓存（懒加载）
+    std::unordered_map<std::string, std::weak_ptr<luaui::interfaces::IControl>> m_controlCache;
 };

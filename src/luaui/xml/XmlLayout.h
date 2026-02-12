@@ -14,8 +14,13 @@ namespace xml {
 class IXmlLoader;
 using IXmlLoaderPtr = std::shared_ptr<IXmlLoader>;
 
+// 事件处理器类型定义
+using ClickHandler = std::function<void()>;
+using ValueChangedHandler = std::function<void(double)>;
+using TextChangedHandler = std::function<void(const std::wstring&)>;
+
 // ============================================================================
-// IXmlLoader - XML 布局加载器接口（新架构简化版）
+// IXmlLoader - XML 布局加载器接口（支持声明式事件绑定）
 // ============================================================================
 class IXmlLoader {
 public:
@@ -30,6 +35,28 @@ public:
     // 注册自定义控件工厂
     virtual void RegisterElement(const std::string& tagName, 
                                   std::function<std::shared_ptr<Control>()> factory) = 0;
+    
+    // ========== 声明式事件绑定 ==========
+    
+    // 注册 Click 事件处理器（通过方法名）
+    virtual void RegisterClickHandler(const std::string& methodName, ClickHandler handler) = 0;
+    
+    // 注册 ValueChanged 事件处理器
+    virtual void RegisterValueChangedHandler(const std::string& methodName, ValueChangedHandler handler) = 0;
+    
+    // 注册 TextChanged 事件处理器
+    virtual void RegisterTextChangedHandler(const std::string& methodName, TextChangedHandler handler) = 0;
+    
+    // 批量注册事件处理器（从对象实例自动提取）
+    template<typename T>
+    void BindEventHandlers(T* instance) {
+        // 这个模板方法在头文件中实现，允许自动绑定
+        BindEventsFromInstance(instance);
+    }
+    
+protected:
+    // 子类需要实现的内部方法
+    virtual void BindEventsFromInstance(void* instance) = 0;
 };
 
 // 创建 XML 加载器实例

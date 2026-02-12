@@ -4,7 +4,7 @@
 #include "layouts/Grid.h"
 #include "TextBlock.h"
 #include "TextBox.h"
-#include "Slider.h"  // Also contains ProgressBar
+#include "Slider.h"
 #include "Button.h"
 #include "Border.h"
 #include <sstream>
@@ -54,12 +54,33 @@ public:
                          std::function<std::shared_ptr<luaui::Control>()> factory) override {
         m_factories[tagName] = factory;
     }
-
+    
+    // ========== 事件处理器注册 ==========
+    
+    void RegisterClickHandler(const std::string& methodName, ClickHandler handler) override {
+        m_clickHandlers[methodName] = handler;
+    }
+    
+    void RegisterValueChangedHandler(const std::string& methodName, ValueChangedHandler handler) override {
+        m_valueChangedHandlers[methodName] = handler;
+    }
+    
+    void RegisterTextChangedHandler(const std::string& methodName, TextChangedHandler handler) override {
+        m_textChangedHandlers[methodName] = handler;
+    }
+    
+protected:
+    void BindEventsFromInstance(void* instance) override {
+        // 基类实现为空，具体绑定由外部完成
+    }
+    
 private:
     std::unordered_map<std::string, std::function<std::shared_ptr<luaui::Control>()>> m_factories;
+    std::unordered_map<std::string, ClickHandler> m_clickHandlers;
+    std::unordered_map<std::string, ValueChangedHandler> m_valueChangedHandlers;
+    std::unordered_map<std::string, TextChangedHandler> m_textChangedHandlers;
     
     void RegisterDefaultElements() {
-        // 注册基本控件
         RegisterElement("StackPanel", []() { return std::make_shared<StackPanel>(); });
         RegisterElement("Panel", []() { return std::make_shared<Panel>(); });
         RegisterElement("Grid", []() { return std::make_shared<Grid>(); });
@@ -87,7 +108,7 @@ private:
         auto control = it->second();
         if (!control) return nullptr;
         
-        // 设置属性
+        // 设置属性（包括事件绑定）
         ApplyAttributes(control, element);
         
         // 处理子元素
@@ -115,7 +136,6 @@ private:
                 if (TypeConverter::ToFloat(value, width)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetWidth(width);
-                        // Width set
                     }
                 }
             }
@@ -125,16 +145,6 @@ private:
                 if (TypeConverter::ToFloat(value, height)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetHeight(height);
-                        // Height set
-                    }
-                }
-            }
-            // 背景色
-            else if (name == "Background") {
-                Color color;
-                if (TypeConverter::ToColor(value, color)) {
-                    if (auto* render = control->GetRender()) {
-                        render->SetBackground(color);
                     }
                 }
             }
@@ -144,7 +154,6 @@ private:
                 if (TypeConverter::ToFloat(value, margin)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetMargin(margin, margin, margin, margin);
-                        // Margin set
                     }
                 }
             }
@@ -154,7 +163,15 @@ private:
                 if (TypeConverter::ToFloat(value, padding)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetPadding(padding, padding, padding, padding);
-                        // Padding set
+                    }
+                }
+            }
+            // 背景色
+            else if (name == "Background") {
+                Color color;
+                if (TypeConverter::ToColor(value, color)) {
+                    if (auto* render = control->GetRender()) {
+                        render->SetBackground(color);
                     }
                 }
             }
@@ -177,7 +194,7 @@ private:
                     }
                 }
             }
-            // Text (TextBlock, TextBox, Button)
+            // Text (TextBlock, TextBox)
             else if (name == "Text") {
                 std::wstring wtext(value.begin(), value.end());
                 if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
@@ -226,7 +243,6 @@ private:
             }
             // SetStateColors (Button) - 格式: "normal,hover,pressed"
             else if (name == "SetStateColors") {
-                // Parse comma-separated colors
                 std::stringstream ss(value);
                 std::string colorStr;
                 std::vector<Color> colors;
@@ -242,20 +258,48 @@ private:
                     }
                 }
             }
+            // ========== 声明式事件绑定 ==========
+            // Click 事件 - XML 中写: Click="OnSaveClick"
+            else if (name == "Click") {
+                auto it = m_clickHandlers.find(value);
+                if (it != m_clickHandlers.end()) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->Click.Add([handler = it->second](luaui::Control*) { handler(); });
+                    }
+                } else {
+                    luaui::utils::Logger::WarningF("[XML] Click handler '%s' not found", value.c_str());
+                }
+            }
+            // ValueChanged 事件 - XML 中写: ValueChanged="OnVolumeChanged"
+            else if (name == "ValueChanged") {
+                auto it = m_valueChangedHandlers.find(value);
+                if (it != m_valueChangedHandlers.end()) {
+                    if (auto slider = std::dynamic_pointer_cast<controls::Slider>(control)) {
+                        slider->ValueChanged.Add([handler = it->second](controls::Slider*, double val) { 
+                            handler(val); 
+                        });
+                    }
+                } else {
+                    luaui::utils::Logger::WarningF("[XML] ValueChanged handler '%s' not found", value.c_str());
+                }
+            }
         }
     }
     
     void LoadChildren(const std::shared_ptr<luaui::Control>& parent, 
                       const tinyxml2::XMLElement* element) {
-        // 特殊处理 Border - 使用 SetChild
+        // 特殊处理 Border - 使用 SetChild 而不是 AddChild
         if (auto border = std::dynamic_pointer_cast<controls::Border>(parent)) {
-            // Border 只能有一个子元素，取第一个
             if (const tinyxml2::XMLElement* childElem = element->FirstChildElement()) {
-                auto child = LoadElement(childElem);
-                if (child) {
-                    border->SetChild(child);
-                    // 递归加载子元素的子元素
-                    LoadChildren(child, childElem);
+                std::string tagName = childElem->Name();
+                auto it = m_factories.find(tagName);
+                if (it != m_factories.end()) {
+                    auto child = it->second();
+                    if (child) {
+                        ApplyAttributes(child, childElem);
+                        border->SetChild(child);
+                        LoadChildren(child, childElem);
+                    }
                 }
             }
             return;

@@ -1,25 +1,36 @@
-# XML Layout Demo - 代码后置示例
+# XML Layout Demo - 声明式事件绑定
 
-这是 LuaUI XML 布局系统的演示，展示了如何使用外部 XML 配置文件和 C++ 代码后置（Code-Behind）模式构建 UI。
+这是 LuaUI XML 布局系统的演示，展示了如何使用**声明式事件绑定**构建 UI。
 
-## 功能特性
+## 核心特性：声明式事件绑定
 
-### 1. 外部 XML 布局
-- UI 结构定义在 `layouts/main_window.xml` 中
-- 支持标准控件：StackPanel, Border, Button, TextBlock, TextBox, Slider, ProgressBar
-- 使用 `x:Name` 为控件命名以便在代码中访问
+传统方式需要手动查找控件并绑定事件：
+```cpp
+// 传统方式（繁琐）
+void OnLoaded() {
+    auto root = LoadXML("layout.xml");
+    SetRoot(root);
+    
+    // 手动查找控件
+    auto saveBtn = FindControl<Button>("saveBtn");
+    if (saveBtn) {
+        // 手动绑定事件
+        saveBtn->Click.Add([this](Control*) { OnSaveClick(); });
+    }
+}
+```
 
-### 2. 代码后置模式
-- `MainWindow.h/cpp` 实现业务逻辑
-- 通过 `FindNamedControls()` 方法从 XML 中查找命名控件
-- 使用 `BindEvents()` 连接事件处理器
-
-### 3. 演示的功能
-- **工具栏按钮**: 新建、打开、保存
-- **表单控件**: 用户名、邮箱输入框，个人简介多行文本框
-- **进度显示**: 进度条
-- **滑块控制**: 音量控制滑块
-- **状态栏**: 显示操作反馈
+**声明式方式**（XML 中声明，代码中实现）：
+```xml
+<!-- XML 中声明事件 -->
+<Button x:Name="saveBtn" Text="Save" Click="OnSaveClick"/>
+```
+```cpp
+// C++ 中实现方法
+void OnSaveClick() {
+    UpdateStatus(L"Saved!");
+}
+```
 
 ## 代码结构
 
@@ -27,114 +38,111 @@
 12_xml_layout_demo/
 ├── main.cpp              # 程序入口
 ├── MainWindow.h          # 主窗口类声明
-├── MainWindow.cpp        # 主窗口实现（代码后置）
+├── MainWindow.cpp        # 主窗口实现
 ├── layouts/
-│   └── main_window.xml   # UI 布局定义
-└── README.md             # 本文档
+│   └── main_window.xml   # UI 布局 + 事件声明
+└── README.md
 ```
 
-## 关键代码示例
+## 使用步骤
 
-### 从 XML 加载布局
-```cpp
-void MainWindow::OnLoaded() {
-    auto root = LoadLayoutFromXml();
-    SetRoot(root);
-    FindNamedControls();
-    BindEvents();
-}
-```
+### 1. 在 XML 中声明事件
 
-### 在 XML 中定义带名称的控件
 ```xml
-<Button x:Name="saveBtn" SetStateColors="#2196F3,#1976D2,#0D47A1"/>
-<TextBox x:Name="usernameBox" Padding="10,8"/>
-<Slider x:Name="volumeSlider" Minimum="0" Maximum="100" Value="75"/>
+<StackPanel>
+    <Button Text="New" Click="OnNewClick"/>
+    <Button Text="Save" Click="OnSaveClick"/>
+    <Slider ValueChanged="OnVolumeChanged"/>
+</StackPanel>
 ```
 
-### 在代码后置中查找控件
-```cpp
-void MainWindow::FindNamedControls() {
-    std::function<void(const std::shared_ptr<interfaces::IControl>&)> findNamed = 
-        [&](const std::shared_ptr<interfaces::IControl>& control) {
-        std::string name = control->GetName();
-        if (name == "saveBtn") 
-            m_saveBtn = std::dynamic_pointer_cast<Button>(control);
-        // ...
-    };
-    findNamed(root);
-}
-```
+支持的事件：
+- `Click` - 按钮点击（Button）
+- `ValueChanged` - 值改变（Slider, ProgressBar）
+- `TextChanged` - 文本改变（TextBox）
 
-### 连接事件处理器
+### 2. 在 C++ 中实现事件处理器
+
 ```cpp
-void MainWindow::BindEvents() {
-    if (m_saveBtn) {
-        m_saveBtn->Click.Add([this](Control*) {
-            Logger::Info("Save button clicked!");
-        });
+class MainWindow : public luaui::Window {
+protected:
+    void OnLoaded() override {
+        auto loader = CreateXmlLoader();
+        
+        // 注册事件处理器
+        RegisterEventHandlers(loader);
+        
+        // 加载 XML（事件自动绑定）
+        auto root = loader->Load("layouts/main_window.xml");
+        SetRoot(root);
     }
-}
+    
+private:
+    void RegisterEventHandlers(const std::shared_ptr<IXmlLoader>& loader) {
+        loader->RegisterClickHandler("OnNewClick", [this] { OnNewClick(); });
+        loader->RegisterClickHandler("OnSaveClick", [this] { OnSaveClick(); });
+        loader->RegisterValueChangedHandler("OnVolumeChanged", 
+            [this](double v) { OnVolumeChanged(v); });
+    }
+    
+    // 事件处理器实现
+    void OnNewClick() { /* ... */ }
+    void OnSaveClick() { /* ... */ }
+    void OnVolumeChanged(double value) { /* ... */ }
+};
 ```
 
-## 运行程序
+### 3. 运行程序
 
-```bash
-# 从构建目录运行
-./build/bin/Debug/12_xml_layout_demo.exe
-```
+事件自动绑定，无需手动查找控件！
 
-确保 `layouts/main_window.xml` 位于可执行文件同级目录的 `layouts` 文件夹中。
+## 优势对比
 
-## XML 支持的元素
+| 特性 | 传统方式 | 声明式绑定 |
+|------|----------|------------|
+| 代码量 | 多（需查找+绑定） | 少（只实现方法） |
+| 可读性 | 低（逻辑分散） | 高（XML 声明意图） |
+| 维护性 | 差（需同步 ID） | 好（自动匹配） |
+| 设计时 | 不支持 | 支持（XML 即设计） |
 
-当前 XML 加载器支持以下元素：
-- `StackPanel` - 堆叠面板（水平/垂直）
-- `Panel` - 基础面板
-- `Grid` - 网格布局（基础支持，不含行列定义）
-- `Border` - 边框容器
-- `Button` - 按钮
-- `TextBlock` - 文本显示
-- `TextBox` - 文本输入
-- `Slider` - 滑块
-- `ProgressBar` - 进度条
-- `CheckBox` - 复选框
-- `ListBox` - 列表框
-- `Rectangle` - 矩形
-- `Ellipse` - 椭圆
-
-## 支持的属性
+## XML 支持的属性
 
 ### 布局属性
-- `Margin` - 外边距
-- `Padding` - 内边距
-- `Spacing` - 子元素间距（StackPanel）
-- `Width`/`Height` - 尺寸
+- `Margin`, `Padding`, `Spacing`
+- `Width`, `Height`
+- `Orientation` (StackPanel)
 
 ### 外观属性
-- `Background`/`Foreground` - 背景/前景色
-- `BorderBrush`/`BorderThickness` - 边框
+- `Background`, `Foreground`
+- `FontSize`
+- `SetStateColors` (Button: "normal,hover,pressed")
 
-### 控件特定属性
-- `x:Name` - 控件名称
+### 事件属性
+- `Click` - 点击事件方法名
+- `ValueChanged` - 值改变事件方法名
+- `TextChanged` - 文本改变事件方法名
+
+### 控件特定
 - `Text` - 文本内容
-- `Value`/`Minimum`/`Maximum` - 范围控件
-- `SetStateColors` - 按钮三态颜色
+- `Value`, `Minimum`, `Maximum` - 范围控件
 
-## 构建配置
+## 扩展：自动反射绑定（未来）
 
-CMakeLists.txt 中配置了自动复制 layouts 目录到输出目录：
+理想情况下，框架可以通过反射自动发现方法：
 
-```cmake
-add_custom_command(TARGET 12_xml_layout_demo POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_CURRENT_SOURCE_DIR}/12_xml_layout_demo/layouts
-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/layouts
-)
+```cpp
+// 未来版本可能支持：
+class MainWindow : public Window {
+    // 只需要标记，无需手动注册
+    void OnNewClick() { /* ... */ }
+    void OnSaveClick() { /* ... */ }
+};
+
+void OnLoaded() {
+    auto loader = CreateXmlLoader();
+    loader->AutoBind(this);  // 自动发现所有事件方法
+    SetRoot(loader->Load("layout.xml"));
+}
 ```
 
-## 注意事项
-
-1. **XML 修改后需要重新构建**才能复制到输出目录
-2. **Grid 行列定义**当前版本不支持复杂的 RowDefinitions/ColumnDefinitions
-3. **属性值格式**需要符合 XML 加载器的解析规则
+当前版本需要手动注册，但已大幅简化代码。
