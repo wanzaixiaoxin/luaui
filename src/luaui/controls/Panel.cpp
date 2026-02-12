@@ -1,7 +1,7 @@
 #include "Panel.h"
 #include "Interfaces/IControl.h"
 #include "IRenderContext.h"
-#include <iostream>
+#include "Logger.h"
 
 namespace luaui {
 namespace controls {
@@ -20,7 +20,7 @@ void Panel::InitializeComponents() {
     // 添加 Panel 专用布局组件（会测量和排列子控件）
     // 注意：GetComponent 使用 typeid 查找，所以 AddComponent 和 GetComponent 必须使用相同类型
     auto* layoutComp = GetComponents().AddComponent<PanelLayoutComponent>(this);
-    std::cout << "[Panel] PanelLayoutComponent added: " << (layoutComp ? "yes" : "no") << std::endl;
+    luaui::utils::Logger::TraceF("[Panel] PanelLayoutComponent added: %s", layoutComp ? "yes" : "no");
     
     // 添加 Panel 专用渲染组件（会渲染子控件）
     GetComponents().AddComponent<PanelRenderComponent>(this);
@@ -174,17 +174,17 @@ void Panel::OnRenderChildren(rendering::IRenderContext* context) {
     // 渲染所有子控件
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) {
-            std::cout << "  [OnRenderChildren] Child invisible, skipping" << std::endl;
+            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Child invisible, skipping");
             continue;
         }
         
         // 尝试转换为可渲染接口
         auto* renderable = static_cast<Control*>(child.get())->AsRenderable();
         if (renderable) {
-            std::cout << "  [OnRenderChildren] Rendering child..." << std::endl;
+            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Rendering child");
             renderable->Render(context);
         } else {
-            std::cout << "  [OnRenderChildren] Child not renderable" << std::endl;
+            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Child not renderable");
         }
     }
 }

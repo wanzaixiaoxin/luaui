@@ -3,8 +3,8 @@
 #include "Interfaces/ILayoutable.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
+#include "Logger.h"
 #include <algorithm>
-#include <iostream>
 
 namespace luaui {
 namespace controls {
@@ -60,7 +60,7 @@ rendering::Size StackPanel::OnArrangeChildren(const rendering::Size& finalSize) 
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     float position = 0;
     
-    std::cout << "    [StackPanel::OnArrangeChildren] finalSize=" << finalSize.width << "x" << finalSize.height << std::endl;
+    luaui::utils::Logger::TraceF("[StackPanel::OnArrangeChildren] finalSize=%.1fx%.1f", finalSize.width, finalSize.height);
     
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;

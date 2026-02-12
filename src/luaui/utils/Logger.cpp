@@ -251,7 +251,8 @@ void ConsoleLogger::SetConsoleColor(LogLevel level) {
     
     WORD color = 7; // Default gray
     switch (level) {
-        case LogLevel::Debug:   color = 8; break;  // Dark gray
+        case LogLevel::Trace:   color = 8; break;  // Dark gray (verbose)
+        case LogLevel::Debug:   color = 3; break;  // Cyan/Aqua
         case LogLevel::Info:    color = 7; break;  // Gray
         case LogLevel::Warning: color = 6; break;  // Yellow
         case LogLevel::Error:   color = 4; break;  // Red
@@ -439,6 +440,11 @@ ILoggerPtr Logger::Get() {
 bool Logger::IsInitialized() {
     std::lock_guard<std::mutex> lock(s_mutex);
     return s_instance != nullptr;
+}
+
+void Logger::Trace(const std::string& msg) {
+    auto logger = Get();
+    if (logger) logger->Trace(msg);
 }
 
 void Logger::Debug(const std::string& msg) {

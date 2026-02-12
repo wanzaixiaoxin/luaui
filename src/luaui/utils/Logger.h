@@ -25,16 +25,18 @@ namespace utils {
 
 // Log levels
 enum class LogLevel {
-    Debug = 0,
-    Info = 1,
-    Warning = 2,
-    Error = 3,
-    Fatal = 4
+    Trace = 0,   // Most verbose, for detailed debugging
+    Debug = 1,
+    Info = 2,
+    Warning = 3,
+    Error = 4,
+    Fatal = 5
 };
 
 // Convert log level to string
 inline const char* LogLevelToString(LogLevel level) {
     switch (level) {
+        case LogLevel::Trace:   return "TRACE";
         case LogLevel::Debug:   return "DEBUG";
         case LogLevel::Info:    return "INFO";
         case LogLevel::Warning: return "WARN";
@@ -57,6 +59,7 @@ public:
     virtual LogLevel GetLevel() const = 0;
     
     // Convenience methods
+    void Trace(const std::string& msg) { Log(LogLevel::Trace, msg); }
     void Debug(const std::string& msg) { Log(LogLevel::Debug, msg); }
     void Info(const std::string& msg) { Log(LogLevel::Info, msg); }
     void Warning(const std::string& msg) { Log(LogLevel::Warning, msg); }
@@ -64,6 +67,11 @@ public:
     void Fatal(const std::string& msg) { Log(LogLevel::Fatal, msg); }
     
     // Formatted logging (variadic template)
+    template<typename... Args>
+    void TraceF(const char* format, Args... args) {
+        LogF(LogLevel::Trace, format, args...);
+    }
+    
     template<typename... Args>
     void DebugF(const char* format, Args... args) {
         LogF(LogLevel::Debug, format, args...);
@@ -261,11 +269,18 @@ public:
     static void SetFileLevel(LogLevel level);
     
     // Convenience methods (redirect to global instance)
+    static void Trace(const std::string& msg);
     static void Debug(const std::string& msg);
     static void Info(const std::string& msg);
     static void Warning(const std::string& msg);
     static void Error(const std::string& msg);
     static void Fatal(const std::string& msg);
+    
+    template<typename... Args>
+    static void TraceF(const char* format, Args... args) {
+        auto logger = Get();
+        if (logger) logger->TraceF(format, args...);
+    }
     
     template<typename... Args>
     static void DebugF(const char* format, Args... args) {

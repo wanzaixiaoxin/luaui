@@ -7,6 +7,7 @@
 #include "Control.h"
 #include "Panel.h"
 #include "Components/InputComponent.h"
+#include "Logger.h"
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>
@@ -19,6 +20,7 @@
 using namespace luaui;
 using namespace luaui::controls;
 using namespace luaui::rendering;
+using namespace luaui::utils;
 
 // 简化的演示窗口 - 使用新架构
 class ControlsDemoWindow {
@@ -333,8 +335,8 @@ private:
         if (m_capturedControl) {
             static int count = 0;
             if (++count % 10 == 0) {  // 每10次打印一次，避免刷屏
-                std::cout << "[Drag] " << m_capturedControl->GetTypeName() 
-                          << " at (" << x << "," << y << ")" << std::endl;
+                Logger::TraceF("[Drag] %s at (%.1f,%.1f)", 
+                    m_capturedControl->GetTypeName().c_str(), x, y);
             }
             if (auto* inputComp = m_capturedControl->GetInput()) {
                 MouseEventArgs args{x, y, 0, false};
@@ -373,8 +375,8 @@ private:
     void HandleMouseDown(float x, float y, int button) {
         auto* control = HitTest(m_rootPanel.get(), x, y);
         
-        std::cout << "[MouseDown] Hit: " << (control ? control->GetTypeName() : "null") 
-                  << " at (" << x << "," << y << ")" << std::endl;
+        Logger::TraceF("[MouseDown] Hit: %s at (%.1f,%.1f)", 
+            control ? control->GetTypeName().c_str() : "null", x, y);
         
         if (control) {
             // 记录捕获的控件
@@ -405,7 +407,8 @@ private:
     }
     
     void HandleMouseUp(float x, float y, int button) {
-        std::cout << "[MouseUp] captured=" << (m_capturedControl ? m_capturedControl->GetTypeName() : "null") << std::endl;
+        Logger::TraceF("[MouseUp] captured=%s", 
+            m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
         
         // 如果有捕获的控件，先发送给它
         if (m_capturedControl) {
@@ -573,11 +576,12 @@ private:
 };
 
 int main() {
-    std::cout << "=== LuaUI Controls Demo Starting ===" << std::endl;
+    Logger::Initialize();
+    Logger::Info("=== LuaUI Controls Demo Starting ===");
     
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) {
-        std::cerr << "Failed to initialize COM" << std::endl;
+        Logger::Error("Failed to initialize COM");
         return 1;
     }
 
@@ -586,7 +590,7 @@ int main() {
 
     ControlsDemoWindow demo;
     if (!demo.Initialize(hInstance, nCmdShow)) {
-        std::cerr << "Failed to initialize demo window" << std::endl;
+        Logger::Error("Failed to initialize demo window");
         CoUninitialize();
         return 1;
     }

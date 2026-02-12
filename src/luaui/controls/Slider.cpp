@@ -3,9 +3,9 @@
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
+#include "Logger.h"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 
 namespace luaui {
 namespace controls {
@@ -98,7 +98,7 @@ void Slider::ClampValue() {
 void Slider::UpdateValueFromPosition(float x, float y) {
     auto* render = GetRender();
     if (!render) {
-        std::cout << "[Slider UpdateValue] No render component!" << std::endl;
+        utils::Logger::Trace("[Slider] UpdateValue: No render component!");
         return;
     }
     
@@ -126,7 +126,7 @@ void Slider::UpdateValueFromPosition(float x, float y) {
     
     static int count = 0;
     if (++count % 10 == 0) {
-        std::cout << "[Slider] Value=" << m_value << " localX=" << localX << std::endl;
+        utils::Logger::TraceF("[Slider] Value=%.2f localX=%.2f", m_value, localX);
     }
     
     float thumbSize = 12.0f;
@@ -161,13 +161,13 @@ void Slider::UpdateValueFromPosition(float x, float y) {
 }
 
 void Slider::OnMouseDown(MouseEventArgs& args) {
-    std::cout << "[Slider] MouseDown -> Drag START" << std::endl;
+    utils::Logger::Trace("[Slider] MouseDown -> Drag START");
     m_isDragging = true;
     UpdateValueFromPosition(args.x, args.y);
 }
 
 void Slider::OnMouseUp(MouseEventArgs& args) {
-    std::cout << "[Slider] MouseUp -> Drag STOP" << std::endl;
+    utils::Logger::Trace("[Slider] MouseUp -> Drag STOP");
     m_isDragging = false;
 }
 
@@ -175,7 +175,7 @@ void Slider::OnMouseMove(MouseEventArgs& args) {
     if (m_isDragging) {
         static int count = 0;
         if (++count % 5 == 0) {
-            std::cout << "[Slider OnMouseMove] x=" << args.x << " y=" << args.y << std::endl;
+            utils::Logger::TraceF("[Slider] OnMouseMove x=%.2f y=%.2f", args.x, args.y);
         }
         UpdateValueFromPosition(args.x, args.y);
     }

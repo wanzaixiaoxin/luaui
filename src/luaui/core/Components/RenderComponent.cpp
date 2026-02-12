@@ -1,7 +1,7 @@
 #include "Components/RenderComponent.h"
 #include "Control.h"
 #include "IRenderContext.h"
-#include <iostream>
+#include "Logger.h"
 
 namespace luaui {
 namespace components {
@@ -11,9 +11,8 @@ RenderComponent::RenderComponent(Control* owner) : Component(owner) {}
 void RenderComponent::Render(rendering::IRenderContext* context) {
     if (!m_owner || !context) return;
     
-    std::cout << "    [Render] " << m_owner->GetTypeName() 
-              << " RenderRect: " << m_renderRect.x << "," << m_renderRect.y 
-              << " " << m_renderRect.width << "x" << m_renderRect.height << std::endl;
+    utils::Logger::TraceF("[Render] %s RenderRect: %.1f,%.1f %.1fx%.1f", 
+        m_owner->GetTypeName().c_str(), m_renderRect.x, m_renderRect.y, m_renderRect.width, m_renderRect.height);
     
     // 保存状态
     context->PushState();
@@ -24,10 +23,10 @@ void RenderComponent::Render(rendering::IRenderContext* context) {
     context->MultiplyTransform(positionTransform);
     
     // 执行实际渲染（使用相对于当前变换的本地坐标）
-    std::cout << "    [Render] About to call RenderOverride..." << std::endl;
+    utils::Logger::Trace("[Render] About to call RenderOverride...");
     rendering::Rect localRect(0, 0, m_renderRect.width, m_renderRect.height);
     RenderOverride(context, localRect);
-    std::cout << "    [Render] RenderOverride returned" << std::endl;
+    utils::Logger::Trace("[Render] RenderOverride returned");
     
     // 恢复状态
     context->PopState();
