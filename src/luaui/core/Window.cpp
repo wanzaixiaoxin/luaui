@@ -86,6 +86,11 @@ bool Window::Create(HINSTANCE hInstance, const wchar_t* title, int width, int he
 void Window::Show(int nCmdShow) {
     if (m_hWnd) {
         ShowWindow(m_hWnd, nCmdShow);
+        
+        // 确保立即进行首次渲染，避免控件延迟显示
+        InvalidateRender();
+        Render();
+        
         UpdateWindow(m_hWnd);
         SetForegroundWindow(m_hWnd);  // 强制激活窗口
         SetFocus(m_hWnd);             // 确保窗口获得焦点以接收键盘事件
@@ -111,10 +116,30 @@ void Window::Close() {
 
 void Window::SetRoot(const std::shared_ptr<Control>& root) {
     m_root = root;
-    if (m_root && m_dispatcher) {
-        m_root->SetDispatcher(m_dispatcher.get());
+    if (m_root) {
+        // 递归设置 Window 指针
+        SetWindowForControlTree(m_root.get(), this);
+        
+        if (m_dispatcher) {
+            m_root->SetDispatcher(m_dispatcher.get());
+        }
     }
     InvalidateLayout();
+}
+
+void Window::SetWindowForControlTree(Control* control, Window* window) {
+    if (!control) return;
+    
+    control->SetWindow(window);
+    
+    // 递归设置子控件
+    size_t childCount = control->GetChildCount();
+    for (size_t i = 0; i < childCount; ++i) {
+        auto child = control->GetChild(i);
+        if (auto childControl = std::dynamic_pointer_cast<Control>(child)) {
+            SetWindowForControlTree(childControl.get(), window);
+        }
+    }
 }
 
 // ============================================================================
@@ -133,11 +158,31 @@ void Window::InvalidateLayout() {
         }
     }
     
-    InvalidateRect(m_hWnd, nullptr, FALSE);
+    // 使用全局作用符调用 Windows API
+    ::InvalidateRect(m_hWnd, nullptr, FALSE);
 }
 
 void Window::InvalidateRender() {
-    InvalidateRect(m_hWnd, nullptr, FALSE);
+    // 全屏变脏
+    m_dirtyRegion.InvalidateAll(m_width, m_height);
+    ::InvalidateRect(m_hWnd, nullptr, FALSE);
+}
+
+void Window::InvalidateRect(const rendering::Rect& rect) {
+    // 添加到脏矩形区域
+    m_dirtyRegion.AddRect(rect);
+    
+    // 转换为 Windows RECT 触发系统重绘
+    RECT rc;
+    rc.left = static_cast<LONG>(rect.x);
+    rc.top = static_cast<LONG>(rect.y);
+    rc.right = static_cast<LONG>(rect.x + rect.width);
+    rc.bottom = static_cast<LONG>(rect.y + rect.height);
+    ::InvalidateRect(m_hWnd, &rc, FALSE);
+}
+
+bool Window::NeedsRedraw(const rendering::Rect& bounds) const {
+    return m_dirtyRegion.Intersects(bounds);
 }
 
 void Window::UpdateLayout() {
@@ -185,22 +230,102 @@ void Window::OnRender() {
         return;
     }
     
-    // 清空背景
-    context->Clear(rendering::Color::White());
+    // 确保资源缓存已创建
+    if (!m_resourceCache) {
+        m_resourceCache = std::make_unique<rendering::ResourceCache>(context);
+    }
     
     // 更新布局（如果需要）
     if (m_layoutDirty) {
         UpdateLayout();
+        // 布局变更使全屏变脏
+        m_dirtyRegion.InvalidateAll(m_width, m_height);
     }
     
-    // 渲染根控件
-    if (m_root) {
-        if (auto* renderable = m_root->AsRenderable()) {
-            renderable->Render(context);
+    // 检查是否有脏矩形需要重绘（首次渲染或布局后确保有脏区域）
+    if (m_dirtyRegion.IsEmpty()) {
+        // 如果没有指定脏区域，默认全屏渲染（首次渲染场景）
+        m_dirtyRegion.InvalidateAll(m_width, m_height);
+    }
+    
+    // 获取脏矩形区域列表
+    const auto& dirtyRects = m_dirtyRegion.GetRects();
+    
+    // 如果脏区域接近全屏，直接全屏渲染
+    bool fullScreenRender = false;
+    if (dirtyRects.size() == 1) {
+        const auto& rect = dirtyRects[0];
+        float area = rect.width * rect.height;
+        float windowArea = m_width * m_height;
+        if (area > windowArea * 0.75f) {
+            fullScreenRender = true;
         }
     }
     
+    if (fullScreenRender) {
+        // 全屏渲染（传统方式）
+        context->Clear(rendering::Color::White());
+        
+        if (m_root) {
+            if (auto* renderable = m_root->AsRenderable()) {
+                renderable->Render(context);
+            }
+        }
+    } else {
+        // 局部渲染：对每个脏矩形区域进行裁剪渲染
+        for (const auto& dirtyRect : dirtyRects) {
+            // 设置裁剪区域
+            context->PushClip(dirtyRect);
+            
+            // 清空该区域（使用白色画刷）
+            if (auto* cache = GetResourceCache()) {
+                context->FillRectangle(dirtyRect, cache->GetSolidColorBrush(rendering::Color::White()));
+            }
+            
+            // 渲染与脏矩形相交的控件
+            if (m_root) {
+                RenderWithClipping(m_root.get(), context, dirtyRect);
+            }
+            
+            // 恢复裁剪
+            context->PopClip();
+        }
+    }
+    
+    // 清除脏矩形区域
+    m_dirtyRegion.Clear();
+    
     m_renderer->Present();
+}
+
+void Window::RenderWithClipping(Control* control, rendering::IRenderContext* context, 
+                                 const rendering::Rect& clipRect) {
+    if (!control) return;
+    
+    // 获取控件渲染矩形
+    rendering::Rect bounds;
+    if (auto* render = control->GetRender()) {
+        bounds = render->GetRenderRect();
+    }
+    
+    // 检查是否与裁剪矩形相交
+    if (!bounds.Intersects(clipRect)) {
+        return;  // 完全在裁剪区域外，跳过渲染
+    }
+    
+    // 渲染当前控件
+    if (auto* renderable = control->AsRenderable()) {
+        renderable->Render(context);
+    }
+    
+    // 递归渲染子控件
+    size_t childCount = control->GetChildCount();
+    for (size_t i = 0; i < childCount; ++i) {
+        auto child = control->GetChild(i);
+        if (auto childControl = std::dynamic_pointer_cast<Control>(child)) {
+            RenderWithClipping(childControl.get(), context, clipRect);
+        }
+    }
 }
 
 void Window::Render() {

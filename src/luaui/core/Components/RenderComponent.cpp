@@ -1,5 +1,6 @@
 #include "Components/RenderComponent.h"
 #include "Control.h"
+#include "Window.h"
 #include "IRenderContext.h"
 #include "Logger.h"
 
@@ -51,7 +52,29 @@ void RenderComponent::SetRenderTransform(const rendering::Transform& transform) 
 
 void RenderComponent::Invalidate() {
     m_isDirty = true;
-    // TODO: 通知窗口需要重绘
+    
+    // 通知窗口局部重绘
+    if (m_owner) {
+        // 获取控件渲染矩形
+        rendering::Rect bounds = m_renderRect;
+        
+        // 遍历父控件累加偏移
+        auto parent = m_owner->GetParent();
+        while (parent) {
+            if (auto parentControl = std::dynamic_pointer_cast<Control>(parent)) {
+                if (auto* parentRender = parentControl->GetRender()) {
+                    bounds.x += parentRender->GetRenderRect().x;
+                    bounds.y += parentRender->GetRenderRect().y;
+                }
+            }
+            parent = parent->GetParent();
+        }
+        
+        // 通知窗口使该区域变脏
+        if (auto* window = m_owner->GetWindow()) {
+            window->InvalidateRect(bounds);
+        }
+    }
 }
 
 void RenderComponent::RenderOverride(rendering::IRenderContext* context) {

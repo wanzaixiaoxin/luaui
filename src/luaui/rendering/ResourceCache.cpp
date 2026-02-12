@@ -26,7 +26,7 @@ ISolidColorBrush* ResourceCache::GetSolidColorBrush(const Color& color) {
     if (!brush) return nullptr;
     
     ISolidColorBrush* ptr = brush.get();
-    m_brushCache[hash] = brush;
+    m_brushCache[hash] = std::move(brush);
     return ptr;
 }
 
@@ -34,8 +34,38 @@ void ResourceCache::ClearBrushes() {
     m_brushCache.clear();
 }
 
+ITextFormat* ResourceCache::GetTextFormat(const std::wstring& fontFamily, 
+                                           float fontSize) {
+    if (!m_context) return nullptr;
+    
+    TextFormatKey key{fontFamily, fontSize};
+    
+    auto it = m_textFormatCache.find(key);
+    if (it != m_textFormatCache.end()) {
+        return it->second.get();
+    }
+    
+    // 创建新文本格式并缓存
+    auto format = m_context->CreateTextFormat(fontFamily, fontSize);
+    if (!format) return nullptr;
+    
+    ITextFormat* ptr = format.get();
+    m_textFormatCache[key] = std::move(format);
+    return ptr;
+}
+
+ITextFormat* ResourceCache::GetDefaultTextFormat() {
+    // 默认：微软雅黑 14px
+    return GetTextFormat(L"Microsoft YaHei", 14.0f);
+}
+
+void ResourceCache::ClearTextFormats() {
+    m_textFormatCache.clear();
+}
+
 void ResourceCache::ClearAll() {
     ClearBrushes();
+    ClearTextFormats();
 }
 
 uint32_t ResourceCache::ColorToHash(const Color& color) {

@@ -2,6 +2,8 @@
 #include "IRenderContext.h"
 #include "ITextFormat.h"
 #include "ITextLayout.h"
+#include "ResourceCache.h"
+#include "Window.h"
 
 namespace luaui {
 namespace controls {
@@ -64,14 +66,48 @@ void TextBlock::OnRender(rendering::IRenderContext* context) {
     
     if (m_text.empty()) return;
     
-    // 创建文本格式和画刷
-    auto format = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
-    auto brush = context->CreateSolidColorBrush(m_foreground);
+    // 获取资源缓存（如果可用）
+    rendering::ResourceCache* cache = nullptr;
+    if (auto* window = GetWindow()) {
+        cache = window->GetResourceCache();
+    }
+    
+    rendering::ITextFormat* format = nullptr;
+    rendering::ISolidColorBrush* brush = nullptr;
+    
+    if (cache) {
+        // 使用缓存（高性能路径）
+        format = cache->GetTextFormat(L"Microsoft YaHei", m_fontSize);
+        brush = cache->GetSolidColorBrush(m_foreground);
+    } else {
+        // 回退：直接创建（低性能，仅用于测试或特殊场景）
+        // 注意：这种方式每帧都会创建资源，应避免在生产环境使用
+        static thread_local std::shared_ptr<rendering::ITextFormat> s_format;
+        static thread_local std::shared_ptr<rendering::ISolidColorBrush> s_brush;
+        static thread_local float s_lastFontSize = 0;
+        static thread_local rendering::Color s_lastColor;
+        
+        if (!s_format || s_lastFontSize != m_fontSize) {
+            s_format = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
+            s_lastFontSize = m_fontSize;
+        }
+        if (!s_brush || 
+            s_lastColor.r != m_foreground.r || 
+            s_lastColor.g != m_foreground.g || 
+            s_lastColor.b != m_foreground.b || 
+            s_lastColor.a != m_foreground.a) {
+            s_brush = context->CreateSolidColorBrush(m_foreground);
+            s_lastColor = m_foreground;
+        }
+        
+        format = s_format.get();
+        brush = s_brush.get();
+    }
     
     if (format && brush) {
         // 使用本地坐标绘制文本
-        context->DrawTextString(m_text, format.get(), 
-                                rendering::Point(0, 0), brush.get());
+        context->DrawTextString(m_text, format, 
+                                rendering::Point(0, 0), brush);
     }
 }
 

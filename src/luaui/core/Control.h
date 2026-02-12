@@ -94,6 +94,10 @@ public:
     Dispatcher* GetDispatcher() const { return m_dispatcher; }
     void SetDispatcher(Dispatcher* disp) { m_dispatcher = disp; }
     void VerifyUIThread() const;
+    
+    // ========== 窗口关联 ==========
+    class Window* GetWindow() const { return m_window; }
+    void SetWindow(class Window* window) { m_window = window; }
 
     // ========== 能力接口转换 ==========
     interfaces::IRenderable* AsRenderable() override;
@@ -132,6 +136,7 @@ protected:
     
     std::weak_ptr<IControl> m_parent;
     Dispatcher* m_dispatcher = nullptr;
+    class Window* m_window = nullptr;
     
     components::ComponentHolder m_components;
     

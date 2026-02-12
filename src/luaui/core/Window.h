@@ -5,6 +5,8 @@
 #include "Types.h"
 #include "Dispatcher.h"
 #include "Logger.h"
+#include "DirtyRegion.h"
+#include "ResourceCache.h"
 #include <windows.h>
 #include <memory>
 
@@ -40,6 +42,28 @@ public:
     // ========== 布局管理 ==========
     void InvalidateLayout();
     void InvalidateRender();
+    
+    // ========== 脏矩形优化 ==========
+    /**
+     * @brief 使指定区域变脏，触发局部重绘
+     * @param rect 需要重绘的矩形区域（本地坐标）
+     */
+    void InvalidateRect(const rendering::Rect& rect);
+    
+    /**
+     * @brief 获取当前脏矩形区域
+     */
+    const rendering::DirtyRegion& GetDirtyRegion() const { return m_dirtyRegion; }
+    
+    /**
+     * @brief 检查指定区域是否需要重绘
+     */
+    bool NeedsRedraw(const rendering::Rect& bounds) const;
+    
+    /**
+     * @brief 获取资源缓存
+     */
+    rendering::ResourceCache* GetResourceCache() const { return m_resourceCache.get(); }
     
     // ========== 焦点管理 ==========
     Control* GetFocusedControl() const { return m_focusedControl; }
@@ -87,6 +111,13 @@ private:
     // ========== 命中测试 ==========
     Control* HitTest(Control* root, float x, float y);
     
+    // ========== 带裁剪的渲染 ==========
+    void RenderWithClipping(Control* control, rendering::IRenderContext* context, 
+                            const rendering::Rect& clipRect);
+    
+    // ========== 递归设置 Window 指针 ==========
+    void SetWindowForControlTree(Control* control, Window* window);
+    
     // ========== 焦点管理 ==========
     void UpdateFocus(Control* newFocus);
     void ClearFocus();
@@ -102,6 +133,12 @@ private:
     bool m_layoutDirty = true;
     float m_width = 0;
     float m_height = 0;
+    
+    // 脏矩形区域（优化渲染）
+    rendering::DirtyRegion m_dirtyRegion;
+    
+    // 资源缓存（画刷、文本格式等）
+    std::unique_ptr<rendering::ResourceCache> m_resourceCache;
     
     // 输入状态
     Control* m_capturedControl = nullptr;   // 鼠标捕获的控件
