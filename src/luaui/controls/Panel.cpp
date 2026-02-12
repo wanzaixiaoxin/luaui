@@ -174,17 +174,19 @@ void Panel::OnRenderChildren(rendering::IRenderContext* context) {
     // 渲染所有子控件
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) {
-            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Child invisible, skipping");
+            luaui::utils::Logger::Debug("[Panel] OnRenderChildren: Child invisible, skipping");
             continue;
         }
         
         // 尝试转换为可渲染接口
-        auto* renderable = static_cast<Control*>(child.get())->AsRenderable();
+        auto* control = static_cast<Control*>(child.get());
+        auto* renderable = control->AsRenderable();
+        
+        luaui::utils::Logger::TraceF("[Panel] OnRenderChildren: Child %s, renderable=%p", 
+            child->GetTypeName().c_str(), (void*)renderable);
+        
         if (renderable) {
-            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Rendering child");
             renderable->Render(context);
-        } else {
-            luaui::utils::Logger::Trace("[Panel] OnRenderChildren: Child not renderable");
         }
     }
 }

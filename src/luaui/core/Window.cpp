@@ -3,8 +3,11 @@
 #include "../controls/Control.h"
 #include "../controls/Panel.h"
 #include "Components/InputComponent.h"
+#include "../utils/Logger.h"
 #include <objbase.h>
 #include <windowsx.h>
+
+using namespace luaui::utils;
 
 namespace luaui {
 
@@ -84,6 +87,8 @@ void Window::Show(int nCmdShow) {
     if (m_hWnd) {
         ShowWindow(m_hWnd, nCmdShow);
         UpdateWindow(m_hWnd);
+        SetForegroundWindow(m_hWnd);  // 强制激活窗口
+        SetFocus(m_hWnd);             // 确保窗口获得焦点以接收键盘事件
     }
 }
 
@@ -117,7 +122,17 @@ void Window::SetRoot(const std::shared_ptr<Control>& root) {
 // ============================================================================
 
 void Window::InvalidateLayout() {
+    Logger::Debug("[Window] InvalidateLayout called");
     m_layoutDirty = true;
+    
+    // 使根控件的布局失效，确保 Measure 和 Arrange 会被重新执行
+    if (m_root) {
+        if (auto* layoutable = m_root->AsLayoutable()) {
+            layoutable->InvalidateMeasure();
+            layoutable->InvalidateArrange();
+        }
+    }
+    
     InvalidateRect(m_hWnd, nullptr, FALSE);
 }
 
@@ -126,20 +141,33 @@ void Window::InvalidateRender() {
 }
 
 void Window::UpdateLayout() {
-    if (!m_root || !m_layoutDirty) return;
+    Logger::DebugF("[Window] UpdateLayout called, m_layoutDirty=%s", m_layoutDirty ? "true" : "false");
+    
+    if (!m_root || !m_layoutDirty) {
+        Logger::Debug("[Window] UpdateLayout: skipped (no root or not dirty)");
+        return;
+    }
     
     auto* layoutable = m_root->AsLayoutable();
-    if (!layoutable) return;
+    if (!layoutable) {
+        Logger::Debug("[Window] UpdateLayout: skipped (root not layoutable)");
+        return;
+    }
     
     interfaces::LayoutConstraint constraint;
     constraint.available = rendering::Size(m_width, m_height);
     
+    Logger::DebugF("[Window] UpdateLayout: size=%.0fx%.0f, measuring root...", m_width, m_height);
+    
     layoutable->Measure(constraint);
+    auto desired = layoutable->GetDesiredSize();
+    Logger::DebugF("[Window] Root desired size: %.0fx%.0f", desired.width, desired.height);
+    
     layoutable->Arrange(rendering::Rect(0, 0, m_width, m_height));
     
     m_layoutDirty = false;
     
-    utils::Logger::TraceF("[Window] Layout updated: %.0fx%.0f", m_width, m_height);
+    Logger::DebugF("[Window] Layout updated: %.0fx%.0f", m_width, m_height);
 }
 
 // ============================================================================
@@ -359,6 +387,10 @@ void Window::HandleMouseWheel(float x, float y, int delta) {
 }
 
 void Window::HandleKeyDown(int keyCode) {
+    // 先调用虚函数，允许派生类拦截
+    OnKeyDown(keyCode);
+    
+    // 再发送给焦点控件
     if (m_focusedControl) {
         if (auto* inputComp = m_focusedControl->GetInput()) {
             controls::KeyEventArgs args{keyCode, false, false, false, false, false};
@@ -369,6 +401,8 @@ void Window::HandleKeyDown(int keyCode) {
 }
 
 void Window::HandleKeyUp(int keyCode) {
+    OnKeyUp(keyCode);
+    
     if (m_focusedControl) {
         if (auto* inputComp = m_focusedControl->GetInput()) {
             controls::KeyEventArgs args{keyCode, false, false, false, false, false};
@@ -379,6 +413,8 @@ void Window::HandleKeyUp(int keyCode) {
 }
 
 void Window::HandleChar(wchar_t ch) {
+    OnChar(ch);
+    
     if (m_focusedControl) {
         if (auto* inputComp = m_focusedControl->GetInput()) {
             inputComp->RaiseChar(ch);
@@ -422,6 +458,16 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
                 m_renderer->ResizeRenderTarget(static_cast<int>(m_width), static_cast<int>(m_height));
             }
             InvalidateLayout();
+            return 0;
+        }
+        
+        case WM_SETFOCUS: {
+            Logger::Debug("[Window] WM_SETFOCUS");
+            return 0;
+        }
+        
+        case WM_KILLFOCUS: {
+            Logger::Debug("[Window] WM_KILLFOCUS");
             return 0;
         }
         
@@ -471,6 +517,7 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
         
         // ========== 键盘事件 ==========
         case WM_KEYDOWN: {
+            Logger::DebugF("[Window] WM_KEYDOWN: %d", (int)wP);
             HandleKeyDown(static_cast<int>(wP));
             return 0;
         }

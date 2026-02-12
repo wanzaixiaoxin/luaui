@@ -1,19 +1,20 @@
-// Visual Layout Demo - 使用新架构
+// Visual Layout Demo - 使用框架 Window 类
 // 展示各种布局效果
 
 #include "Controls.h"
+#include "Panel.h"
+#include "Window.h"
+#include "Logger.h"
+#include "Types.h"
+#include "Shapes.h"
 #include "IRenderContext.h"
-#include "IRenderEngine.h"
 #include <windows.h>
-#include <windowsx.h>
-#include <objbase.h>
 #include <string>
-#include <vector>
-#include <memory>
 
 using namespace luaui;
 using namespace luaui::controls;
 using namespace luaui::rendering;
+using namespace luaui::utils;
 
 // 简化的彩色矩形控件
 class ColorRect : public Control {
@@ -32,10 +33,52 @@ public:
 
 protected:
     void InitializeComponents() override {
+        Logger::Debug("[ColorRect] InitializeComponents");
+        
         Control::InitializeComponents();
-        if (auto* layout = GetLayout()) {
-            layout->SetWidth(80);
-            layout->SetHeight(60);
+        
+        // 添加布局组件
+        auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
+        layout->SetWidth(80);
+        layout->SetHeight(60);
+        
+        // 添加渲染组件（关键！）
+        auto* render = GetComponents().AddComponent<components::RenderComponent>(this);
+        Logger::DebugF("[ColorRect] RenderComponent added: %p", (void*)render);
+    }
+    
+    void OnRender(IRenderContext* context) override {
+        if (!context) return;
+        
+        auto* render = GetRender();
+        if (!render) return;
+        
+        float width = render->GetRenderRect().width;
+        float height = render->GetRenderRect().height;
+        
+        static int count = 0;
+        if (++count % 60 == 0 || width <= 0 || height <= 0) {
+            Logger::TraceF("[ColorRect] OnRender: size=%.0fx%.0f", width, height);
+        }
+        
+        // 跳过无效尺寸
+        if (width <= 0 || height <= 0) {
+            Logger::Trace("[ColorRect] Skipping render due to invalid size");
+            return;
+        }
+        
+        // 强制不透明背景
+        auto fillBrush = context->CreateSolidColorBrush(m_fillColor);
+        if (fillBrush) {
+            context->FillRectangle(Rect(0, 0, width, height), fillBrush.get());
+        }
+        
+        // 边框
+        if (m_strokeColor.a > 0 && m_strokeThickness > 0) {
+            auto strokeBrush = context->CreateSolidColorBrush(m_strokeColor);
+            if (strokeBrush) {
+                context->DrawRectangle(Rect(0, 0, width, height), strokeBrush.get(), m_strokeThickness);
+            }
         }
     }
 
@@ -45,14 +88,14 @@ private:
     float m_strokeThickness = 1.0f;
 };
 
-// 演示窗口
-class VisualLayoutDemo {
+// 演示窗口 - 使用框架 Window 类
+class VisualLayoutWindow : public Window {
 public:
-    VisualLayoutDemo() = default;
-    ~VisualLayoutDemo() { Cleanup(); }
-    
-    bool Initialize(HINSTANCE hInstance, int nCmdShow);
-    int Run();
+    VisualLayoutWindow() = default;
+
+protected:
+    void OnLoaded() override;
+    void OnKeyDown(int keyCode) override;
     
 private:
     void CreateDemo_VerticalStack();
@@ -60,15 +103,9 @@ private:
     void CreateDemo_NestedStack();
     void CreateDemo_Shapes();
     void SwitchDemo(int demoIndex);
-    void Render();
-    void Cleanup();
+    void UpdateWindowTitle();
     
-    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-    
-private:
-    HWND m_hWnd = nullptr;
-    IRenderEnginePtr m_engine;
-    std::shared_ptr<StackPanel> m_rootPanel;
+    std::shared_ptr<StackPanel> m_contentPanel;
     int m_currentDemoIndex = 0;
     const wchar_t* m_demoNames[4] = {
         L"Vertical StackPanel",
@@ -78,66 +115,68 @@ private:
     };
 };
 
-bool VisualLayoutDemo::Initialize(HINSTANCE hInstance, int nCmdShow) {
-    WNDCLASSEXW wcex = {};
-    wcex.cbSize = sizeof(WNDCLASSEXW);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WindowProc;
-    wcex.hInstance = hInstance;
-    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszClassName = L"VisualLayoutDemoNew";
-    
-    if (!RegisterClassExW(&wcex)) return false;
-    
-    m_hWnd = CreateWindowExW(
-        0, L"VisualLayoutDemoNew", L"Visual Layout Demo - New Architecture [Press 1-4 to switch]",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 1024, 768,
-        nullptr, nullptr, hInstance, this
-    );
-    
-    if (!m_hWnd) return false;
-    
-    m_engine = CreateRenderEngine();
-    if (!m_engine || !m_engine->Initialize()) {
-        MessageBoxW(m_hWnd, L"Failed to initialize rendering engine", L"Error", MB_OK);
-        return false;
-    }
-    
-    RenderTargetDesc desc;
-    desc.type = RenderTargetType::Window;
-    desc.nativeHandle = m_hWnd;
-    desc.width = 1024;
-    desc.height = 768;
-    
-    if (!m_engine->CreateRenderTarget(desc)) {
-        MessageBoxW(m_hWnd, L"Failed to create render target", L"Error", MB_OK);
-        return false;
-    }
+void VisualLayoutWindow::OnLoaded() {
+    Logger::Info("=== Visual Layout Demo Starting ===");
     
     // 创建根面板
-    m_rootPanel = std::make_shared<StackPanel>();
-    m_rootPanel->SetName("Root");
-    m_rootPanel->SetOrientation(StackPanel::Orientation::Vertical);
+    auto root = std::make_shared<StackPanel>();
+    root->SetName("Root");
+    root->SetOrientation(StackPanel::Orientation::Vertical);
+    
+    // 内容面板
+    m_contentPanel = std::make_shared<StackPanel>();
+    m_contentPanel->SetName("Content");
+    root->AddChild(m_contentPanel);
+    
+    SetRoot(root);
     
     // 加载初始演示
     SwitchDemo(0);
-    
-    ShowWindow(m_hWnd, nCmdShow);
-    UpdateWindow(m_hWnd);
-    return true;
 }
 
-void VisualLayoutDemo::CreateDemo_VerticalStack() {
-    m_rootPanel->ClearChildren();
+void VisualLayoutWindow::UpdateWindowTitle() {
+    std::wstring title = std::wstring(L"Visual Layout Demo - ") + m_demoNames[m_currentDemoIndex] + L" [Press 1-4 to switch]";
+    SetWindowTextW(GetHandle(), title.c_str());
+}
+
+void VisualLayoutWindow::SwitchDemo(int demoIndex) {
+    Logger::DebugF("[SwitchDemo] index=%d, current children=%zu", demoIndex, m_contentPanel->GetChildCount());
     
+    m_currentDemoIndex = demoIndex % 4;
+    
+    // 清空内容面板
+    m_contentPanel->ClearChildren();
+    Logger::Debug("[SwitchDemo] Cleared children, calling InvalidateLayout...");
+    
+    // 关键：子控件改变后必须调用 InvalidateLayout
+    InvalidateLayout();
+    Logger::Debug("[SwitchDemo] InvalidateLayout called");
+    
+    switch (m_currentDemoIndex) {
+        case 0: CreateDemo_VerticalStack(); break;
+        case 1: CreateDemo_HorizontalStack(); break;
+        case 2: CreateDemo_NestedStack(); break;
+        case 3: CreateDemo_Shapes(); break;
+    }
+    
+    UpdateWindowTitle();
+    InvalidateLayout();
+}
+
+void VisualLayoutWindow::OnKeyDown(int keyCode) {
+    Logger::DebugF("[OnKeyDown] keyCode=%d", keyCode);
+    if (keyCode >= '1' && keyCode <= '4') {
+        SwitchDemo(keyCode - '1');
+    }
+    Window::OnKeyDown(keyCode);
+}
+
+void VisualLayoutWindow::CreateDemo_VerticalStack() {
     auto panel = std::make_shared<StackPanel>();
     panel->SetName("VerticalStackDemo");
     panel->SetOrientation(StackPanel::Orientation::Vertical);
     panel->SetSpacing(10);
     
-    // 添加彩色矩形
     Color colors[] = {
         Color::FromHex(0xFF6B6B),
         Color::FromHex(0x4ECDC4),
@@ -155,12 +194,14 @@ void VisualLayoutDemo::CreateDemo_VerticalStack() {
         panel->AddChild(rect);
     }
     
-    m_rootPanel->AddChild(panel);
+    Logger::DebugF("[CreateDemo_VerticalStack] Panel has %zu children", panel->GetChildCount());
+    
+    m_contentPanel->AddChild(panel);
+    
+    Logger::DebugF("[CreateDemo_VerticalStack] ContentPanel has %zu children", m_contentPanel->GetChildCount());
 }
 
-void VisualLayoutDemo::CreateDemo_HorizontalStack() {
-    m_rootPanel->ClearChildren();
-    
+void VisualLayoutWindow::CreateDemo_HorizontalStack() {
     auto panel = std::make_shared<StackPanel>();
     panel->SetName("HorizontalStackDemo");
     panel->SetOrientation(StackPanel::Orientation::Horizontal);
@@ -183,12 +224,10 @@ void VisualLayoutDemo::CreateDemo_HorizontalStack() {
         panel->AddChild(rect);
     }
     
-    m_rootPanel->AddChild(panel);
+    m_contentPanel->AddChild(panel);
 }
 
-void VisualLayoutDemo::CreateDemo_NestedStack() {
-    m_rootPanel->ClearChildren();
-    
+void VisualLayoutWindow::CreateDemo_NestedStack() {
     auto outerPanel = std::make_shared<StackPanel>();
     outerPanel->SetName("NestedDemo");
     outerPanel->SetOrientation(StackPanel::Orientation::Vertical);
@@ -239,12 +278,10 @@ void VisualLayoutDemo::CreateDemo_NestedStack() {
     }
     outerPanel->AddChild(footer);
     
-    m_rootPanel->AddChild(outerPanel);
+    m_contentPanel->AddChild(outerPanel);
 }
 
-void VisualLayoutDemo::CreateDemo_Shapes() {
-    m_rootPanel->ClearChildren();
-    
+void VisualLayoutWindow::CreateDemo_Shapes() {
     auto panel = std::make_shared<StackPanel>();
     panel->SetName("ShapesDemo");
     panel->SetOrientation(StackPanel::Orientation::Horizontal);
@@ -285,132 +322,32 @@ void VisualLayoutDemo::CreateDemo_Shapes() {
     ellipse->SetStrokeThickness(2);
     panel->AddChild(ellipse);
     
-    m_rootPanel->AddChild(panel);
+    m_contentPanel->AddChild(panel);
 }
 
-void VisualLayoutDemo::SwitchDemo(int demoIndex) {
-    m_currentDemoIndex = demoIndex % 4;
-    
-    switch (m_currentDemoIndex) {
-        case 0: CreateDemo_VerticalStack(); break;
-        case 1: CreateDemo_HorizontalStack(); break;
-        case 2: CreateDemo_NestedStack(); break;
-        case 3: CreateDemo_Shapes(); break;
-    }
-    
-    std::wstring title = std::wstring(L"Visual Layout Demo - ") + m_demoNames[m_currentDemoIndex] + L" [Press 1-4 to switch]";
-    SetWindowTextW(m_hWnd, title.c_str());
-    
-    InvalidateRect(m_hWnd, nullptr, FALSE);
-}
+// ============================================================================
+// 入口点
+// ============================================================================
 
-void VisualLayoutDemo::Render() {
-    if (!m_engine->BeginFrame()) return;
+int main() {
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
     
-    auto* context = m_engine->GetContext();
-    if (!context) {
-        m_engine->Present();
-        return;
-    }
+    Logger::Initialize();
+    Logger::SetConsoleLevel(LogLevel::Debug);
     
-    context->Clear(Color::White());
-    
-    RECT rc;
-    GetClientRect(m_hWnd, &rc);
-    float width = static_cast<float>(rc.right - rc.left);
-    float height = static_cast<float>(rc.bottom - rc.top);
-    
-    interfaces::LayoutConstraint constraint;
-    constraint.available = Size(width, height);
-    
-    if (auto* layoutable = m_rootPanel->AsLayoutable()) {
-        layoutable->Measure(constraint);
-        layoutable->Arrange(Rect(0, 0, width, height));
-    }
-    
-    if (auto* renderable = m_rootPanel->AsRenderable()) {
-        renderable->Render(context);
-    }
-    
-    m_engine->Present();
-}
-
-void VisualLayoutDemo::Cleanup() {
-    m_rootPanel = nullptr;
-    if (m_engine) {
-        m_engine->Shutdown();
-        m_engine = nullptr;
-    }
-}
-
-LRESULT CALLBACK VisualLayoutDemo::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    VisualLayoutDemo* pThis = nullptr;
-    
-    if (message == WM_NCCREATE) {
-        CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-        pThis = reinterpret_cast<VisualLayoutDemo*>(pCreate->lpCreateParams);
-        SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
-        pThis->m_hWnd = hWnd;
-    } else {
-        pThis = reinterpret_cast<VisualLayoutDemo*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-    }
-    
-    if (pThis) {
-        switch (message) {
-            case WM_PAINT: {
-                PAINTSTRUCT ps;
-                BeginPaint(hWnd, &ps);
-                pThis->Render();
-                EndPaint(hWnd, &ps);
-                return 0;
-            }
-            case WM_SIZE: {
-                int width = LOWORD(lParam);
-                int height = HIWORD(lParam);
-                if (pThis->m_engine) {
-                    pThis->m_engine->ResizeRenderTarget(width, height);
-                }
-                InvalidateRect(hWnd, nullptr, FALSE);
-                return 0;
-            }
-            case WM_KEYDOWN: {
-                int key = static_cast<int>(wParam);
-                if (key >= '1' && key <= '4') {
-                    pThis->SwitchDemo(key - '1');
-                }
-                return 0;
-            }
-            case WM_DESTROY:
-                PostQuitMessage(0);
-                return 0;
+    try {
+        VisualLayoutWindow window;
+        
+        if (!window.Create(hInstance, L"Visual Layout Demo", 1024, 768)) {
+            Logger::Error("Failed to create window");
+            return 1;
         }
-    }
-    return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-int VisualLayoutDemo::Run() {
-    MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-    return (int)msg.wParam;
-}
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int nCmdShow) {
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    if (FAILED(hr)) {
-        MessageBoxW(nullptr, L"Failed to initialize COM", L"Error", MB_OK);
+        
+        window.Show(SW_SHOW);
+        return window.Run();
+        
+    } catch (const std::exception& e) {
+        Logger::ErrorF("Exception: %s", e.what());
         return 1;
     }
-    
-    VisualLayoutDemo demo;
-    if (!demo.Initialize(hInstance, nCmdShow)) {
-        CoUninitialize();
-        return 1;
-    }
-    
-    int result = demo.Run();
-    CoUninitialize();
-    return result;
 }

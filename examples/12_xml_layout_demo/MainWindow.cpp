@@ -1,10 +1,11 @@
 // XML Layout Demo - MainWindow implementation
 
 #include "MainWindow.h"
-#include <iostream>
+#include "Logger.h"
 
 using namespace luaui;
 using namespace luaui::controls;
+using namespace luaui::utils;
 
 MainWindow::MainWindow() {
     // Initialize components
@@ -98,7 +99,7 @@ void MainWindow::BindEvents() {
     
     if (m_primaryBtn) {
         m_primaryBtn->Click.Add([this](Control*) {
-            std::cout << "Primary button clicked!" << std::endl;
+            Logger::Info("Primary button clicked!");
             
             // Update progress bar
             if (m_progressBar) {
@@ -110,13 +111,13 @@ void MainWindow::BindEvents() {
     
     if (m_secondaryBtn) {
         m_secondaryBtn->Click.Add([this](Control*) {
-            std::cout << "Secondary button clicked!" << std::endl;
+            Logger::Info("Secondary button clicked!");
         });
     }
     
     if (m_slider) {
         m_slider->ValueChanged.Add([this](Slider*, double value) {
-            std::cout << "Slider value: " << value << std::endl;
+            Logger::InfoF("Slider value: %.1f", value);
             
             // Update label
             if (m_sliderLabel) {

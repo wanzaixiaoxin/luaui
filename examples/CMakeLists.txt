@@ -52,22 +52,9 @@ if(TARGET LuaUI)
     )
 endif()
 
-# 07_layout_demo - Layout engine demo (New Architecture)
-if(TARGET LuaUI)
-    add_executable(07_layout_demo 07_layout_demo/main.cpp)
-    target_link_libraries(07_layout_demo PRIVATE LuaUI)
-    target_include_directories(07_layout_demo PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-    )
-endif()
-
 # 08_visual_layout_demo - Visual layout demo with GUI (New Architecture)
 if(TARGET LuaUI)
-    add_executable(08_visual_layout_demo WIN32 08_visual_layout_demo/main.cpp)
+    add_executable(08_visual_layout_demo 08_visual_layout_demo/main.cpp)
     target_link_libraries(08_visual_layout_demo PRIVATE LuaUI)
     target_include_directories(08_visual_layout_demo PRIVATE
         ${CMAKE_SOURCE_DIR}/src
@@ -78,49 +65,9 @@ if(TARGET LuaUI)
     )
 endif()
 
-# 09_composite_layout - Layout + Controls composite demo (New Architecture)
-if(TARGET LuaUI)
-    add_executable(09_composite_layout WIN32 09_composite_layout/main.cpp)
-    target_link_libraries(09_composite_layout PRIVATE LuaUI)
-    target_include_directories(09_composite_layout PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-    )
-endif()
-
-# 10_advanced_controls - Advanced input controls demo (New Architecture)
-if(TARGET LuaUI)
-    add_executable(10_advanced_controls WIN32 10_advanced_controls/main.cpp)
-    target_link_libraries(10_advanced_controls PRIVATE LuaUI)
-    target_include_directories(10_advanced_controls PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-    )
-endif()
-
-# 11_style_demo - Style system demo (New Architecture)
-if(TARGET LuaUI)
-    add_executable(11_style_demo WIN32 11_style_demo/main.cpp)
-    target_link_libraries(11_style_demo PRIVATE LuaUI)
-    target_include_directories(11_style_demo PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-        ${CMAKE_SOURCE_DIR}/src/luaui/style
-    )
-endif()
-
 # 12_xml_layout_demo - XML layout system demo with code-behind (New Architecture)
 if(TARGET LuaUI)
-    add_executable(12_xml_layout_demo WIN32 
+    add_executable(12_xml_layout_demo
         12_xml_layout_demo/main.cpp
         12_xml_layout_demo/MainWindow.cpp
         12_xml_layout_demo/MainWindow.h
@@ -136,24 +83,6 @@ if(TARGET LuaUI)
         ${CMAKE_SOURCE_DIR}/src/luaui/xml
         ${CMAKE_SOURCE_DIR}/third_party/tinyxml2
         12_xml_layout_demo
-    )
-endif()
-
-# 13_refactored_arch_demo - 重构后的架构演示
-if(TARGET LuaUI_Core)
-    add_executable(13_refactored_arch_demo 
-        13_refactored_arch_demo/main.cpp
-        13_refactored_arch_demo/MainWindow.cpp
-        13_refactored_arch_demo/MainWindow.h
-    )
-    target_link_libraries(13_refactored_arch_demo PRIVATE LuaUI)
-    target_include_directories(13_refactored_arch_demo PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-        13_refactored_arch_demo
     )
 endif()
 
