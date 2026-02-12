@@ -1,14 +1,15 @@
 # LuaUI
 
-A Windows UI framework with Lua scripting and Direct2D rendering.
+A Windows UI framework with Direct2D rendering, MVVM data binding, and declarative XML layouts.
 
 ## Features
 
 - **Direct2D Rendering** - Hardware-accelerated 2D graphics
+- **MVVM Data Binding** - Declarative bindings with TwoWay support
 - **Layout System** - StackPanel, Grid, Canvas, DockPanel, WrapPanel
-- **Control System** - Button, TextBox, CheckBox, Slider, ProgressBar, etc.
+- **Control System** - Button, TextBox, CheckBox, RadioButton, Slider, ProgressBar, Image, etc.
 - **XML Layout System** - Declarative UI with external config files and code-behind
-- **Lua Scripting** - Embed Lua for UI logic
+- **Image Support** - Load and display images with multiple stretch modes
 - **Modern C++** - C++17 standard
 
 ## Project Structure
@@ -16,19 +17,41 @@ A Windows UI framework with Lua scripting and Direct2D rendering.
 ```
 src/luaui/
 ├── controls/           # UI Controls
-│   ├── include/        # Control.h, Event.h, Shapes.h...
-│   ├── layout/         # Layout containers
-│   │   ├── include/    # StackPanel.h, Grid.h, Canvas.h...
-│   │   └── src/
-│   └── src/            # Control implementations
+│   ├── Button.h/cpp
+│   ├── TextBlock.h/cpp
+│   ├── TextBox.h/cpp
+│   ├── CheckBox.h/cpp      # Includes RadioButton
+│   ├── Slider.h/cpp
+│   ├── ProgressBar.h/cpp
+│   ├── Image.h/cpp         # Image display with stretch modes
+│   ├── ListBox.h/cpp
+│   └── layouts/            # Layout containers
+│       ├── StackPanel.h/cpp
+│       ├── Grid.h/cpp
+│       ├── Canvas.h/cpp
+│       └── ...
+├── core/               # Core framework
+│   ├── Components/         # Component-based architecture
+│   │   ├── LayoutComponent.h/cpp
+│   │   ├── RenderComponent.h/cpp
+│   │   └── InputComponent.h/cpp
+│   ├── Control.h/cpp
+│   └── Window.h/cpp
 ├── rendering/          # Rendering engine
-│   ├── include/        # IRenderContext.h, Types.h...
-│   └── src/d2d/        # Direct2D implementation
+│   ├── IRenderContext.h    # Rendering interface
+│   ├── IBitmap.h           # Bitmap/image support
+│   ├── Types.h
+│   └── d2d/                # Direct2D implementation
 ├── xml/                # XML Layout system
-│   ├── include/        # XmlLayout.h, IXmlLoader.h...
-│   └── src/            # XML loader implementation
+│   ├── XmlLoader.cpp
+│   └── ...
+├── mvvm/               # MVVM Data Binding
+│   ├── MvvmXmlLoader.h/cpp     # MVVM-enabled XML loader
+│   ├── BindingEngine.h/cpp     # Binding expression parser
+│   ├── ViewModelBase.h         # INotifyPropertyChanged base
+│   └── Converters.h            # Value converters
 └── utils/              # Utilities
-    └── include/        # Logger.h
+    └── Logger.h
 ```
 
 ## Quick Start
@@ -44,6 +67,9 @@ cmake --build . --config Release
 ### Run Examples
 
 ```bash
+# MVVM Data Binding Demo
+./bin/Release/13_mvvm_demo.exe
+
 # Layout demo
 ./bin/Release/07_layout_demo.exe
 
@@ -54,50 +80,112 @@ cmake --build . --config Release
 ./bin/Release/09_composite_layout.exe
 ```
 
-### Use Layout System
-
-```cpp
-#include "Control.h"
-#include "layout.h"
-
-// Create vertical stack panel
-auto panel = std::make_shared<StackPanel>();
-panel->SetOrientation(StackPanel::Orientation::Vertical);
-panel->SetSpacing(10);
-
-// Add child controls
-auto button = std::make_shared<Button>();
-panel->AddChild(button);
-
-// Measure and arrange
-panel->Measure(Size(800, 600));
-panel->Arrange(Rect(0, 0, 800, 600));
-```
-
-### Use XML Layout
+### MVVM Data Binding
 
 ```xml
-<!-- layout.xml -->
-<StackPanel xmlns="http://luaui.io/schema" Background="White" Margin="20">
-    <TextBlock Text="Hello XML!" FontSize="24" Foreground="#333"/>
-    <Button x:Name="clickBtn" Content="Click Me" 
-            SetStateColors="#2196F3,#1976D2,#0D47A1"/>
+<!-- MVVM Layout with Data Binding -->
+<StackPanel xmlns="http://luaui.io/schema">
+    <!-- OneWay Binding -->
+    <TextBlock Text="{Binding Status}" FontSize="14"/>
+    
+    <!-- TwoWay Binding -->
+    <TextBox Text="{Binding UserName, Mode=TwoWay}" Width="300"/>
+    <Slider Value="{Binding Progress, Mode=TwoWay}" Minimum="0" Maximum="100"/>
+    <CheckBox IsChecked="{Binding IsPremium, Mode=TwoWay}" Text="Premium Member"/>
+    
+    <!-- Converter -->
+    <TextBlock Text="{Binding Progress, Converter=Format, ConverterParameter='Progress: {0}%'})"/>
+    
+    <!-- Image with Stretch mode -->
+    <Image SourcePath="image.png" Width="100" Height="100" Stretch="Uniform"/>
+    
+    <!-- RadioButton Group -->
+    <StackPanel Orientation="Horizontal">
+        <RadioButton Name="rbMale" Text="Male" GroupName="Gender" IsChecked="True"/>
+        <RadioButton Name="rbFemale" Text="Female" GroupName="Gender"/>
+    </StackPanel>
 </StackPanel>
 ```
 
 ```cpp
-#include "XmlLayout.h"
+#include "MainWindow.h"
+#include "UserViewModel.h"
 
-// Load from XML file
-auto loader = luaui::xml::CreateXmlLoader();
-auto root = loader->Load("layout.xml");
-
-// Find named controls and attach events
-auto button = FindControlByName<Button>(root, "clickBtn");
-if (button) {
-    button->AddClickHandler([](auto*) { /* handle click */ });
-}
+class MainWindow : public luaui::Window {
+public:
+    void OnLoaded() override {
+        // Create ViewModel
+        m_viewModel = std::make_shared<UserViewModel>();
+        m_viewModel->SetUserName(L"John Doe");
+        m_viewModel->SetProgress(65);
+        
+        // Load MVVM layout
+        auto loader = luaui::mvvm::CreateMvvmXmlLoader();
+        auto root = loader->Load("layout.xml");
+        
+        // Set DataContext - triggers all bindings
+        loader->SetDataContext(m_viewModel);
+        
+        SetRoot(root);
+    }
+    
+private:
+    std::shared_ptr<UserViewModel> m_viewModel;
+};
 ```
+
+### ViewModel Implementation
+
+```cpp
+class UserViewModel : public luaui::mvvm::ViewModelBase {
+public:
+    std::wstring GetUserName() const { return m_userName; }
+    void SetUserName(const std::wstring& value) {
+        if (m_userName != value) {
+            m_userName = value;
+            RaisePropertyChanged("UserName");
+        }
+    }
+    
+    int GetProgress() const { return m_progress; }
+    void SetProgress(int value) {
+        if (m_progress != value) {
+            m_progress = value;
+            RaisePropertyChanged("Progress");
+        }
+    }
+    
+private:
+    std::wstring m_userName;
+    int m_progress = 0;
+};
+```
+
+### Image Control
+
+```xml
+<!-- Image with different stretch modes -->
+<Image SourcePath="photo.png" Width="200" Height="150" Stretch="Uniform"/>
+<Image SourcePath="icon.png" Width="32" Height="32" Stretch="None"/>
+<Image SourcePath="background.jpg" Stretch="UniformToFill"/>
+```
+
+**Stretch Modes:**
+- `None` - Keep original size, centered
+- `Fill` - Fill entire area (may distort)
+- `Uniform` - Scale proportionally (default)
+- `UniformToFill` - Fill area, may clip
+
+### Button with State Colors
+
+```xml
+<Button Text="Save" Width="90" Height="32" Background="#22C55E"/>
+<Button Text="Cancel" Width="90" Height="32" Background="#EF4444"/>
+```
+
+Button automatically generates:
+- Hover state: 15% lighter
+- Pressed state: 15% darker
 
 ## Documentation
 
@@ -109,16 +197,17 @@ if (button) {
 
 | Example | Description |
 |---------|-------------|
-| 01_basic_window | Win32 + Direct2D basics |
-| 02_hello_lua | Lua integration |
-| 03_rendering_demo | Rendering engine demo |
-| 04_animation_demo | Animation system |
-| 05_offscreen_demo | Offscreen rendering |
-| 06_controls_demo | Control system |
-| 07_layout_demo | Layout engine |
-| 08_visual_layout_demo | Visual layout showcase |
-| 09_composite_layout | Layout + Controls composite |
+| 13_mvvm_demo | **MVVM Data Binding Demo** - Declarative bindings, converters, TwoWay binding |
 | 12_xml_layout_demo | XML Layout with code-behind |
+| 09_composite_layout | Layout + Controls composite |
+| 08_visual_layout_demo | Visual layout showcase |
+| 07_layout_demo | Layout engine |
+| 06_controls_demo | Control system |
+| 05_offscreen_demo | Offscreen rendering |
+| 04_animation_demo | Animation system |
+| 03_rendering_demo | Rendering engine demo |
+| 02_hello_lua | Lua integration |
+| 01_basic_window | Win32 + Direct2D basics |
 
 ## License
 
