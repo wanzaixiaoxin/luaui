@@ -186,6 +186,7 @@ void ListBox::UpdateItemStates() {
 }
 
 int ListBox::HitTestItem(float x, float y) {
+    (void)x;
     rendering::Rect contentRect;
     if (auto* renderable = AsRenderable()) {
         contentRect = renderable->GetRenderRect();

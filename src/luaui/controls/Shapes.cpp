@@ -18,6 +18,7 @@ void Rectangle::InitializeComponents() {
 }
 
 rendering::Size Rectangle::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (auto* layout = GetLayout()) {
         float w = layout->GetWidth();
         float h = layout->GetHeight();
@@ -100,6 +101,7 @@ void Ellipse::InitializeComponents() {
 }
 
 rendering::Size Ellipse::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (auto* layout = GetLayout()) {
         float w = layout->GetWidth();
         float h = layout->GetHeight();

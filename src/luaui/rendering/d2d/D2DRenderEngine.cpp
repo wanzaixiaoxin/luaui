@@ -198,6 +198,7 @@ void D2DRenderEngine::Present() {
 }
 
 void D2DRenderEngine::Present(const Rect& dirtyRect) {
+    (void)dirtyRect;
     // Partial present not implemented for HWND target
     Present();
 }
@@ -243,6 +244,7 @@ void D2DRenderEngine::EnableStats(bool enable) {
 }
 
 void D2DRenderEngine::SetResourceCacheSize(size_t maxBytes) {
+    (void)maxBytes;
     // TODO: Implement resource cache
 }
 

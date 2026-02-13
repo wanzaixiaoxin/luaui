@@ -68,27 +68,27 @@ public:
                     ITextFormat* format, const Size& maxSize);
     
     // ITextFormat (delegated to base format)
-    void SetFontFamily(const std::wstring& family) override {}
-    void SetFontSize(float size) override {}
-    void SetFontWeight(FontWeight weight) override {}
-    void SetFontStyle(FontStyle style) override {}
+    void SetFontFamily(const std::wstring& family) override { (void)family; }
+    void SetFontSize(float size) override { (void)size; }
+    void SetFontWeight(FontWeight weight) override { (void)weight; }
+    void SetFontStyle(FontStyle style) override { (void)style; }
     std::wstring GetFontFamily() const override { return L""; }
     float GetFontSize() const override { return 0; }
     FontWeight GetFontWeight() const override { return FontWeight::Regular; }
     FontStyle GetFontStyle() const override { return FontStyle::Normal; }
-    void SetTextAlignment(TextAlignment align) override {}
-    void SetParagraphAlignment(ParagraphAlignment align) override {}
-    void SetWordWrapping(WordWrapping wrapping) override {}
-    void SetTextTrimming(TextTrimming trimming) override {}
+    void SetTextAlignment(TextAlignment align) override { (void)align; }
+    void SetParagraphAlignment(ParagraphAlignment align) override { (void)align; }
+    void SetWordWrapping(WordWrapping wrapping) override { (void)wrapping; }
+    void SetTextTrimming(TextTrimming trimming) override { (void)trimming; }
     TextAlignment GetTextAlignment() const override { return TextAlignment::Leading; }
     ParagraphAlignment GetParagraphAlignment() const override { return ParagraphAlignment::Near; }
     WordWrapping GetWordWrapping() const override { return WordWrapping::Wrap; }
     TextTrimming GetTextTrimming() const override { return TextTrimming::None; }
-    void SetLineSpacing(float lineHeight, float baseline) override {}
+    void SetLineSpacing(float lineHeight, float baseline) override { (void)lineHeight; (void)baseline; }
     float GetLineHeight() const override { return 0; }
     float GetBaseline() const override { return 0; }
-    void* GetNativeFormat(IRenderContext* context) override { return nullptr; }
-    int HitTest(const std::wstring& text, const Point& point) override { return 0; }
+    void* GetNativeFormat(IRenderContext* context) override { (void)context; return nullptr; }
+    int HitTest(const std::wstring& text, const Point& point) override { (void)text; (void)point; return 0; }
     
     // ITextLayout
     void SetText(const std::wstring& text) override;

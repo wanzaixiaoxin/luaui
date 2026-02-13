@@ -24,6 +24,7 @@ bool D2DSolidColorBrush::Initialize(D2DRenderContext* context, const Color& colo
 }
 
 void* D2DSolidColorBrush::GetNativeBrush(IRenderContext* context) {
+    (void)context;
     return m_brush.Get();
 }
 
@@ -97,6 +98,7 @@ bool D2DLinearGradientBrush::CreateGradientStopCollection(D2DRenderContext* cont
 }
 
 void* D2DLinearGradientBrush::GetNativeBrush(IRenderContext* context) {
+    (void)context;
     return m_brush.Get();
 }
 
@@ -115,6 +117,7 @@ void D2DLinearGradientBrush::SetEndPoint(const Point& point) {
 }
 
 void D2DLinearGradientBrush::SetGradientStops(const std::vector<GradientStop>& stops) {
+    (void)stops;
     // Note: In Direct2D, gradient stops cannot be changed after creation
     // We would need to recreate the brush
 }
@@ -188,6 +191,7 @@ bool D2DRadialGradientBrush::CreateGradientStopCollection(D2DRenderContext* cont
 }
 
 void* D2DRadialGradientBrush::GetNativeBrush(IRenderContext* context) {
+    (void)context;
     return m_brush.Get();
 }
 
@@ -208,6 +212,7 @@ void D2DRadialGradientBrush::SetRadius(float radiusX, float radiusY) {
 }
 
 void D2DRadialGradientBrush::SetGradientStops(const std::vector<GradientStop>& stops) {
+    (void)stops;
     // Note: In Direct2D, gradient stops cannot be changed after creation
 }
 

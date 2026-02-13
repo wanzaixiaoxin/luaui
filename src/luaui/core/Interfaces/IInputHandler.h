@@ -20,29 +20,29 @@ public:
     virtual ~IInputHandler() = default;
 
     // ========== 鼠标事件 ==========
-    virtual void OnPreviewMouseDown(controls::MouseEventArgs& args) {}
-    virtual void OnMouseDown(controls::MouseEventArgs& args) {}
-    virtual void OnPreviewMouseUp(controls::MouseEventArgs& args) {}
-    virtual void OnMouseUp(controls::MouseEventArgs& args) {}
-    virtual void OnPreviewMouseMove(controls::MouseEventArgs& args) {}
-    virtual void OnMouseMove(controls::MouseEventArgs& args) {}
+    virtual void OnPreviewMouseDown(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnMouseDown(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnPreviewMouseUp(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnMouseUp(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnPreviewMouseMove(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnMouseMove(controls::MouseEventArgs& args) { (void)args; }
     virtual void OnMouseEnter() {}
     virtual void OnMouseLeave() {}
-    virtual void OnMouseWheel(controls::MouseEventArgs& args) {}
+    virtual void OnMouseWheel(controls::MouseEventArgs& args) { (void)args; }
     
     // ========== 键盘事件 ==========
-    virtual void OnPreviewKeyDown(controls::KeyEventArgs& args) {}
-    virtual void OnKeyDown(controls::KeyEventArgs& args) {}
-    virtual void OnPreviewKeyUp(controls::KeyEventArgs& args) {}
-    virtual void OnKeyUp(controls::KeyEventArgs& args) {}
+    virtual void OnPreviewKeyDown(controls::KeyEventArgs& args) { (void)args; }
+    virtual void OnKeyDown(controls::KeyEventArgs& args) { (void)args; }
+    virtual void OnPreviewKeyUp(controls::KeyEventArgs& args) { (void)args; }
+    virtual void OnKeyUp(controls::KeyEventArgs& args) { (void)args; }
     
     // 字符输入（文本控件专用）
-    virtual void OnChar(wchar_t ch) {}
+    virtual void OnChar(wchar_t ch) { (void)ch; }
     
     // ========== 焦点事件 ==========
-    virtual void OnPreviewGotFocus(controls::FocusEventArgs& args) {}
+    virtual void OnPreviewGotFocus(controls::FocusEventArgs& args) { (void)args; }
     virtual void OnGotFocus() {}
-    virtual void OnPreviewLostFocus(controls::FocusEventArgs& args) {}
+    virtual void OnPreviewLostFocus(controls::FocusEventArgs& args) { (void)args; }
     virtual void OnLostFocus() {}
     
     // ========== 点击事件 ==========

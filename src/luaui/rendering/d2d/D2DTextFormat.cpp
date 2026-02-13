@@ -171,6 +171,7 @@ void D2DTextFormat::SetLineSpacing(float lineHeight, float baseline) {
 }
 
 void* D2DTextFormat::GetNativeFormat(IRenderContext* context) {
+    (void)context;
     return m_format.Get();
 }
 
@@ -197,6 +198,8 @@ Size D2DTextFormat::MeasureText(const std::wstring& text, float maxWidth) {
 }
 
 int D2DTextFormat::HitTest(const std::wstring& text, const Point& point) {
+    (void)text;
+    (void)point;
     // Not implemented
     return -1;
 }
@@ -251,6 +254,8 @@ void D2DTextLayout::SetMaxSize(const Size& size) {
 }
 
 Size D2DTextLayout::MeasureText(const std::wstring& text, float maxWidth) {
+    (void)text;
+    (void)maxWidth;
     return GetLayoutSize();
 }
 

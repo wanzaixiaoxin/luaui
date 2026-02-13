@@ -220,27 +220,40 @@ void D2DRenderContext::DrawBitmap(IBitmap* bmp, const Point& pos, float op) {
 void D2DRenderContext::DrawBitmap(IBitmap* bmp, const Rect& dest, float op) {
     if (!m_renderTarget || !bmp) return;
     ID2D1Bitmap* b = static_cast<ID2D1Bitmap*>(bmp->GetNativeBitmap(this));
-    if (b) m_renderTarget->DrawBitmap(b, &ToD2DRect(dest), op * m_currentState.opacity);
+    if (b) {
+        D2D1_RECT_F d2dDest = ToD2DRect(dest);
+        m_renderTarget->DrawBitmap(b, &d2dDest, op * m_currentState.opacity);
+    }
 }
 
 void D2DRenderContext::DrawBitmap(IBitmap* bmp, const Rect& dest, const Rect& src, float op) {
     if (!m_renderTarget || !bmp) return;
     ID2D1Bitmap* b = static_cast<ID2D1Bitmap*>(bmp->GetNativeBitmap(this));
-    if (b) m_renderTarget->DrawBitmap(b, &ToD2DRect(dest), op * m_currentState.opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &ToD2DRect(src));
+    if (b) {
+        D2D1_RECT_F d2dDest = ToD2DRect(dest);
+        D2D1_RECT_F d2dSrc = ToD2DRect(src);
+        m_renderTarget->DrawBitmap(b, &d2dDest, op * m_currentState.opacity, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &d2dSrc);
+    }
 }
 
 void D2DRenderContext::DrawTextString(const std::wstring& text, ITextFormat* format, const Point& pos, IBrush* brush) {
     if (!m_renderTarget || !format || !brush) return;
     IDWriteTextFormat* f = static_cast<IDWriteTextFormat*>(format->GetNativeFormat(this));
     ID2D1Brush* b = static_cast<ID2D1Brush*>(brush->GetNativeBrush(this));
-    if (f && b) m_renderTarget->DrawText(text.c_str(), (UINT32)text.length(), f, &D2D1::RectF(pos.x, pos.y, pos.x + 10000, pos.y + 10000), b);
+    if (f && b) {
+        D2D1_RECT_F rect = D2D1::RectF(pos.x, pos.y, pos.x + 10000, pos.y + 10000);
+        m_renderTarget->DrawText(text.c_str(), (UINT32)text.length(), f, &rect, b);
+    }
 }
 
 void D2DRenderContext::DrawTextString(const std::wstring& text, ITextFormat* format, const Rect& rect, IBrush* brush) {
     if (!m_renderTarget || !format || !brush) return;
     IDWriteTextFormat* f = static_cast<IDWriteTextFormat*>(format->GetNativeFormat(this));
     ID2D1Brush* b = static_cast<ID2D1Brush*>(brush->GetNativeBrush(this));
-    if (f && b) m_renderTarget->DrawText(text.c_str(), (UINT32)text.length(), f, &ToD2DRect(rect), b);
+    if (f && b) {
+        D2D1_RECT_F d2dRect = ToD2DRect(rect);
+        m_renderTarget->DrawText(text.c_str(), (UINT32)text.length(), f, &d2dRect, b);
+    }
 }
 
 void D2DRenderContext::PushLayer(float op) {

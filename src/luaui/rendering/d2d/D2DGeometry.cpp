@@ -104,6 +104,7 @@ bool D2DRoundedRectangleGeometry::FillContains(const Point& point) const {
 }
 
 bool D2DRoundedRectangleGeometry::StrokeContains(const Point& point, const StrokeStyle& stroke) const {
+    (void)stroke;
     return m_rect.Contains(point); // Simplified
 }
 
@@ -273,6 +274,7 @@ void D2DPathGeometry::AddRectangle(const Rect& rect) {
 }
 
 void D2DPathGeometry::AddRoundedRectangle(const Rect& rect, const CornerRadius& radius) {
+    (void)radius;
     // Simplified implementation
     AddRectangle(rect);
 }
@@ -311,6 +313,7 @@ Rect D2DPathGeometry::GetBounds() const {
 }
 
 Rect D2DPathGeometry::GetBoundsWithStroke(const StrokeStyle& stroke) const {
+    (void)stroke;
     if (!m_geometry) return Rect();
     
     // Simplified
@@ -379,6 +382,9 @@ bool D2DCombinedGeometry::Initialize(D2DRenderContext* context, IGeometry* g1, I
 }
 
 void D2DCombinedGeometry::SetGeometries(IGeometry* g1, IGeometry* g2, CombineMode mode) {
+    (void)g1;
+    (void)g2;
+    (void)mode;
     // Geometries are immutable in D2D, would need to recreate
 }
 
@@ -394,6 +400,7 @@ Rect D2DCombinedGeometry::GetBounds() const {
 }
 
 Rect D2DCombinedGeometry::GetBoundsWithStroke(const StrokeStyle& stroke) const {
+    (void)stroke;
     return GetBounds();
 }
 

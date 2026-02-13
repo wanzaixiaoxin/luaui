@@ -13,6 +13,7 @@ WrapPanel::WrapPanel() {}
 rendering::Size WrapPanel::OnMeasureChildren(const rendering::Size& availableSize) {
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     float lineSize = 0;
+    (void)lineSize;
     float lineOffset = 0;
     float maxOtherSize = 0;
     
@@ -70,6 +71,7 @@ rendering::Size WrapPanel::OnArrangeChildren(const rendering::Size& finalSize) {
     float linePos = isHorizontal ? contentRect.y : contentRect.x;
     float itemPos = isHorizontal ? contentRect.x : contentRect.y;
     float lineSize = 0;
+    (void)lineSize;
     float maxOtherSize = 0;
     
     for (auto& child : m_children) {

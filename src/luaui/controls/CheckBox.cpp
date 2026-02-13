@@ -79,6 +79,7 @@ void CheckBox::InitializeComponents() {
 }
 
 rendering::Size CheckBox::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     return rendering::Size(m_boxSize + m_spacing + 80, m_boxSize);
 }
 
@@ -140,6 +141,7 @@ void CheckBox::OnMouseLeave() {
 }
 
 void CheckBox::OnMouseDown(MouseEventArgs& args) {
+    (void)args;
     m_isPressed = true;
     if (auto* render = GetRender()) {
         render->Invalidate();
@@ -147,6 +149,7 @@ void CheckBox::OnMouseDown(MouseEventArgs& args) {
 }
 
 void CheckBox::OnMouseUp(MouseEventArgs& args) {
+    (void)args;
     m_isPressed = false;
     if (auto* render = GetRender()) {
         render->Invalidate();

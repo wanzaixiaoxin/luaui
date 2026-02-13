@@ -330,17 +330,6 @@ std::shared_ptr<luaui::Control> MvvmXmlLoader::FindControlByName(
 }
 
 // ============================================================================
-// 属性值获取辅助函数
-// ============================================================================
-static std::any GetPropertyValue(INotifyPropertyChanged* viewModel, const std::string& propertyName) {
-    // 这里简化处理，实际应该通过反射获取
-    // 返回空值，由订阅回调处理
-    (void)viewModel;
-    (void)propertyName;
-    return std::any{};
-}
-
-// ============================================================================
 // 创建实际绑定 - 核心实现
 // ============================================================================
 void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control,

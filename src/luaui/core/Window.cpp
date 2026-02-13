@@ -511,6 +511,7 @@ void Window::HandleMouseUp(float x, float y, int button) {
 }
 
 void Window::HandleMouseWheel(float x, float y, int delta) {
+    (void)delta;
     auto* control = m_capturedControl ? m_capturedControl : HitTest(m_root.get(), x, y, 0, 0);
     
     if (control) {

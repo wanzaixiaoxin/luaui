@@ -181,7 +181,7 @@ bool D2DRenderTarget::SaveToFile(const std::wstring& filePath) const {
     GUID containerFormat = GUID_ContainerFormatPng;
     if (filePath.size() > 4) {
         std::wstring ext = filePath.substr(filePath.size() - 4);
-        for (auto& c : ext) c = std::tolower(c);
+        for (auto& c : ext) c = static_cast<wchar_t>(std::tolower(static_cast<unsigned char>(c)));
         if (ext == L".jpg" || ext == L"jpeg") {
             containerFormat = GUID_ContainerFormatJpeg;
         } else if (ext == L".bmp") {

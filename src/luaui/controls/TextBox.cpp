@@ -263,6 +263,7 @@ void TextBox::OnLostFocus() {
 }
 
 rendering::Size TextBox::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (auto* layout = GetLayout()) {
         float w = layout->GetWidth();
         float h = layout->GetHeight();

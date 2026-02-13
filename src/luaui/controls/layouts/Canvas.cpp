@@ -24,11 +24,15 @@ void Canvas::SetTop(const std::shared_ptr<IControl>& control, float top) {
 }
 
 void Canvas::SetRight(const std::shared_ptr<IControl>& control, float right) {
+    (void)control;
+    (void)right;
     // Canvas 不直接支持 Right，可以通过计算实现
     // 简化：忽略此属性
 }
 
 void Canvas::SetBottom(const std::shared_ptr<IControl>& control, float bottom) {
+    (void)control;
+    (void)bottom;
     // Canvas 不直接支持 Bottom，可以通过计算实现
     // 简化：忽略此属性
 }
@@ -46,16 +50,19 @@ float Canvas::GetTop(const std::shared_ptr<IControl>& control) {
 }
 
 float Canvas::GetRight(const std::shared_ptr<IControl>& control) {
+    (void)control;
     // 简化实现
     return 0;
 }
 
 float Canvas::GetBottom(const std::shared_ptr<IControl>& control) {
+    (void)control;
     // 简化实现
     return 0;
 }
 
 rendering::Size Canvas::OnMeasureChildren(const rendering::Size& availableSize) {
+    (void)availableSize;
     // Canvas 给子控件无限空间进行测量
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;

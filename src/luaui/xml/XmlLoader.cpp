@@ -74,6 +74,7 @@ public:
     
 protected:
     void BindEventsFromInstance(void* instance) override {
+        (void)instance;
         // 基类实现为空，具体绑定由外部完成
     }
     

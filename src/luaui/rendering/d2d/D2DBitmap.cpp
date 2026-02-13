@@ -233,10 +233,14 @@ void D2DBitmap::SetDpi(float dpiX, float dpiY) {
 }
 
 void* D2DBitmap::GetNativeBitmap(IRenderContext* context) {
+    (void)context;
     return m_bitmap.Get();
 }
 
 bool D2DBitmap::Lock(const Rect* rect, void** pixels, int* pitch) {
+    (void)rect;
+    (void)pixels;
+    (void)pitch;
     // Direct2D bitmaps don't support direct pixel access
     // Would need to use WIC or staging texture
     return false;

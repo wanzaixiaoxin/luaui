@@ -56,6 +56,7 @@ void Button::OnRender(rendering::IRenderContext* context) {
 }
 
 void Button::OnMouseDown(MouseEventArgs& args) {
+    (void)args;
     m_isPressed = true;
     if (auto* render = GetRender()) {
         render->Invalidate();
@@ -63,6 +64,7 @@ void Button::OnMouseDown(MouseEventArgs& args) {
 }
 
 void Button::OnMouseUp(MouseEventArgs& args) {
+    (void)args;
     if (m_isPressed) {
         m_isPressed = false;
         OnClick();
@@ -93,6 +95,7 @@ void Button::OnClick() {
 }
 
 rendering::Size Button::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     // 默认按钮大小
     if (auto* layout = GetLayout()) {
         float w = layout->GetWidth();

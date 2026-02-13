@@ -112,6 +112,7 @@ void TextBlock::OnRender(rendering::IRenderContext* context) {
 }
 
 rendering::Size TextBlock::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (!m_textDirty) {
         return m_textSize;
     }

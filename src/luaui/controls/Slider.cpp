@@ -32,6 +32,7 @@ void Slider::InitializeComponents() {
 }
 
 rendering::Size Slider::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (m_isVertical) {
         return rendering::Size(16, 100);
     } else {
@@ -161,12 +162,14 @@ void Slider::UpdateValueFromPosition(float x, float y) {
 }
 
 void Slider::OnMouseDown(MouseEventArgs& args) {
+    (void)args;
     utils::Logger::Trace("[Slider] MouseDown -> Drag START");
     m_isDragging = true;
     UpdateValueFromPosition(args.x, args.y);
 }
 
 void Slider::OnMouseUp(MouseEventArgs& args) {
+    (void)args;
     utils::Logger::Trace("[Slider] MouseUp -> Drag STOP");
     m_isDragging = false;
 }
@@ -287,6 +290,7 @@ void ProgressBar::InitializeComponents() {
 }
 
 rendering::Size ProgressBar::OnMeasure(const rendering::Size& availableSize) {
+    (void)availableSize;
     if (m_isVertical) {
         return rendering::Size(8, 100);
     } else {

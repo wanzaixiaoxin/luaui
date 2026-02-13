@@ -16,7 +16,7 @@ public:
     bool Initialize(D2DRenderContext* context, const Rect& rect);
     
     GeometryType GetType() const override { return GeometryType::Rectangle; }
-    void* GetNativeGeometry(IRenderContext* context) const override { return m_geometry.Get(); }
+    void* GetNativeGeometry(IRenderContext* context) const override { (void)context; return m_geometry.Get(); }
     
     void SetRect(const Rect& rect) override;
     Rect GetRect() const override { return m_rect; }
@@ -37,7 +37,7 @@ public:
     bool Initialize(D2DRenderContext* context, const Rect& rect, const CornerRadius& radius);
     
     GeometryType GetType() const override { return GeometryType::RoundedRectangle; }
-    void* GetNativeGeometry(IRenderContext* context) const override { return m_geometry.Get(); }
+    void* GetNativeGeometry(IRenderContext* context) const override { (void)context; return m_geometry.Get(); }
     
     void SetRect(const Rect& rect) override;
     void SetCornerRadius(const CornerRadius& radius) override;
@@ -61,7 +61,7 @@ public:
     bool Initialize(D2DRenderContext* context, const Point& center, float rx, float ry);
     
     GeometryType GetType() const override { return GeometryType::Ellipse; }
-    void* GetNativeGeometry(IRenderContext* context) const override { return m_geometry.Get(); }
+    void* GetNativeGeometry(IRenderContext* context) const override { (void)context; return m_geometry.Get(); }
     
     void SetCenter(const Point& center) override;
     void SetRadius(float rx, float ry) override;
@@ -92,7 +92,7 @@ public:
     void Clear() override;
     
     GeometryType GetType() const override { return GeometryType::Path; }
-    void* GetNativeGeometry(IRenderContext* context) const override { return m_geometry.Get(); }
+    void* GetNativeGeometry(IRenderContext* context) const override { (void)context; return m_geometry.Get(); }
     
     void BeginFigure(const Point& startPoint, bool filled = true) override;
     void EndFigure(bool closed = true) override;
@@ -123,7 +123,7 @@ public:
     bool Initialize(D2DRenderContext* context, IGeometry* g1, IGeometry* g2, CombineMode mode);
     
     GeometryType GetType() const override { return GeometryType::Combined; }
-    void* GetNativeGeometry(IRenderContext* context) const override { return m_geometry.Get(); }
+    void* GetNativeGeometry(IRenderContext* context) const override { (void)context; return m_geometry.Get(); }
     
     void SetGeometries(IGeometry* g1, IGeometry* g2, CombineMode mode) override;
     
