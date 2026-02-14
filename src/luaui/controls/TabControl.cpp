@@ -5,6 +5,7 @@
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
+#include "Logger.h"
 
 namespace luaui {
 namespace controls {
@@ -33,7 +34,29 @@ void TabItem::SetHeader(const std::wstring& header) {
 }
 
 void TabItem::SetContent(const std::shared_ptr<Control>& content) {
+    // 如果内容已存在且已添加到父控件，先移除
+    if (m_content && m_content->GetParent()) {
+        if (auto parent = m_content->GetParent()) {
+            if (auto* panel = dynamic_cast<Panel*>(parent.get())) {
+                panel->RemoveChild(m_content);
+            }
+        }
+    }
+    
     m_content = content;
+    
+    // 如果 TabItem 已经有父 TabControl，添加内容到父控件
+    if (m_content) {
+        if (auto parent = GetParent()) {
+            if (auto* tabControl = dynamic_cast<TabControl*>(parent.get())) {
+                m_content->SetIsVisible(m_isSelected);
+                tabControl->AddChild(m_content);
+                if (auto* layout = tabControl->GetLayout()) {
+                    layout->InvalidateMeasure();
+                }
+            }
+        }
+    }
 }
 
 void TabItem::SetIsSelected(bool selected) {
@@ -57,6 +80,7 @@ void TabItem::OnMouseLeave() {
 void TabItem::OnMouseDown(MouseEventArgs& args) {
     // 检查是否点击关闭按钮
     if (m_canClose && HitTestCloseButton(args.x, args.y)) {
+
         // 通知 TabControl 关闭此标签
         if (auto parent = GetParent()) {
             if (auto* tabControl = dynamic_cast<TabControl*>(parent.get())) {
@@ -64,6 +88,7 @@ void TabItem::OnMouseDown(MouseEventArgs& args) {
             }
         }
     } else {
+
         // 选中标签
         SetIsSelected(true);
         if (auto parent = GetParent()) {
@@ -85,8 +110,8 @@ bool TabItem::HitTestCloseButton(float x, float y) {
     if (!m_canClose) return false;
     
     rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
+    if (auto* renderComp = GetRender()) {
+        rect = renderComp->GetRenderRect();
     }
     
     float closeX = rect.x + rect.width - m_padding - m_closeButtonSize;
@@ -136,6 +161,7 @@ void TabItem::OnRender(rendering::IRenderContext* context) {
     if (!render) return;
     
     auto rect = render->GetRenderRect();
+
     
     // 绘制背景
     rendering::Color bgColor = m_normalBg;
@@ -192,6 +218,15 @@ void TabControl::AddTab(const std::shared_ptr<TabItem>& tab) {
     if (!tab) return;
     
     m_tabs.push_back(tab);
+    
+    // 先添加内容（如果存在），再添加 TabItem
+    // 这样 HitTest 会从后向前先测试 TabItem（标签栏在内容上方）
+    if (auto content = tab->GetContent()) {
+        content->SetIsVisible(tab->GetIsSelected());
+        AddChild(content);
+    }
+    
+    // 后添加 TabItem，确保在子控件列表中位于内容之后
     AddChild(tab);
     
     // 如果是第一个标签，自动选中
@@ -348,50 +383,48 @@ void TabControl::UpdateTabStates() {
 }
 
 rendering::Rect TabControl::GetTabStripRect() const {
-    rendering::Rect contentRect;
-    if (auto* renderable = const_cast<TabControl*>(this)->AsRenderable()) {
-        contentRect = renderable->GetRenderRect();
+    // 使用相对于 TabControl 的坐标（不是全局坐标）
+    float width = 0, height = 0;
+    if (auto* renderComp = const_cast<TabControl*>(this)->GetRender()) {
+        width = renderComp->GetRenderRect().width;
+        height = renderComp->GetRenderRect().height;
     }
     
     switch (m_tabStripPlacement) {
         case TabStripPlacement::Top:
-            return rendering::Rect(contentRect.x, contentRect.y, 
-                                   contentRect.width, m_tabHeight);
+            return rendering::Rect(0, 0, width, m_tabHeight);
         case TabStripPlacement::Bottom:
-            return rendering::Rect(contentRect.x, 
-                                   contentRect.y + contentRect.height - m_tabHeight,
-                                   contentRect.width, m_tabHeight);
+            return rendering::Rect(0, height - m_tabHeight,
+                                   width, m_tabHeight);
         case TabStripPlacement::Left:
-            return rendering::Rect(contentRect.x, contentRect.y,
-                                   m_tabHeight, contentRect.height); // 侧边栏使用 tabHeight 作为宽度
+            return rendering::Rect(0, 0, m_tabHeight, height);
         case TabStripPlacement::Right:
-            return rendering::Rect(contentRect.x + contentRect.width - m_tabHeight,
-                                   contentRect.y, m_tabHeight, contentRect.height);
+            return rendering::Rect(width - m_tabHeight, 0, 
+                                   m_tabHeight, height);
     }
-    return contentRect;
+    return rendering::Rect(0, 0, width, height);
 }
 
 rendering::Rect TabControl::GetContentRect() const {
-    rendering::Rect contentRect;
-    if (auto* renderable = const_cast<TabControl*>(this)->AsRenderable()) {
-        contentRect = renderable->GetRenderRect();
+    // 使用相对于 TabControl 的坐标
+    float width = 0, height = 0;
+    if (auto* renderComp = const_cast<TabControl*>(this)->GetRender()) {
+        width = renderComp->GetRenderRect().width;
+        height = renderComp->GetRenderRect().height;
     }
     
     switch (m_tabStripPlacement) {
         case TabStripPlacement::Top:
-            return rendering::Rect(contentRect.x, contentRect.y + m_tabHeight,
-                                   contentRect.width, contentRect.height - m_tabHeight);
+            return rendering::Rect(0, m_tabHeight,
+                                   width, height - m_tabHeight);
         case TabStripPlacement::Bottom:
-            return rendering::Rect(contentRect.x, contentRect.y,
-                                   contentRect.width, contentRect.height - m_tabHeight);
+            return rendering::Rect(0, 0, width, height - m_tabHeight);
         case TabStripPlacement::Left:
-            return rendering::Rect(contentRect.x + m_tabHeight, contentRect.y,
-                                   contentRect.width - m_tabHeight, contentRect.height);
+            return rendering::Rect(m_tabHeight, 0, width - m_tabHeight, height);
         case TabStripPlacement::Right:
-            return rendering::Rect(contentRect.x, contentRect.y,
-                                   contentRect.width - m_tabHeight, contentRect.height);
+            return rendering::Rect(0, 0, width - m_tabHeight, height);
     }
-    return contentRect;
+    return rendering::Rect(0, 0, width, height);
 }
 
 float TabControl::CalculateTabWidth() const {
@@ -450,7 +483,7 @@ int TabControl::HitTestTab(float x, float y) {
 rendering::Size TabControl::OnMeasureChildren(const rendering::Size& availableSize) {
     // 测量标签
     for (auto& tab : m_tabs) {
-        if (auto* layoutable = tab->AsLayoutable()) {
+        if (auto* layoutable = tab->GetLayout()) {
             interfaces::LayoutConstraint constraint;
             constraint.available = rendering::Size(CalculateTabWidth(), m_tabHeight);
             layoutable->Measure(constraint);
@@ -464,7 +497,7 @@ rendering::Size TabControl::OnMeasureChildren(const rendering::Size& availableSi
     
     for (auto& tab : m_tabs) {
         if (auto content = tab->GetContent()) {
-            if (auto* layoutable = content->AsLayoutable()) {
+            if (auto* layoutable = content->GetLayout()) {
                 interfaces::LayoutConstraint constraint;
                 constraint.available = rendering::Size(contentRect.width, contentRect.height);
                 layoutable->Measure(constraint);
@@ -478,7 +511,7 @@ rendering::Size TabControl::OnMeasureChildren(const rendering::Size& availableSi
 rendering::Size TabControl::OnArrangeChildren(const rendering::Size& finalSize) {
     // 排列标签
     for (size_t i = 0; i < m_tabs.size(); ++i) {
-        if (auto* layoutable = m_tabs[i]->AsLayoutable()) {
+        if (auto* layoutable = m_tabs[i]->GetLayout()) {
             rendering::Rect tabRect = GetTabRect(static_cast<int>(i));
             layoutable->Arrange(tabRect);
         }
@@ -488,7 +521,8 @@ rendering::Size TabControl::OnArrangeChildren(const rendering::Size& finalSize) 
     rendering::Rect contentRect = GetContentRect();
     for (auto& tab : m_tabs) {
         if (auto content = tab->GetContent()) {
-            if (auto* layoutable = content->AsLayoutable()) {
+            if (auto* layoutable = content->GetLayout()) {
+
                 layoutable->Arrange(contentRect);
             }
         }
@@ -499,6 +533,16 @@ rendering::Size TabControl::OnArrangeChildren(const rendering::Size& finalSize) 
 
 void TabControl::OnRenderChildren(rendering::IRenderContext* context) {
     if (!context) return;
+    
+    // 调试：输出 TabItem 信息
+    for (size_t i = 0; i < m_tabs.size(); ++i) {
+        if (auto* render = m_tabs[i]->GetRender()) {
+            auto rect = render->GetRenderRect();
+
+        } else {
+
+        }
+    }
     
     // 绘制标签栏背景
     rendering::Rect tabStripRect = GetTabStripRect();
@@ -521,15 +565,19 @@ void TabControl::OnRenderChildren(rendering::IRenderContext* context) {
     
     // 渲染标签
     for (auto& tab : m_tabs) {
-        if (auto* itemRenderable = tab->AsRenderable()) {
-            itemRenderable->Render(context);
+        // 使用 GetRender 直接获取 RenderComponent
+        if (auto* renderComp = tab->GetRender()) {
+
+            renderComp->Render(context);
+        } else {
+
         }
     }
     
     // 渲染当前选中的内容
     if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<int>(m_tabs.size())) {
         if (auto content = m_tabs[m_selectedIndex]->GetContent()) {
-            if (auto* contentRenderable = content->AsRenderable()) {
+            if (auto* contentRenderable = content->GetRender()) {
                 contentRenderable->Render(context);
             }
         }
@@ -547,9 +595,9 @@ void TabControl::OnMouseMove(MouseEventArgs& args) {
         if (auto* render = GetRender()) {
             render->Invalidate();
         }
+        args.Handled = true;  // 只有悬停在标签栏上才标记为已处理
     }
-    
-    args.Handled = true;
+    // 如果悬停在内容区域，不标记 Handled，让事件传递给子控件
 }
 
 void TabControl::OnMouseDown(MouseEventArgs& args) {
@@ -560,9 +608,11 @@ void TabControl::OnMouseDown(MouseEventArgs& args) {
         rendering::Rect tabRect = GetTabRect(tabIndex);
         localArgs.x = args.x - tabRect.x;
         localArgs.y = args.y - tabRect.y;
+
         m_tabs[tabIndex]->OnMouseDown(localArgs);
+        args.Handled = true;  // 只有点击在标签栏上才标记为已处理
     }
-    args.Handled = true;
+    // 如果点击在内容区域，不标记 Handled，让事件传递给子控件
 }
 
 } // namespace controls

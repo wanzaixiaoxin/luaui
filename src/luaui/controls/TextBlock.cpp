@@ -56,6 +56,32 @@ void TextBlock::SetForeground(const rendering::Color& color) {
     }
 }
 
+void TextBlock::SetFontWeight(rendering::FontWeight weight) {
+    if (m_fontWeight != weight) {
+        m_fontWeight = weight;
+        m_textDirty = true;
+        if (auto* layout = GetLayout()) {
+            layout->InvalidateMeasure();
+        }
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    }
+}
+
+void TextBlock::SetFontStyle(rendering::FontStyle style) {
+    if (m_fontStyle != style) {
+        m_fontStyle = style;
+        m_textDirty = true;
+        if (auto* layout = GetLayout()) {
+            layout->InvalidateMeasure();
+        }
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    }
+}
+
 void TextBlock::OnRender(rendering::IRenderContext* context) {
     if (!context) return;
     

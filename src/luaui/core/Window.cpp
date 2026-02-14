@@ -376,6 +376,9 @@ void Window::ClearFocus() {
 Control* Window::HitTest(Control* root, float x, float y, float offsetX, float offsetY) {
     if (!root) return nullptr;
     
+    // 检查控件是否可见
+    if (!root->GetIsVisible()) return nullptr;
+    
     auto* render = root->GetRender();
     if (!render) return nullptr;
     
