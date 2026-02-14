@@ -9,14 +9,40 @@ add_library(LuaUI_Controls STATIC
     CheckBox.h
     Image.cpp
     Image.h
+    Toolbar.cpp
+    Toolbar.h
+    StatusBar.cpp
+    StatusBar.h
+    Tooltip.cpp
+    Tooltip.h
+    Notification.cpp
+    Notification.h
     ListBox.cpp
     ListBox.h
+    ComboBox.cpp
+    ComboBox.h
+    TreeView.cpp
+    TreeView.h
+    DataGrid.cpp
+    DataGrid.h
+    DatePicker.cpp
+    DatePicker.h
+    TabControl.cpp
+    TabControl.h
+    Dialog.cpp
+    Dialog.h
+    Menu.cpp
+    Menu.h
     Panel.cpp
     Panel.h
     Shapes.cpp
     Shapes.h
     Slider.cpp
     Slider.h
+    ProgressBar.cpp
+    ProgressBar.h
+    RichTextBox.cpp
+    RichTextBox.h
     TextBlock.cpp
     TextBlock.h
     TextBox.cpp

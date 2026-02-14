@@ -23,15 +23,40 @@
 
 // Range controls
 #include "Slider.h"
+#include "ProgressBar.h"
+
+// Text controls
+#include "RichTextBox.h"
 
 // Selector controls
 #include "ListBox.h"
+#include "ComboBox.h"
+#include "TreeView.h"
+#include "DataGrid.h"
+#include "DatePicker.h"
+#include "TabControl.h"
+#include "Dialog.h"
+
+// Menu
+#include "Menu.h"
 
 // Shapes
 #include "Shapes.h"
 
 // Image
 #include "Image.h"
+
+// Toolbar
+#include "Toolbar.h"
+
+// StatusBar
+#include "StatusBar.h"
+
+// Tooltip
+#include "Tooltip.h"
+
+// Notification
+#include "Notification.h"
 
 // Layout controls
 #include "layouts/Grid.h"
