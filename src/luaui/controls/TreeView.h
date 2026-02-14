@@ -22,8 +22,7 @@ class TreeViewItem;
  * - 自定义数据
  * - 层级缩进
  */
-class TreeViewItem : public luaui::Control,
-                     public std::enable_shared_from_this<TreeViewItem> {
+class TreeViewItem : public luaui::Control {
 public:
     TreeViewItem();
     
@@ -85,6 +84,8 @@ protected:
     void OnMouseDown(MouseEventArgs& args) override;
 
 private:
+    friend class TreeView;
+    
     void UpdateVisualState();
     void DrawExpandButton(rendering::IRenderContext* context, const rendering::Rect& rect);
     

@@ -381,8 +381,8 @@ void NotificationManager::AddNotification(
     
     m_notifications.push_back(notification);
     
-    // 监听关闭事件
-    notification->Closed.Add([this, notification]() {
+    // 监听关闭事件 - use the object's own method via a static wrapper
+    notification->Closed.Add([this, notification](ToastNotification*) {
         RemoveNotification(notification);
     });
     

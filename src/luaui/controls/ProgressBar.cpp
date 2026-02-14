@@ -81,13 +81,11 @@ void ProgressBar::SetOrientation(Orientation orientation) {
             if (orientation == Orientation::Horizontal) {
                 layout->SetMinWidth(100);
                 layout->SetMinHeight(16);
-                layout->ClearWidth();
                 layout->SetHeight(16);
             } else {
                 layout->SetMinWidth(16);
                 layout->SetMinHeight(100);
                 layout->SetWidth(16);
-                layout->ClearHeight();
             }
             layout->InvalidateMeasure();
         }

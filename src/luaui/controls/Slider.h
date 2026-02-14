@@ -72,43 +72,5 @@ private:
     bool m_isHovered = false;
 };
 
-/**
- * @brief ProgressBar 进度条（新架构）
- */
-class ProgressBar : public luaui::Control {
-public:
-    ProgressBar();
-    
-    std::string GetTypeName() const override { return "ProgressBar"; }
-    
-    // 值属性
-    double GetValue() const { return m_value; }
-    void SetValue(double value);
-    
-    double GetMinimum() const { return m_minimum; }
-    void SetMinimum(double min);
-    
-    double GetMaximum() const { return m_maximum; }
-    void SetMaximum(double max);
-    
-    bool GetIsIndeterminate() const { return m_isIndeterminate; }
-    void SetIsIndeterminate(bool indeterminate);
-    
-    bool GetIsVertical() const { return m_isVertical; }
-    void SetIsVertical(bool vertical);
-
-protected:
-    void InitializeComponents() override;
-    rendering::Size OnMeasure(const rendering::Size& availableSize) override;
-    void OnRender(rendering::IRenderContext* context) override;
-
-private:
-    double m_value = 0.0;
-    double m_minimum = 0.0;
-    double m_maximum = 100.0;
-    bool m_isIndeterminate = false;
-    bool m_isVertical = false;
-};
-
 } // namespace controls
 } // namespace luaui

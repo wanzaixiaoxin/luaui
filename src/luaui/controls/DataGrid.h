@@ -109,6 +109,9 @@ public:
     // 是否编辑中
     bool GetIsEditing() const { return m_isEditing; }
     void SetIsEditing(bool editing);
+    
+    // Hover state (for internal use)
+    void SetIsHovered(bool hovered) { m_isHovered = hovered; }
 
 protected:
     void InitializeComponents() override;
@@ -147,8 +150,7 @@ private:
 /**
  * @brief DataGridRow 表格行
  */
-class DataGridRow : public luaui::Control,
-                    public std::enable_shared_from_this<DataGridRow> {
+class DataGridRow : public luaui::Control {
 public:
     DataGridRow();
     

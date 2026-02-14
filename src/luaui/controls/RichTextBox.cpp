@@ -4,6 +4,7 @@
 #include "Components/InputComponent.h"
 #include "Interfaces/IRenderable.h"
 #include "IRenderContext.h"
+#include <Windows.h>
 
 namespace luaui {
 namespace controls {
@@ -506,62 +507,62 @@ void RichTextBox::OnMouseUp(MouseEventArgs& args) {
 void RichTextBox::OnKeyDown(KeyEventArgs& args) {
     if (m_isReadOnly) return;
     
-    switch (args.KeyCode) {
-        case Key::Left:
+    switch (args.keyCode) {
+        case VK_LEFT:
             if (m_caretPosition > 0) {
                 SetCaretPosition(m_caretPosition - 1);
             }
             break;
             
-        case Key::Right:
+        case VK_RIGHT:
             if (m_document && m_caretPosition < m_document->GetLength()) {
                 SetCaretPosition(m_caretPosition + 1);
             }
             break;
             
-        case Key::Home:
+        case VK_HOME:
             SetCaretPosition(0);
             break;
             
-        case Key::End:
+        case VK_END:
             if (m_document) {
                 SetCaretPosition(m_document->GetLength());
             }
             break;
             
-        case Key::Return:
+        case VK_RETURN:
             if (m_acceptsReturn) {
                 InsertParagraphBreak();
             }
             break;
             
-        case Key::Back:
+        case VK_BACK:
             // 删除前一个字符
             break;
             
-        case Key::Delete:
+        case VK_DELETE:
             // 删除后一个字符
             break;
             
-        case Key::A:
+        case 'A':
             if (args.Control) {
                 SelectAll();
             }
             break;
             
-        case Key::C:
+        case 'C':
             if (args.Control) {
                 Copy();
             }
             break;
             
-        case Key::V:
+        case 'V':
             if (args.Control) {
                 Paste();
             }
             break;
             
-        case Key::X:
+        case 'X':
             if (args.Control) {
                 Cut();
             }
@@ -571,11 +572,10 @@ void RichTextBox::OnKeyDown(KeyEventArgs& args) {
     args.Handled = true;
 }
 
-void RichTextBox::OnTextInput(TextCompositionEventArgs& args) {
+void RichTextBox::OnChar(wchar_t ch) {
     if (m_isReadOnly) return;
     
-    InsertText(args.Text);
-    args.Handled = true;
+    InsertText(std::wstring(1, ch));
 }
 
 void RichTextBox::OnGotFocus() {

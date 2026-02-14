@@ -175,7 +175,7 @@ protected:
     void InitializeComponents() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
-    void OnRenderChildren(rendering::IRenderContext* context) override;
+    void OnRenderChildren(rendering::IRenderContext* context);
     
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseLeave() override;

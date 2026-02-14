@@ -64,7 +64,7 @@ std::wstring DataGridCell::FormatValue(const std::any& value) {
             return std::to_wstring(std::any_cast<float>(value));
         }
         if (value.type() == typeid(bool)) {
-            return std::any_cast<bool>(value) ? L"是" : L"否";
+            return std::any_cast<bool>(value) ? L"Yes" : L"No";
         }
     } catch (...) {
         return L"";
@@ -167,13 +167,11 @@ void DataGridRow::AddCell(const std::shared_ptr<DataGridCell>& cell) {
     
     cell->SetRow(this);
     m_cells.push_back(cell);
-    AddChild(cell);
+    // Note: DataGridRow inherits from Control, not Panel
+    // Cells are rendered by the row's custom render logic, not as child controls
 }
 
 void DataGridRow::ClearCells() {
-    for (auto& cell : m_cells) {
-        RemoveChild(cell);
-    }
     m_cells.clear();
 }
 
@@ -211,7 +209,7 @@ void DataGridRow::OnMouseEnter() {
     m_isHovered = true;
     if (!m_isSelected) {
         for (auto& cell : m_cells) {
-            cell->OnMouseEnter();
+            cell->SetIsHovered(true);
         }
     }
 }
@@ -219,7 +217,7 @@ void DataGridRow::OnMouseEnter() {
 void DataGridRow::OnMouseLeave() {
     m_isHovered = false;
     for (auto& cell : m_cells) {
-        cell->OnMouseLeave();
+        cell->SetIsHovered(false);
     }
 }
 
@@ -326,7 +324,7 @@ void DataGrid::AddRow(const std::shared_ptr<DataGridRow>& row) {
     }
     
     m_rows.push_back(row);
-    AddChild(row);
+    Panel::AddChild(row);
     
     if (auto* layout = GetLayout()) {
         layout->InvalidateMeasure();
@@ -342,7 +340,7 @@ void DataGrid::RemoveRow(const std::shared_ptr<DataGridRow>& row) {
             m_selectedRows.erase(selectedIt);
         }
         
-        RemoveChild(*it);
+        Panel::RemoveChild(*it);
         m_rows.erase(it);
         
         // 更新索引
@@ -358,7 +356,7 @@ void DataGrid::RemoveRow(const std::shared_ptr<DataGridRow>& row) {
 
 void DataGrid::ClearRows() {
     for (auto& row : m_rows) {
-        RemoveChild(row);
+        Panel::RemoveChild(row);
     }
     m_rows.clear();
     m_selectedRows.clear();
@@ -409,7 +407,7 @@ void DataGrid::ClearSelection() {
 void DataGrid::OnRowSelected(DataGridRow* row) {
     if (!row) return;
     
-    auto rowPtr = row->shared_from_this();
+    auto rowPtr = std::static_pointer_cast<DataGridRow>(row->shared_from_this());
     
     if (m_selectionMode == SelectionMode::Single) {
         // 单选模式：清除其他选择

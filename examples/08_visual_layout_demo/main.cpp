@@ -17,7 +17,7 @@ using namespace luaui::rendering;
 using namespace luaui::utils;
 
 // 简化的彩色矩形控件
-class ColorRect : public Control {
+class ColorRect : public luaui::Control {
 public:
     ColorRect(const Color& fillColor, const Color& strokeColor = Color::Transparent())
         : m_fillColor(fillColor), m_strokeColor(strokeColor) {

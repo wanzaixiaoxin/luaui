@@ -327,11 +327,9 @@ void Toolbar::SetOrientation(Orientation orientation) {
         // 更新约束
         if (auto* layout = GetLayout()) {
             if (orientation == Orientation::Horizontal) {
-                layout->ClearWidth();
                 layout->SetHeight(m_thickness);
             } else {
                 layout->SetWidth(m_thickness);
-                layout->ClearHeight();
             }
             layout->InvalidateMeasure();
         }
@@ -469,10 +467,10 @@ void ToolStripContainer::InitializeComponents() {
     m_contentPanel = std::make_shared<Panel>();
     
     // 添加到停靠面板
-    DockPanel::SetDock(m_topPanel, layouts::Dock::Top);
-    DockPanel::SetDock(m_bottomPanel, layouts::Dock::Bottom);
-    DockPanel::SetDock(m_leftPanel, layouts::Dock::Left);
-    DockPanel::SetDock(m_rightPanel, layouts::Dock::Right);
+    DockPanel::SetDock(m_topPanel, Dock::Top);
+    DockPanel::SetDock(m_bottomPanel, Dock::Bottom);
+    DockPanel::SetDock(m_leftPanel, Dock::Left);
+    DockPanel::SetDock(m_rightPanel, Dock::Right);
     
     dockPanel->AddChild(m_topPanel);
     dockPanel->AddChild(m_bottomPanel);
@@ -482,23 +480,23 @@ void ToolStripContainer::InitializeComponents() {
 }
 
 void ToolStripContainer::AddToolbar(const std::shared_ptr<Toolbar>& toolbar, 
-                                     layouts::Dock dock) {
+                                     Dock dock) {
     if (!toolbar) return;
     
     switch (dock) {
-        case layouts::Dock::Top:
+        case Dock::Top:
             toolbar->SetOrientation(Toolbar::Orientation::Horizontal);
             m_topPanel->AddChild(toolbar);
             break;
-        case layouts::Dock::Bottom:
+        case Dock::Bottom:
             toolbar->SetOrientation(Toolbar::Orientation::Horizontal);
             m_bottomPanel->AddChild(toolbar);
             break;
-        case layouts::Dock::Left:
+        case Dock::Left:
             toolbar->SetOrientation(Toolbar::Orientation::Vertical);
             m_leftPanel->AddChild(toolbar);
             break;
-        case layouts::Dock::Right:
+        case Dock::Right:
             toolbar->SetOrientation(Toolbar::Orientation::Vertical);
             m_rightPanel->AddChild(toolbar);
             break;

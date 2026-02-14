@@ -20,6 +20,15 @@ void Button::InitializeComponents() {
     input->SetIsFocusable(true);
 }
 
+void Button::SetText(const std::wstring& text) {
+    if (m_text != text) {
+        m_text = text;
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    }
+}
+
 void Button::SetStateColors(const rendering::Color& normal, 
                             const rendering::Color& hover, 
                             const rendering::Color& pressed) {
@@ -52,6 +61,18 @@ void Button::OnRender(rendering::IRenderContext* context) {
     auto brush = context->CreateSolidColorBrush(bgColor);
     if (brush) {
         context->FillRectangle(localRect, brush.get());
+    }
+    
+    // 渲染文本
+    if (!m_text.empty()) {
+        auto textBrush = context->CreateSolidColorBrush(rendering::Color::Black());
+        auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", 14.0f);
+        if (textBrush && textFormat) {
+            textFormat->SetTextAlignment(rendering::TextAlignment::Center);
+            textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
+            rendering::Point textPos(localRect.width / 2, localRect.height / 2);
+            context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
+        }
     }
 }
 

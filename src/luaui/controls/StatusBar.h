@@ -25,7 +25,7 @@ class StatusBarItem;
  * - 弹簧（自动填充）
  * - 边框
  */
-class StatusBarItem : public luaui::Control {
+class StatusBarItem : public Panel {
 public:
     // 项类型
     enum class ItemType {

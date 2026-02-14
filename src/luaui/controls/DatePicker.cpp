@@ -205,9 +205,9 @@ std::wstring DatePicker::FormatDate(const std::chrono::system_clock::time_point&
         }
         case DateFormat::LongDate: {
             std::wstringstream ss;
-            ss << (localTm.tm_year + 1900) << L"年" 
-               << (localTm.tm_mon + 1) << L"月" 
-               << localTm.tm_mday << L"日";
+            ss << (localTm.tm_year + 1900) << L"-" 
+               << (localTm.tm_mon + 1) << L"-" 
+               << localTm.tm_mday;
             return ss.str();
         }
         case DateFormat::Custom: {
@@ -532,7 +532,7 @@ void Calendar::RenderHeader(rendering::IRenderContext* context, const rendering:
         textFormat->SetTextAlignment(rendering::TextAlignment::Center);
         
         std::wstringstream ss;
-        ss << m_displayYear << L"年" << m_displayMonth << L"月";
+        ss << m_displayYear << L"-" << m_displayMonth;
         
         rendering::Point textPos(rect.x + rect.width / 2, 
                                  rect.y + (m_headerHeight - m_fontSize) / 2);
@@ -569,7 +569,7 @@ void Calendar::RenderHeader(rendering::IRenderContext* context, const rendering:
 }
 
 void Calendar::RenderDaysOfWeek(rendering::IRenderContext* context, const rendering::Rect& rect) {
-    const wchar_t* days[] = {L"日", L"一", L"二", L"三", L"四", L"五", L"六"};
+    const wchar_t* days[] = {L"Sun", L"Mon", L"Tue", L"Wed", L"Thu", L"Fri", L"Sat"};
     
     auto textBrush = context->CreateSolidColorBrush(m_dayOfWeekColor);
     auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_smallFontSize);

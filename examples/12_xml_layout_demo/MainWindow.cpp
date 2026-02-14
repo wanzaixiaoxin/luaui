@@ -34,7 +34,7 @@ void MainWindow::OnLoaded() {
     
     // 查找并加载 XML
     std::string xmlPath = FindResourcePath("main_window.xml");
-    std::shared_ptr<Control> root;
+    std::shared_ptr<luaui::Control> root;
     
     if (!xmlPath.empty()) {
         try {
@@ -136,7 +136,7 @@ std::shared_ptr<T> MainWindow::FindControl(const std::string& name) {
         }
         if (auto border = std::dynamic_pointer_cast<Border>(control)) {
             if (auto child = border->GetChild()) {
-                return find(std::static_pointer_cast<Control>(child));
+                return find(std::static_pointer_cast<luaui::Control>(child));
             }
         }
         return nullptr;
@@ -241,7 +241,7 @@ void MainWindow::UpdateProgressText() {
 // ============================================================================
 // 回退内容
 // ============================================================================
-std::shared_ptr<Control> MainWindow::CreateFallbackContent() {
+std::shared_ptr<luaui::Control> MainWindow::CreateFallbackContent() {
     auto content = std::make_shared<StackPanel>();
     content->SetSpacing(20);
     

@@ -80,7 +80,7 @@ void ControlsDemoWindow::OnLoaded() {
         Color::FromHex(0x1976D2),  // Hover
         Color::FromHex(0x0D47A1)   // Pressed
     );
-    btn1->Click.Add([this](Control*) {
+    btn1->Click.Add([this](luaui::Control*) {
         m_statusText->SetText(L"Blue button clicked!");
         double newValue = m_progressBar->GetValue() + 10;
         if (newValue > 100) newValue = 0;
@@ -96,7 +96,7 @@ void ControlsDemoWindow::OnLoaded() {
         Color::FromHex(0x388E3C),  // Hover
         Color::FromHex(0x1B5E20)   // Pressed
     );
-    btn2->Click.Add([this](Control*) {
+    btn2->Click.Add([this](luaui::Control*) {
         m_statusText->SetText(L"Green button clicked!");
         double newValue = m_progressBar->GetValue() - 10;
         if (newValue < 0) newValue = 100;

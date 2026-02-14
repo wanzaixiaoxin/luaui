@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Button.h"
 #include "../rendering/Types.h"
+#include "layouts/DockPanel.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -107,6 +108,9 @@ private:
         TextOnly      // 仅文本
     };
     DisplayMode m_displayMode = DisplayMode::Default;
+    
+    bool m_showIcons = true;
+    bool m_showTextLabels = true;
     
     // 外观
     float m_padding = 6.0f;
@@ -243,7 +247,7 @@ public:
     
     // 添加工具栏到指定边缘
     void AddToolbar(const std::shared_ptr<Toolbar>& toolbar, 
-                    layouts::Dock dock);
+                    Dock dock);
     
     // 内容区域
     std::shared_ptr<Panel> GetContentPanel() const { return m_contentPanel; }

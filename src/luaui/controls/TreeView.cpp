@@ -64,7 +64,7 @@ void TreeViewItem::SetIsSelected(bool selected) {
 void TreeViewItem::AddItem(const std::shared_ptr<TreeViewItem>& item) {
     if (!item) return;
     
-    item->m_parentItem = shared_from_this();
+    item->m_parentItem = std::dynamic_pointer_cast<TreeViewItem>(shared_from_this());
     item->m_treeView = m_treeView;
     item->m_level = m_level + 1;
     
@@ -120,7 +120,7 @@ float TreeViewItem::CalculateTotalHeight() const {
 
 std::shared_ptr<TreeViewItem> TreeViewItem::FindItem(const std::wstring& header) {
     if (m_header == header) {
-        return shared_from_this();
+        return std::dynamic_pointer_cast<TreeViewItem>(shared_from_this());
     }
     for (const auto& child : m_children) {
         if (auto found = child->FindItem(header)) {
@@ -337,7 +337,7 @@ void TreeView::OnItemSelected(TreeViewItem* item) {
             prev->SetIsSelected(false);
         }
     }
-    m_selectedItem = item->shared_from_this();
+    m_selectedItem = std::dynamic_pointer_cast<TreeViewItem>(item->shared_from_this());
     
     SelectedItemChanged.Invoke(this, item);
 }
@@ -372,8 +372,7 @@ rendering::Size TreeView::OnArrangeChildren(const rendering::Size& finalSize) {
     
     float y = contentRect.y - m_scrollOffset;
     
-    std::function<void(const std::shared_ptr<TreeViewItem>&)> arrangeItem;
-    arrangeItem = [&y, contentRect, this](const std::shared_ptr<TreeViewItem>& item) {
+    std::function<void(const std::shared_ptr<TreeViewItem>&)> arrangeItem = [&](const std::shared_ptr<TreeViewItem>& item) {
         if (auto* layoutable = item->AsLayoutable()) {
             layoutable->Arrange(rendering::Rect(contentRect.x, y, contentRect.width, m_itemHeight));
             y += m_itemHeight;
@@ -428,7 +427,9 @@ void TreeView::OnRenderChildren(rendering::IRenderContext* context) {
 }
 
 TreeViewItem* TreeView::HitTestItem(float x, float y) {
-    return HitTestItemRecursive(m_roots, x, y);
+    (void)x;
+    float currentY = 0;
+    return HitTestItemRecursive(m_roots, currentY, y);
 }
 
 TreeViewItem* TreeView::HitTestItemRecursive(const std::vector<std::shared_ptr<TreeViewItem>>& items, 
@@ -448,11 +449,7 @@ TreeViewItem* TreeView::HitTestItemRecursive(const std::vector<std::shared_ptr<T
     return nullptr;
 }
 
-TreeViewItem* TreeView::HitTestItemRecursive(const std::vector<std::shared_ptr<TreeViewItem>>& items,
-                                              float x, float y) {
-    float currentY = 0;
-    return HitTestItemRecursive(items, currentY, y);
-}
+
 
 void TreeView::OnMouseMove(MouseEventArgs& args) {
     rendering::Rect contentRect;

@@ -66,7 +66,7 @@ public:
     DialogWindow();
     virtual ~DialogWindow();
     
-    std::string GetTypeName() const override { return "DialogWindow"; }
+    std::string GetTypeName() const { return "DialogWindow"; }
     
     // 标题
     std::wstring GetTitle() const { return m_title; }
@@ -97,14 +97,14 @@ public:
     luaui::Delegate<DialogWindow*, DialogResult> Closed;
 
 protected:
-    void Initialize() override;
-    void OnClosing() override;
+    void Initialize();
+    void OnClosing();
 
 private:
     void CenterToOwner(Window* owner);
     void EnableOwner(Window* owner, bool enable);
     
-    std::wstring m_title = L"对话框";
+    std::wstring m_title = L"Dialog";
     std::shared_ptr<Control> m_content;
     DialogResult m_dialogResult = DialogResult::None;
     bool m_isModal = false;
@@ -112,6 +112,8 @@ private:
     
     Window* m_owner = nullptr;
     DialogClosedHandler m_closedHandler;
+    int m_dialogWidth = 400;
+    int m_dialogHeight = 250;
 };
 
 /**
@@ -123,7 +125,7 @@ class MessageDialog {
 public:
     // 显示消息框（静态方法）
     static DialogResult Show(const std::wstring& message, 
-                              const std::wstring& title = L"提示",
+                              const std::wstring& title = L"Info",
                               DialogButton buttons = DialogButton::OK,
                               DialogIcon icon = DialogIcon::None,
                               Window* owner = nullptr);
@@ -138,24 +140,24 @@ public:
     
     // 便捷方法
     static void ShowInfo(const std::wstring& message, 
-                         const std::wstring& title = L"信息",
+                         const std::wstring& title = L"Information",
                          Window* owner = nullptr);
     
     static void ShowWarning(const std::wstring& message,
-                            const std::wstring& title = L"警告",
+                            const std::wstring& title = L"Warning",
                             Window* owner = nullptr);
     
     static void ShowError(const std::wstring& message,
-                          const std::wstring& title = L"错误",
+                          const std::wstring& title = L"Error",
                           Window* owner = nullptr);
     
     static DialogResult ShowQuestion(const std::wstring& message,
-                                      const std::wstring& title = L"确认",
+                                      const std::wstring& title = L"Confirm",
                                       DialogButton buttons = DialogButton::YesNo,
                                       Window* owner = nullptr);
     
     static DialogResult ShowConfirm(const std::wstring& message,
-                                     const std::wstring& title = L"确认",
+                                     const std::wstring& title = L"Confirm",
                                      Window* owner = nullptr);
 };
 
@@ -169,20 +171,20 @@ public:
     // 显示文本输入框
     static DialogResult Show(const std::wstring& prompt,
                               std::wstring& outValue,
-                              const std::wstring& title = L"输入",
+                              const std::wstring& title = L"Input",
                               const std::wstring& defaultValue = L"",
                               Window* owner = nullptr);
     
     // 显示密码输入框
     static DialogResult ShowPassword(const std::wstring& prompt,
                                       std::wstring& outValue,
-                                      const std::wstring& title = L"输入密码",
+                                      const std::wstring& title = L"Enter Password",
                                       Window* owner = nullptr);
     
     // 显示多行文本输入框
     static DialogResult ShowMultiline(const std::wstring& prompt,
                                        std::wstring& outValue,
-                                       const std::wstring& title = L"输入",
+                                       const std::wstring& title = L"Input",
                                        const std::wstring& defaultValue = L"",
                                        Window* owner = nullptr);
 };
@@ -203,25 +205,25 @@ public:
     // 打开文件对话框
     static DialogResult ShowOpen(std::wstring& outFilePath,
                                   const std::vector<Filter>& filters = {},
-                                  const std::wstring& title = L"打开文件",
+                                  const std::wstring& title = L"Open File",
                                   Window* owner = nullptr);
     
     // 保存文件对话框
     static DialogResult ShowSave(std::wstring& outFilePath,
                                   const std::vector<Filter>& filters = {},
-                                  const std::wstring& title = L"保存文件",
+                                  const std::wstring& title = L"Save File",
                                   const std::wstring& defaultFileName = L"",
                                   Window* owner = nullptr);
     
     // 选择文件夹对话框
     static DialogResult ShowFolder(std::wstring& outFolderPath,
-                                    const std::wstring& title = L"选择文件夹",
+                                    const std::wstring& title = L"Select Folder",
                                     Window* owner = nullptr);
     
     // 多选文件对话框
     static DialogResult ShowOpenMultiple(std::vector<std::wstring>& outFilePaths,
                                           const std::vector<Filter>& filters = {},
-                                          const std::wstring& title = L"打开文件",
+                                          const std::wstring& title = L"Open File",
                                           Window* owner = nullptr);
 };
 

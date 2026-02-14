@@ -1,6 +1,7 @@
 #include "TabControl.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
+#include "Components/InputComponent.h"
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
@@ -348,7 +349,7 @@ void TabControl::UpdateTabStates() {
 
 rendering::Rect TabControl::GetTabStripRect() const {
     rendering::Rect contentRect;
-    if (auto* renderable = AsRenderable()) {
+    if (auto* renderable = const_cast<TabControl*>(this)->AsRenderable()) {
         contentRect = renderable->GetRenderRect();
     }
     
@@ -372,7 +373,7 @@ rendering::Rect TabControl::GetTabStripRect() const {
 
 rendering::Rect TabControl::GetContentRect() const {
     rendering::Rect contentRect;
-    if (auto* renderable = AsRenderable()) {
+    if (auto* renderable = const_cast<TabControl*>(this)->AsRenderable()) {
         contentRect = renderable->GetRenderRect();
     }
     

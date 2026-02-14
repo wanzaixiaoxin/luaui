@@ -2,6 +2,7 @@
 
 #include "Control.h"
 #include "../rendering/Types.h"
+#include "../rendering/ITextFormat.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -259,7 +260,7 @@ protected:
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseUp(MouseEventArgs& args) override;
     void OnKeyDown(KeyEventArgs& args) override;
-    void OnTextInput(TextCompositionEventArgs& args) override;
+    void OnChar(wchar_t ch) override;
     void OnGotFocus() override;
     void OnLostFocus() override;
 

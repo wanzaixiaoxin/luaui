@@ -24,6 +24,10 @@ public:
     
     std::string GetTypeName() const override { return "Button"; }
     
+    // 文本
+    std::wstring GetText() const { return m_text; }
+    void SetText(const std::wstring& text);
+    
     // 状态查询
     bool GetIsPressed() const { return m_isPressed; }
     bool GetIsHovered() const { return m_isHovered; }
@@ -52,6 +56,7 @@ protected:
 private:
     bool m_isHovered = false;
     bool m_isPressed = false;
+    std::wstring m_text;
     
     rendering::Color m_normalBackground = rendering::Color::FromHex(0xE0E0E0);
     rendering::Color m_hoverBackground = rendering::Color::FromHex(0xD0D0D0);

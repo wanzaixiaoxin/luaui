@@ -26,10 +26,8 @@ void Tooltip::InitializeComponents() {
     // Tooltip 默认不可见
     SetIsVisible(false);
     
-    // 设置固定层级
-    if (auto* layout = GetLayout()) {
-        layout->SetZIndex(9999); // 确保在最上层
-    }
+    // Z-index not supported in current LayoutComponent
+    // TODO: Implement z-index support
 }
 
 void Tooltip::SetText(const std::wstring& text) {
@@ -109,11 +107,11 @@ Tooltip* Tooltip::GetDefault() {
 }
 
 void Tooltip::SetToolTip(Control* target, const std::wstring& text) {
-    ToolTipService::SetToolTip(target, text);
+    ToolTipService::SetToolTip(reinterpret_cast<controls::Control*>(target), text);
 }
 
 std::wstring Tooltip::GetToolTip(Control* target) {
-    return ToolTipService::GetToolTip(target);
+    return ToolTipService::GetToolTip(reinterpret_cast<controls::Control*>(target));
 }
 
 rendering::Size Tooltip::MeasureText(const std::wstring& text, float maxWidth) {
