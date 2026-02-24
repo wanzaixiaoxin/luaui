@@ -422,7 +422,7 @@ Error: MainWindow.xml(15,5)
 
 ## 8. 示例程序
 
-### 8.1 基础布局 (12_xml_layout_demo)
+### 8.1 基础布局 (02_mvvm_demo)
 
 **layout_basic.xml:**
 ```xml

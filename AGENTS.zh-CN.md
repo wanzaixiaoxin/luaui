@@ -80,7 +80,7 @@ ctest -C Release
 |--------|---------|-------------|
 | `LUAUI_BUILD_EXAMPLES` | ON | 构建示例应用程序 |
 | `LUAUI_BUILD_TESTS` | OFF | 构建测试套件 |
-| `LUAUI_BUILD_OLD_EXAMPLES` | OFF | 构建旧版示例（06-12）|
+
 
 ### 输出目录
 
@@ -326,19 +326,13 @@ endif()
 
 | 示例 | 说明 |
 |---------|-------------|
-| 01_basic_window | Win32 + Direct2D 基础 |
-| 02_hello_lua | Lua 集成 |
-| 03_rendering_demo | 渲染引擎 |
-| 04_animation_demo | 动画系统 |
-| 05_offscreen_demo | 离屏渲染 |
-| 06_controls_demo | 控件系统 |
-| 08_visual_layout_demo | 视觉布局 |
-| 12_xml_layout_demo | 带代码后置的 XML 布局 |
-| 13_mvvm_demo | **MVVM 数据绑定演示** |
+| 01_controls_demo | **控件系统演示** - 基于代码创建控件 |
+| 02_mvvm_demo | **MVVM 数据绑定演示** - 基于 XML 声明式绑定 |
 
 从构建目录运行示例：
 ```bash
-./bin/Release/13_mvvm_demo.exe
+./bin/Release/01_controls_demo.exe
+./bin/Release/02_mvvm_demo.exe
 ```
 
 ---

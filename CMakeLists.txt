@@ -24,7 +24,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # Options
 option(LUAUI_BUILD_EXAMPLES "Build example applications" ON)
 option(LUAUI_BUILD_TESTS "Build tests" OFF)
-option(LUAUI_BUILD_OLD_EXAMPLES "Build old examples (06-12, not yet migrated)" OFF)
 
 # Platform check
 if(NOT WIN32)

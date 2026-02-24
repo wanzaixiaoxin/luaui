@@ -69,7 +69,9 @@ CheckBox::CheckBox() {}
 
 void CheckBox::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    layout->SetWidth(m_boxSize + m_spacing + 80);
+    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
+    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    layout->SetWidth(m_boxSize + m_spacing + textWidth + 10);
     layout->SetHeight(m_boxSize);
     
     GetComponents().AddComponent<components::RenderComponent>(this);
@@ -80,13 +82,18 @@ void CheckBox::InitializeComponents() {
 
 rendering::Size CheckBox::OnMeasure(const rendering::Size& availableSize) {
     (void)availableSize;
-    return rendering::Size(m_boxSize + m_spacing + 80, m_boxSize);
+    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
+    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    return rendering::Size(m_boxSize + m_spacing + textWidth + 10, m_boxSize);
 }
 
 void CheckBox::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
         if (auto* layout = GetLayout()) {
+            // 根据文本长度动态更新宽度
+            float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+            layout->SetWidth(m_boxSize + m_spacing + textWidth + 10);
             layout->InvalidateMeasure();
         }
         if (auto* render = GetRender()) {
@@ -236,7 +243,9 @@ void CheckBox::UpdateVisualState() {
 // ============================================================================
 void RadioButton::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    layout->SetWidth(m_circleSize + m_spacing + 60);
+    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
+    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    layout->SetWidth(m_circleSize + m_spacing + textWidth + 10);
     layout->SetHeight(m_circleSize);
     
     GetComponents().AddComponent<components::RenderComponent>(this);
@@ -250,13 +259,18 @@ void RadioButton::InitializeComponents() {
 
 rendering::Size RadioButton::OnMeasure(const rendering::Size& availableSize) {
     (void)availableSize;
-    return rendering::Size(m_circleSize + m_spacing + 60, m_circleSize);
+    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
+    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    return rendering::Size(m_circleSize + m_spacing + textWidth + 10, m_circleSize);
 }
 
 void RadioButton::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
         if (auto* layout = GetLayout()) {
+            // 根据文本长度动态更新宽度
+            float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+            layout->SetWidth(m_circleSize + m_spacing + textWidth + 10);
             layout->InvalidateMeasure();
         }
         if (auto* render = GetRender()) {

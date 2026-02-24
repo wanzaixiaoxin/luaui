@@ -80,7 +80,7 @@ ctest -C Release
 |--------|---------|-------------|
 | `LUAUI_BUILD_EXAMPLES` | ON | Build example applications |
 | `LUAUI_BUILD_TESTS` | OFF | Build test suite |
-| `LUAUI_BUILD_OLD_EXAMPLES` | OFF | Build legacy examples (06-12) |
+
 
 ### Output Directories
 
@@ -326,19 +326,13 @@ Key files:
 
 | Example | Description |
 |---------|-------------|
-| 01_basic_window | Win32 + Direct2D basics |
-| 02_hello_lua | Lua integration |
-| 03_rendering_demo | Rendering engine |
-| 04_animation_demo | Animation system |
-| 05_offscreen_demo | Offscreen rendering |
-| 06_controls_demo | Control system |
-| 08_visual_layout_demo | Visual layout |
-| 12_xml_layout_demo | XML layouts with code-behind |
-| 13_mvvm_demo | **MVVM data binding demo** |
+| 01_controls_demo | **Control System Demo** - Code-based control creation |
+| 02_mvvm_demo | **MVVM Data Binding Demo** - XML-based with declarative bindings |
 
 Run examples from build directory:
 ```bash
-./bin/Release/13_mvvm_demo.exe
+./bin/Release/01_controls_demo.exe
+./bin/Release/02_mvvm_demo.exe
 ```
 
 ---

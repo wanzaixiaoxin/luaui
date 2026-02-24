@@ -67,17 +67,11 @@ cmake --build . --config Release
 ### Run Examples
 
 ```bash
-# MVVM Data Binding Demo
-./bin/Release/13_mvvm_demo.exe
+# Control system demo (Code-based)
+./bin/Release/01_controls_demo.exe
 
-# Layout demo
-./bin/Release/07_layout_demo.exe
-
-# Visual layout demo (GUI)
-./bin/Release/08_visual_layout_demo.exe
-
-# Composite layout demo
-./bin/Release/09_composite_layout.exe
+# MVVM Data Binding Demo (XML-based)
+./bin/Release/02_mvvm_demo.exe
 ```
 
 ### MVVM Data Binding
@@ -197,17 +191,8 @@ Button automatically generates:
 
 | Example | Description |
 |---------|-------------|
-| 13_mvvm_demo | **MVVM Data Binding Demo** - Declarative bindings, converters, TwoWay binding |
-| 12_xml_layout_demo | XML Layout with code-behind |
-| 09_composite_layout | Layout + Controls composite |
-| 08_visual_layout_demo | Visual layout showcase |
-| 07_layout_demo | Layout engine |
-| 06_controls_demo | Control system |
-| 05_offscreen_demo | Offscreen rendering |
-| 04_animation_demo | Animation system |
-| 03_rendering_demo | Rendering engine demo |
-| 02_hello_lua | Lua integration |
-| 01_basic_window | Win32 + Direct2D basics |
+| 01_controls_demo | **Control System Demo** - Code-based control creation |
+| 02_mvvm_demo | **MVVM Data Binding Demo** - XML-based with declarative bindings |
 
 ## License
 

@@ -70,7 +70,7 @@ saveBtn->Click.Add([this](Control*) {
 ## 运行示例
 
 ```bash
-./build/bin/Debug/13_mvvm_demo.exe
+./build/bin/Debug/02_mvvm_demo.exe
 ```
 
 **交互说明：**
@@ -170,12 +170,12 @@ class AsyncCommand : public ICommand {
 ## 文件结构
 
 ```
-13_mvvm_demo/
+02_mvvm_demo/
 ├── main.cpp              # 程序入口
 ├── MainWindow.h          # 主窗口声明
 ├── MainWindow.cpp        # 声明式绑定实现
-├── layouts/
-│   └── main_window.xml   # XML 布局（参考设计）
+├── mvvm_layouts/
+│   └── main_window.xml   # XML 布局（MVVM 绑定）
 └── README.md             # 本文档
 ```
 

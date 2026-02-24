@@ -163,8 +163,7 @@ luaui/
 
 #### 交付物
 - [x] 渲染引擎库 (LuaUI_Rendering.lib)
-- [x] 03_rendering_demo.exe - 完整渲染演示
-- [x] 05_offscreen_demo.exe - 离屏渲染演示
+- [x] 渲染演示示例（已合并到示例重构）
 
 #### 验证标准
 - [x] 渲染帧率达到 60 FPS
@@ -219,7 +218,7 @@ luaui/
 
 #### 交付物
 - [x] 动画系统代码 (D2DAnimation.cpp/h)
-- [x] 04_animation_demo.exe - 动画演示
+- [x] 动画演示示例（已合并到示例重构）
   - 弹跳动画 (QuadInOut)
   - 弹性动画 (ElasticOut)
   - 脉冲动画 (SineInOut)
@@ -349,7 +348,7 @@ timeline->Update(deltaTimeMs);
 
 #### 交付物
 - [x] LuaUI.lib - 控件系统库
-- [x] 06_controls_demo.exe - 控件演示程序
+- [x] 01_controls_demo.exe - 控件演示程序
 
 #### 验证标准
 - [x] 所有基础控件正常渲染
@@ -387,7 +386,7 @@ timeline->Update(deltaTimeMs);
 #### 交付物
 - [x] LuaUI_ControlsLayout.lib - 布局库
 - [x] 07_layout_demo.exe - 控制台布局测试
-- [x] 08_visual_layout_demo.exe - 可视化布局演示（5种布局，1-5切换）
+- [x] 布局演示示例（已合并到示例重构）
 - [x] 09_composite_layout.exe - 布局+控件复合演示
 
 #### 验证标准
@@ -540,7 +539,7 @@ btn1->SetText("OK");
 - [ ] `{StaticResource}` - 资源引用（Phase 9 实现）
 
 **Phase 8.5: 示例与文档 ✅**
-- [x] 12_xml_layout_demo
+- [x] 02_mvvm_demo - MVVM数据绑定演示
 - [x] XML 布局设计文档
 - [x] 内嵌 XML 字符串和从文件加载支持
 
@@ -585,7 +584,7 @@ loader->RegisterElement("CustomControl", []() {
 
 #### 交付物
 - [x] LuaUI_Xml.lib - XML 布局库
-- [x] 12_xml_layout_demo.exe - XML 布局演示程序
+- [x] 02_mvvm_demo.exe - XML布局与MVVM演示程序
   - 内嵌 XML 布局演示
   - Grid 布局演示
   - 按钮状态颜色演示
@@ -718,7 +717,7 @@ loader->SetDataContext(m_viewModel);  // 触发绑定连接
 
 #### 交付物
 - [x] `LuaUI_Mvvm.lib` - MVVM 核心库
-- [x] `13_mvvm_demo.exe` - MVVM 数据绑定演示
+- [x] `02_mvvm_demo.exe` - MVVM 数据绑定演示
   - 声明式绑定演示
   - TwoWay 绑定（Slider ↔ Age）
   - 值转换器演示
@@ -961,7 +960,7 @@ loader->SetDataContext(m_viewModel);  // 触发绑定连接
   - 集成 TinyXML2 解析器
   - 实现控件工厂和属性设置器
   - 支持声明式 UI 定义
-  - 交付 12_xml_layout_demo 示例程序
+  - 交付 02_mvvm_demo 示例程序
 - 🔄 **Phase 9 启动** - MVVM 架构实现
   - 设计 [MVVM_DataBinding_Design.md](./MVVM_DataBinding_Design.md)
   - 准备实现 {Binding} 标记扩展

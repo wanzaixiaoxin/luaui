@@ -55,15 +55,8 @@ luaui/
 │   └── test_rendering.cpp       # 渲染系统测试
 │
 ├── examples/                    # 示例项目
-│   ├── 01_basic_window          # Win32 + Direct2D基础
-│   ├── 02_hello_lua             # Lua集成
-│   ├── 03_rendering_demo        # 渲染引擎演示
-│   ├── 04_animation_demo        # 动画系统演示
-│   ├── 05_offscreen_demo        # 离屏渲染
-│   ├── 06_controls_demo         # 控件系统演示
-│   ├── 07_layout_demo           # 布局引擎演示
-│   ├── 08_visual_layout_demo    # 可视化布局演示
-│   └── 09_composite_layout      # 布局+控件复合演示
+│   ├── 01_controls_demo         # 控件系统演示（基于代码）
+│   └── 02_mvvm_demo             # MVVM数据绑定演示（基于XML）
 │
 ├── resources/                   # 框架资源
 │
