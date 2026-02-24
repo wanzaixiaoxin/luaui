@@ -12,6 +12,13 @@
 
 namespace luaui {
 
+// 前置声明测试类（用于自动化测试）
+namespace test {
+namespace automation {
+    class TestWindow;
+}
+}
+
 /**
  * @brief 完整的应用程序窗口类
  * 
@@ -147,6 +154,10 @@ private:
     
     static const wchar_t* s_className;
     static bool s_classRegistered;
+    
+    // ========== 测试支持 ==========
+    // 定义测试友元类，允许自动化测试访问内部方法
+    friend class luaui::test::automation::TestWindow;
 };
 
 } // namespace luaui

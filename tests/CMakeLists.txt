@@ -21,6 +21,11 @@ set(TEST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 #     add_test(NAME LayoutTest COMMAND test_layout)
 # endif()
 
+# UI Automation Tests
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ui_automation)
+    add_subdirectory(ui_automation)
+endif()
+
 # Test executable for rendering types
 if(TARGET LuaUI_Rendering)
     add_executable(test_rendering test_rendering.cpp)
