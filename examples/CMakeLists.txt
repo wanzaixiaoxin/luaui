@@ -44,3 +44,9 @@ if(TARGET 02_mvvm_demo AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/02_mvvm_demo/mvvm_
         COMMENT "Copying MVVM layouts to output directory"
     )
 endif()
+
+# 03_lua_mvvm_demo - MVVM with Lua ViewModel (Phase 10)
+# Demonstrates: XML (View) + Lua (ViewModel) architecture
+if(TARGET LuaUI AND TARGET LuaUI_Lua)
+    add_subdirectory(03_lua_mvvm_demo)
+endif()

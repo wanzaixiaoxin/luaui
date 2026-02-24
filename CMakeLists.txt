@@ -59,6 +59,7 @@ add_subdirectory(src/luaui/controls/layouts)  # Interface library
 add_subdirectory(src/luaui/style)
 add_subdirectory(src/luaui/xml)
 add_subdirectory(src/luaui/mvvm)
+add_subdirectory(src/luaui/lua)
 
 # ============================================
 # LuaUI Main Library (Interface)

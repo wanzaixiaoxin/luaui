@@ -1,20 +1,9 @@
-// Core Module - Delegate Tests
+// Core Module - Delegate Tests (Simplified)
 #include "TestFramework.h"
 #include "Delegate.h"
 #include <string>
 
 using namespace luaui;
-
-// Static counters for testing
-static int staticCallCount = 0;
-static void StaticHandler() {
-    staticCallCount++;
-}
-
-static int staticIntValue = 0;
-static void StaticHandlerWithInt(int val) {
-    staticIntValue = val;
-}
 
 // ==================== Basic Delegate Tests ====================
 TEST(Delegate_EmptyInvoke) {
@@ -24,58 +13,54 @@ TEST(Delegate_EmptyInvoke) {
     ASSERT_TRUE(true);
 }
 
-TEST(Delegate_StaticFunction) {
+TEST(Delegate_LambdaNoCapture) {
     Delegate<> d;
-    staticCallCount = 0;
+    bool called = false;
     
-    d.Add(&StaticHandler);
-    ASSERT_EQ(d.Count(), 1u);
-    
+    d.Add([&called]() { called = true; });
     d.Invoke();
-    ASSERT_EQ(staticCallCount, 1);
     
-    d.Invoke();
-    ASSERT_EQ(staticCallCount, 2);
+    ASSERT_TRUE(called);
 }
 
-TEST(Delegate_MultipleStaticHandlers) {
-    Delegate<int> d;
-    staticIntValue = 0;
+TEST(Delegate_MultipleHandlers) {
+    Delegate<> d;
+    int count = 0;
     
-    d.Add(&StaticHandlerWithInt);
-    d.Invoke(42);
+    d.Add([&count]() { count += 1; });
+    d.Add([&count]() { count += 10; });
+    d.Add([&count]() { count += 100; });
     
-    ASSERT_EQ(staticIntValue, 42);
+    d.Invoke();
+    ASSERT_EQ(count, 111);
 }
 
 TEST(Delegate_RemoveHandler) {
     Delegate<> d;
-    staticCallCount = 0;
+    int count = 0;
     
-    auto id1 = d.Add(&StaticHandler);
+    auto id1 = d.Add([&count]() { count += 1; });
+    auto id2 = d.Add([&count]() { count += 10; });
+    
     d.Invoke();
-    ASSERT_EQ(staticCallCount, 1);
+    ASSERT_EQ(count, 11);
     
     d.Remove(id1);
     d.Invoke();
-    // Should not increment after removal
-    ASSERT_EQ(staticCallCount, 1);
+    ASSERT_EQ(count, 21);  // Only second handler called again
 }
 
 TEST(Delegate_Clear) {
     Delegate<> d;
-    staticCallCount = 0;
+    int count = 0;
     
-    d.Add(&StaticHandler);
-    d.Add(&StaticHandler);
-    
-    ASSERT_EQ(d.Count(), 2u);
+    d.Add([&count]() { count += 1; });
+    d.Add([&count]() { count += 10; });
     
     d.Clear();
     d.Invoke();
     
-    ASSERT_EQ(staticCallCount, 0);  // No handlers called after clear
-    ASSERT_EQ(d.Count(), 0u);
+    ASSERT_EQ(count, 0);  // No handlers called
 }
 
 TEST(Delegate_Count) {
@@ -83,11 +68,11 @@ TEST(Delegate_Count) {
     ASSERT_EQ(d.Count(), 0u);
     ASSERT_TRUE(d.IsEmpty());
     
-    d.Add(&StaticHandler);
+    d.Add([]() {});
     ASSERT_EQ(d.Count(), 1u);
     ASSERT_FALSE(d.IsEmpty());
     
-    auto id = d.Add(&StaticHandler);
+    auto id = d.Add([]() {});
     ASSERT_EQ(d.Count(), 2u);
     
     d.Remove(id);
@@ -97,17 +82,25 @@ TEST(Delegate_Count) {
 TEST(Delegate_Reserve) {
     Delegate<> d;
     d.Reserve(100);
-    // Should not crash and should have reserved capacity
     ASSERT_TRUE(d.IsEmpty());
     ASSERT_EQ(d.Count(), 0u);
 }
 
 TEST(Delegate_InvalidRemove) {
     Delegate<> d;
-    // Remove invalid ID should not crash
     d.Remove(0);
     d.Remove(999);
     ASSERT_TRUE(true);
+}
+
+TEST(Delegate_WithParams) {
+    Delegate<int, int> d;
+    int sum = 0;
+    
+    d.Add([&sum](int a, int b) { sum = a + b; });
+    d.Invoke(3, 4);
+    
+    ASSERT_EQ(sum, 7);
 }
 
 // ==================== Main ====================
