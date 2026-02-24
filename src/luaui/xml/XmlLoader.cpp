@@ -229,7 +229,7 @@ private:
                     }
                 }
             }
-            // Text (TextBlock, TextBox, CheckBox, RadioButton)
+            // Text (TextBlock, TextBox, CheckBox, RadioButton, Button)
             else if (name == "Text") {
                 std::wstring wtext(value.begin(), value.end());
                 if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
@@ -240,6 +240,15 @@ private:
                     cb->SetText(wtext);
                 } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
                     rb->SetText(wtext);
+                } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                    btn->SetText(wtext);
+                }
+            }
+            // Content (Button)
+            else if (name == "Content") {
+                std::wstring wtext(value.begin(), value.end());
+                if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                    btn->SetText(wtext);
                 }
             }
             // FontSize
@@ -319,6 +328,8 @@ private:
                 auto it = m_clickHandlers.find(value);
                 if (it != m_clickHandlers.end()) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        luaui::utils::Logger::DebugF("[XML] Binding Click event for button '%s' to handler '%s'", 
+                            control->GetName().c_str(), value.c_str());
                         btn->Click.Add([handler = it->second](luaui::Control*) { handler(); });
                     }
                 } else {

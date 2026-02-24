@@ -22,6 +22,7 @@ namespace lua {
 class LuaPropertyNotifier : public mvvm::INotifyPropertyChanged {
 public:
     LuaPropertyNotifier(lua_State* L, const std::string& viewModelName);
+    ~LuaPropertyNotifier();
     
     // INotifyPropertyChanged 实现
     void SubscribePropertyChanged(PropertyChangedHandler handler) override;

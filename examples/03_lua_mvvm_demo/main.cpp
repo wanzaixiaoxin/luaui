@@ -23,14 +23,18 @@ void CustomAbortHandler(int signal) {
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
-    // 先分配控制台并设置输出
-    AllocConsole();
-    FILE* dummy;
-    freopen_s(&dummy, "CONOUT$", "w", stdout);
-    
     try {
         // 设置中止信号处理
         signal(SIGABRT, CustomAbortHandler);
+        
+        // 初始化日志系统
+        utils::LoggerConfig config;
+        config.consoleEnabled = true;
+        config.consoleLevel = utils::LogLevel::Debug;
+        config.fileEnabled = true;
+        config.fileLevel = utils::LogLevel::Debug;
+        config.logFilePath = "lua_mvvm_demo.log";
+        utils::Logger::Initialize(config);
         
         utils::Logger::Info("============================================");
         utils::Logger::Info("Starting LuaUI MVVM Demo...");
@@ -56,21 +60,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         
         utils::Logger::InfoF("[Main] Message loop exited with code: %d", result);
         
-        // 保持控制台窗口显示结果
-        printf("\nPress any key to exit...\n");
-        system("pause > nul");
-        
         return result;
         
     } catch (const std::exception& e) {
         utils::Logger::ErrorF("[Main] C++ Exception: %s", e.what());
         MessageBoxA(NULL, e.what(), "C++ Exception", MB_ICONERROR);
-        system("pause");
         return 2;
     } catch (...) {
         utils::Logger::Error("[Main] Unknown exception!");
         MessageBoxA(NULL, "Unknown exception occurred", "Fatal Error", MB_ICONERROR);
-        system("pause");
         return 3;
     }
 }

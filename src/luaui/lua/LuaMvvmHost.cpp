@@ -27,6 +27,7 @@ class LuaMvvmHostImpl {
 public:
     std::unique_ptr<luaui::Window> window;
     std::unique_ptr<LuaSandbox> sandbox;
+    std::shared_ptr<LuaAwareMvvmLoader> loader;  // Keep loader alive for command handlers
     std::string layoutPath;
     std::string viewModelName;
     bool initialized = false;
@@ -74,10 +75,25 @@ public:
             return false;
         }
 
+        // Step 3.5: Register MVVM bindings BEFORE loading Lua script
+        // This ensures Notify() function is available to Lua
+        lua_State* L = sandbox->GetLuaState();
+        LuaBinding::RegisterMVVM(L);
+        utils::Logger::Info("[LuaMvvmHost] MVVM bindings registered");
+
         // Step 4: Load Lua ViewModel
         if (!LoadLuaScript(fullLuaPath)) {
             return false;
         }
+        
+        // Verify: Check if Notify function exists after loading Lua
+        // lua_getglobal(L, "Notify");
+        // if (!lua_isfunction(L, -1)) {
+        //     utils::Logger::Error("[LuaMvvmHost] CRITICAL: Notify function not found after loading Lua!");
+        // } else {
+        //     utils::Logger::Info("[LuaMvvmHost] Notify function verified");
+        // }
+        // lua_pop(L, 1);
 
         // Step 5: Load XML Layout with Lua-aware binding
         if (!LoadLayout()) {
@@ -179,17 +195,14 @@ public:
             return false;
         }
         
-        // Register MVVM bindings for Lua
         lua_State* L = sandbox->GetLuaState();
         if (!L) {
             ShowError("Lua Error", "Lua state is null");
             return false;
         }
         
-        LuaBinding::RegisterMVVM(L);
-        
-        // Create Lua-aware MVVM loader
-        auto loader = std::make_shared<LuaAwareMvvmLoader>();
+        // Create Lua-aware MVVM loader (save as member to keep it alive)
+        loader = std::make_shared<LuaAwareMvvmLoader>();
         if (!loader) {
             ShowError("Loader Error", "Failed to create MVVM loader");
             return false;
@@ -200,6 +213,7 @@ public:
         loader->SetViewModelName(viewModelName);
 
         // Register property notifier for Lua Notify() function
+        // This links the Lua Notify() calls to the C++ binding engine
         if (auto notifier = loader->GetNotifier()) {
             RegisterPropertyNotifier(L, notifier);
         }

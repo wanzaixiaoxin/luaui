@@ -1,5 +1,6 @@
 #include "Button.h"
 #include "IRenderContext.h"
+#include "Logger.h"
 
 namespace luaui {
 namespace controls {
@@ -23,6 +24,9 @@ void Button::InitializeComponents() {
 void Button::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
+        // Debug: Convert wchar_t to char for logging
+        std::string narrow(text.begin(), text.end());
+        luaui::utils::Logger::DebugF("[Button] SetText: '%s'", narrow.c_str());
         if (auto* render = GetRender()) {
             render->Invalidate();
         }
@@ -72,6 +76,15 @@ void Button::OnRender(rendering::IRenderContext* context) {
             textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
             rendering::Point textPos(localRect.width / 2, localRect.height / 2);
             context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
+        } else {
+            // Fallback: try with system font
+            textFormat = context->CreateTextFormat(L"Arial", 14.0f);
+            if (textBrush && textFormat) {
+                textFormat->SetTextAlignment(rendering::TextAlignment::Center);
+                textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
+                rendering::Point textPos(localRect.width / 2, localRect.height / 2);
+                context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
+            }
         }
     }
 }
@@ -88,7 +101,8 @@ void Button::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     if (m_isPressed) {
         m_isPressed = false;
-        OnClick();
+        // OnClick() is now raised by Window::HandleMouseUp via RaiseClick()
+        // to avoid duplicate event triggering
         if (auto* render = GetRender()) {
             render->Invalidate();
         }

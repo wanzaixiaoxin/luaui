@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- LuaUI MVVM Demo Layout - Using StackPanel as root (Window is created by host) -->
+<!-- Click handler names match Lua function names ending with "Command" -->
 <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
     
     <!-- Title -->
@@ -17,9 +18,9 @@
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="-" Style="Primary" Width="40" Command="DecrementCommand"/>
-                <Button Content="+" Style="Primary" Width="40" Command="IncrementCommand"/>
-                <Button Content="Reset" Style="Danger" Margin="16,0,0,0" Command="ResetCommand"/>
+                <Button Content="-" Style="Primary" Width="40" Click="DecrementCommand"/>
+                <Button Content="+" Style="Primary" Width="40" Click="IncrementCommand"/>
+                <Button Content="Reset" Style="Danger" Margin="16,0,0,0" Click="ResetCommand"/>
             </StackPanel>
         </StackPanel>
     </Border>
@@ -31,7 +32,7 @@
             
             <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled}"/>
             
-            <Button Content="Toggle Feature" Style="Primary" Command="ToggleCommand"/>
+            <Button Content="Toggle Feature" Style="Primary" Click="ToggleCommand"/>
             
             <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
         </StackPanel>
@@ -44,8 +45,8 @@
             <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
             
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Add Item" Style="Accent" Command="AddItemCommand"/>
-                <Button Content="Clear Items" Style="Primary" Command="ClearItemsCommand"/>
+                <Button Content="Add Item" Style="Accent" Click="AddItemCommand"/>
+                <Button Content="Clear Items" Style="Primary" Click="ClearItemsCommand"/>
             </StackPanel>
         </StackPanel>
     </Border>

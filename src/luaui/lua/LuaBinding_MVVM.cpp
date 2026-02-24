@@ -13,7 +13,8 @@ namespace luaui {
 namespace lua {
 
 // Global registry for property notifiers (LuaState -> Notifier)
-static std::unordered_map<lua_State*, std::weak_ptr<LuaPropertyNotifier>> g_notifiers;
+// Using shared_ptr to ensure notifier stays alive as long as Lua state is active
+static std::unordered_map<lua_State*, std::shared_ptr<LuaPropertyNotifier>> g_notifiers;
 
 void RegisterPropertyNotifier(lua_State* L, std::shared_ptr<LuaPropertyNotifier> notifier) {
     g_notifiers[L] = notifier;
@@ -49,7 +50,8 @@ void LuaBinding::RegisterMVVM(lua_State* L) {
         // 查找已注册的 notifier
         auto it = g_notifiers.find(L);
         if (it != g_notifiers.end()) {
-            if (auto notifier = it->second.lock()) {
+            auto notifier = it->second;  // shared_ptr, no .lock() needed
+            if (notifier) {
                 notifier->NotifyPropertyChanged(propertyName);
                 utils::Logger::DebugF("[Lua MVVM] Property changed: %s", propertyName);
             }
@@ -72,7 +74,8 @@ void LuaBinding::RegisterMVVM(lua_State* L) {
         
         auto it = g_notifiers.find(L);
         if (it != g_notifiers.end()) {
-            if (auto notifier = it->second.lock()) {
+            auto notifier = it->second;  // shared_ptr, no .lock() needed
+            if (notifier) {
                 notifier->NotifyPropertyChanged(propertyName);
             }
         }

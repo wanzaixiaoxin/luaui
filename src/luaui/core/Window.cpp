@@ -490,10 +490,7 @@ void Window::HandleMouseUp(float x, float y, int button) {
             
             // 如果鼠标仍在控件上，触发点击
             auto* hitControl = HitTest(m_root.get(), x, y, 0, 0);
-            utils::Logger::DebugF("[Window] HitTest result: %s", 
-                hitControl ? hitControl->GetTypeName().c_str() : "null");
             if (hitControl == m_capturedControl) {
-                utils::Logger::DebugF("[Window] Raising Click for %s", m_capturedControl->GetTypeName().c_str());
                 inputComp->RaiseClick();
             }
         }

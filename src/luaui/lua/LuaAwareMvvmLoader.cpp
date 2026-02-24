@@ -12,6 +12,7 @@ namespace lua {
 
 LuaPropertyNotifier::LuaPropertyNotifier(lua_State* L, const std::string& viewModelName)
     : m_L(L), m_viewModelName(viewModelName) {
+    utils::Logger::DebugF("[LuaPropertyNotifier] Created for '%s'", viewModelName.c_str());
 }
 
 void LuaPropertyNotifier::PushViewModel() const {
@@ -29,6 +30,10 @@ void LuaPropertyNotifier::UnsubscribePropertyChanged(PropertyChangedHandler hand
     if (it != m_handlers.end()) {
         m_handlers.erase(it);
     }
+}
+
+LuaPropertyNotifier::~LuaPropertyNotifier() {
+    utils::Logger::DebugF("[LuaPropertyNotifier] Destroyed for '%s'", m_viewModelName.c_str());
 }
 
 void LuaPropertyNotifier::NotifyPropertyChanged(const std::string& propertyName) {
@@ -97,17 +102,12 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
 }
 
 bool LuaPropertyNotifier::CallFunction(const std::string& name) {
-    if (!m_L) {
-        utils::Logger::ErrorF("[Lua] CallFunction '%s': Lua state is null", name.c_str());
-        return false;
-    }
+    if (!m_L) return false;
     
-    // 确保栈有足够的空间
-    lua_checkstack(m_L, 3);
+    utils::Logger::DebugF("[Lua] CallFunction '%s' started", name.c_str());
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
-        utils::Logger::ErrorF("[Lua] CallFunction '%s': ViewModel is not a table", name.c_str());
         lua_pop(m_L, 1);
         return false;
     }
@@ -118,20 +118,18 @@ bool LuaPropertyNotifier::CallFunction(const std::string& name) {
         return false;
     }
     
-    // 调用前保存栈顶位置
-    int topBefore = lua_gettop(m_L);
-    
     lua_pushvalue(m_L, -2);  // Push ViewModel as self
     int status = lua_pcall(m_L, 1, 0, 0);
     
     if (status != LUA_OK) {
         const char* error = lua_tostring(m_L, -1);
         utils::Logger::ErrorF("[Lua] Command '%s' error: %s", name.c_str(), error ? error : "unknown");
-        lua_pop(m_L, 1);  // Pop error message
+        lua_pop(m_L, 1);
+    } else {
+        utils::Logger::DebugF("[Lua] CallFunction '%s' completed successfully", name.c_str());
     }
     
-    // 清理栈：保留 ViewModel，移除其他
-    lua_settop(m_L, topBefore - 1);
+    lua_pop(m_L, 1);
     return status == LUA_OK;
 }
 
@@ -169,15 +167,28 @@ bool LuaPropertyNotifier::HasFunction(const std::string& name) const {
 // LuaAwareMvvmLoader Implementation
 // ============================================================================
 
-LuaAwareMvvmLoader::LuaAwareMvvmLoader() = default;
-LuaAwareMvvmLoader::~LuaAwareMvvmLoader() = default;
+LuaAwareMvvmLoader::LuaAwareMvvmLoader() {
+    utils::Logger::Debug("[LuaAwareMvvmLoader] Constructed");
+}
+
+LuaAwareMvvmLoader::~LuaAwareMvvmLoader() {
+    utils::Logger::Debug("[LuaAwareMvvmLoader] Destroyed");
+}
 
 void LuaAwareMvvmLoader::SetLuaState(lua_State* L) {
     m_L = L;
+    // Create notifier early so it can be registered before Load()
+    if (L && !m_viewModelName.empty()) {
+        m_notifier = std::make_shared<LuaPropertyNotifier>(L, m_viewModelName);
+    }
 }
 
 void LuaAwareMvvmLoader::SetViewModelName(const std::string& name) {
     m_viewModelName = name;
+    // Create notifier early if Lua state is already set
+    if (m_L && !m_notifier) {
+        m_notifier = std::make_shared<LuaPropertyNotifier>(m_L, m_viewModelName);
+    }
 }
 
 std::shared_ptr<luaui::Control> LuaAwareMvvmLoader::Load(const std::string& filePath) {
@@ -186,12 +197,21 @@ std::shared_ptr<luaui::Control> LuaAwareMvvmLoader::Load(const std::string& file
         return nullptr;
     }
     
-    m_notifier = std::make_shared<LuaPropertyNotifier>(m_L, m_viewModelName);
+    // Create the property notifier
+    if (!m_notifier) {
+        m_notifier = std::make_shared<LuaPropertyNotifier>(m_L, m_viewModelName);
+    }
+    
+    // Create base MVVM loader
     m_baseLoader = mvvm::CreateMvvmXmlLoader();
+    
+    // Set DataContext to our Lua-aware notifier
     m_baseLoader->SetDataContext(m_notifier);
     
+    // Auto-bind Lua commands
     AutoBindCommands();
     
+    // Load XML
     auto root = m_baseLoader->Load(filePath);
     
     if (root) {
@@ -204,6 +224,7 @@ std::shared_ptr<luaui::Control> LuaAwareMvvmLoader::Load(const std::string& file
 void LuaAwareMvvmLoader::AutoBindCommands() {
     if (!m_L || !m_notifier || !m_baseLoader) return;
     
+    // 扫描 ViewModel 中的所有函数
     lua_getglobal(m_L, m_viewModelName.c_str());
     if (!lua_istable(m_L, -1)) {
         lua_pop(m_L, 1);
@@ -214,9 +235,11 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
     
     lua_pushnil(m_L);
     while (lua_next(m_L, -2) != 0) {
+        // Key at -2, Value at -1
         if (lua_type(m_L, -2) == LUA_TSTRING) {
             const char* key = lua_tostring(m_L, -2);
             
+            // 自动识别命令：以 Command 或 Handler 结尾的函数
             if (lua_isfunction(m_L, -1)) {
                 if (strstr(key, "Command") || strstr(key, "Handler")) {
                     RegisterLuaCommand(key);
@@ -224,10 +247,10 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
                 }
             }
         }
-        lua_pop(m_L, 1);
+        lua_pop(m_L, 1);  // Pop value, keep key
     }
     
-    lua_pop(m_L, 1);
+    lua_pop(m_L, 1);  // Pop ViewModel
     
     utils::Logger::InfoF("[LuaAwareMvvmLoader] Auto-bound %d commands", commandCount);
 }
