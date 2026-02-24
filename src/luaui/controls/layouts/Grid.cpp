@@ -8,9 +8,6 @@
 namespace luaui {
 namespace controls {
 
-// 静态成员定义
-std::unordered_map<ControlID, Grid::CellInfo> Grid::s_cellInfo;
-
 Grid::Grid() {}
 
 void Grid::AddColumn(const GridLength& width) {
@@ -25,46 +22,46 @@ void Grid::AddRow(const GridLength& height) {
 
 void Grid::SetColumn(const std::shared_ptr<IControl>& control, int column) {
     if (!control) return;
-    s_cellInfo[control->GetID()].column = column;
+    m_cellInfo[control->GetID()].column = column;
 }
 
 void Grid::SetRow(const std::shared_ptr<IControl>& control, int row) {
     if (!control) return;
-    s_cellInfo[control->GetID()].row = row;
+    m_cellInfo[control->GetID()].row = row;
 }
 
 void Grid::SetColumnSpan(const std::shared_ptr<IControl>& control, int span) {
     if (!control) return;
-    s_cellInfo[control->GetID()].columnSpan = span;
+    m_cellInfo[control->GetID()].columnSpan = span;
 }
 
 void Grid::SetRowSpan(const std::shared_ptr<IControl>& control, int span) {
     if (!control) return;
-    s_cellInfo[control->GetID()].rowSpan = span;
+    m_cellInfo[control->GetID()].rowSpan = span;
 }
 
-int Grid::GetColumn(const std::shared_ptr<IControl>& control) {
+int Grid::GetColumn(const std::shared_ptr<IControl>& control) const {
     if (!control) return 0;
-    auto it = s_cellInfo.find(control->GetID());
-    return (it != s_cellInfo.end()) ? it->second.column : 0;
+    auto it = m_cellInfo.find(control->GetID());
+    return (it != m_cellInfo.end()) ? it->second.column : 0;
 }
 
-int Grid::GetRow(const std::shared_ptr<IControl>& control) {
+int Grid::GetRow(const std::shared_ptr<IControl>& control) const {
     if (!control) return 0;
-    auto it = s_cellInfo.find(control->GetID());
-    return (it != s_cellInfo.end()) ? it->second.row : 0;
+    auto it = m_cellInfo.find(control->GetID());
+    return (it != m_cellInfo.end()) ? it->second.row : 0;
 }
 
-int Grid::GetColumnSpan(const std::shared_ptr<IControl>& control) {
+int Grid::GetColumnSpan(const std::shared_ptr<IControl>& control) const {
     if (!control) return 1;
-    auto it = s_cellInfo.find(control->GetID());
-    return (it != s_cellInfo.end()) ? it->second.columnSpan : 1;
+    auto it = m_cellInfo.find(control->GetID());
+    return (it != m_cellInfo.end()) ? it->second.columnSpan : 1;
 }
 
-int Grid::GetRowSpan(const std::shared_ptr<IControl>& control) {
+int Grid::GetRowSpan(const std::shared_ptr<IControl>& control) const {
     if (!control) return 1;
-    auto it = s_cellInfo.find(control->GetID());
-    return (it != s_cellInfo.end()) ? it->second.rowSpan : 1;
+    auto it = m_cellInfo.find(control->GetID());
+    return (it != m_cellInfo.end()) ? it->second.rowSpan : 1;
 }
 
 rendering::Size Grid::OnMeasureChildren(const rendering::Size& availableSize) {

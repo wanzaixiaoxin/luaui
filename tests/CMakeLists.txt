@@ -39,6 +39,62 @@ if(TARGET LuaUI_Rendering)
     add_test(NAME RenderingTest COMMAND test_rendering)
 endif()
 
+# Test executable for rendering resources (DirtyRegion, ResourceCache)
+if(TARGET LuaUI_Rendering)
+    add_executable(test_rendering_resources test_rendering_resources.cpp)
+    target_link_libraries(test_rendering_resources PRIVATE LuaUI_Rendering)
+    target_include_directories(test_rendering_resources PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+
+    add_test(NAME RenderingResourcesTest COMMAND test_rendering_resources)
+endif()
+
+# Test executable for core delegates
+if(TARGET LuaUI_Core)
+    add_executable(test_core_delegates test_core_delegates.cpp)
+    target_link_libraries(test_core_delegates PRIVATE LuaUI_Core)
+    target_include_directories(test_core_delegates PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+
+    add_test(NAME CoreDelegatesTest COMMAND test_core_delegates)
+endif()
+
+# Test executable for core control
+if(TARGET LuaUI_Core AND TARGET LuaUI_Controls)
+    add_executable(test_core_control test_core_control.cpp)
+    target_link_libraries(test_core_control PRIVATE LuaUI_Core LuaUI_Controls)
+    target_include_directories(test_core_control PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+
+    add_test(NAME CoreControlTest COMMAND test_core_control)
+endif()
+
+# Test executable for Grid layout
+if(TARGET LuaUI_Controls)
+    add_executable(test_layout_grid test_layout_grid.cpp)
+    target_link_libraries(test_layout_grid PRIVATE LuaUI_Controls LuaUI_Core)
+    target_include_directories(test_layout_grid PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+
+    add_test(NAME GridLayoutTest COMMAND test_layout_grid)
+endif()
+
 # Test executable for logger
 if(TARGET LuaUI_Utils)
     add_executable(test_logger test_logger.cpp)

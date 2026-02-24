@@ -57,14 +57,14 @@ public:
     size_t GetRowCount() const { return m_rows.size(); }
     
     // 附加属性
-    static void SetColumn(const std::shared_ptr<IControl>& control, int column);
-    static void SetRow(const std::shared_ptr<IControl>& control, int row);
-    static void SetColumnSpan(const std::shared_ptr<IControl>& control, int span);
-    static void SetRowSpan(const std::shared_ptr<IControl>& control, int span);
-    static int GetColumn(const std::shared_ptr<IControl>& control);
-    static int GetRow(const std::shared_ptr<IControl>& control);
-    static int GetColumnSpan(const std::shared_ptr<IControl>& control);
-    static int GetRowSpan(const std::shared_ptr<IControl>& control);
+    void SetColumn(const std::shared_ptr<IControl>& control, int column);
+    void SetRow(const std::shared_ptr<IControl>& control, int row);
+    void SetColumnSpan(const std::shared_ptr<IControl>& control, int span);
+    void SetRowSpan(const std::shared_ptr<IControl>& control, int span);
+    int GetColumn(const std::shared_ptr<IControl>& control) const;
+    int GetRow(const std::shared_ptr<IControl>& control) const;
+    int GetColumnSpan(const std::shared_ptr<IControl>& control) const;
+    int GetRowSpan(const std::shared_ptr<IControl>& control) const;
 
 protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
@@ -83,7 +83,7 @@ private:
         int columnSpan = 1;
         int rowSpan = 1;
     };
-    static std::unordered_map<ControlID, CellInfo> s_cellInfo;
+    std::unordered_map<ControlID, CellInfo> m_cellInfo;
     
     void CalculateSizes(const rendering::Size& availableSize);
 };
