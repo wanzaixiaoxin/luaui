@@ -1,58 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Window Title="{Binding Title}" Width="700" Height="600">
+<!-- LuaUI MVVM Demo Layout - Using StackPanel as root (Window is created by host) -->
+<StackPanel Orientation="Vertical" Margin="24" Spacing="12">
     
-    <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
-        
-        <!-- Title -->
-        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
-        <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#757575"/>
-        
-        <!-- Counter Section -->
-        <Border Background="#F5F5F5" Padding="16">
-            <StackPanel Orientation="Vertical" Spacing="12">
-                <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
-                
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                    <TextBlock Text="Count:" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Counter}" FontSize="32" FontWeight="Bold" Foreground="#2196F3"/>
-                </StackPanel>
-                
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="-" Style="Primary" Width="40" Command="DecrementCommand"/>
-                    <Button Content="+" Style="Primary" Width="40" Command="IncrementCommand"/>
-                    <Button Content="Reset" Style="Danger" Margin="16,0,0,0" Command="ResetCommand"/>
-                </StackPanel>
+    <!-- Title -->
+    <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- Counter Section -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock Text="Count:" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Counter}" FontSize="32" FontWeight="Bold" Foreground="#2196F3"/>
             </StackPanel>
-        </Border>
-        
-        <!-- Feature Toggle Section -->
-        <Border Background="#F5F5F5" Padding="16">
-            <StackPanel Orientation="Vertical" Spacing="12">
-                <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
-                
-                <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled}"/>
-                
-                <Button Content="Toggle Feature" Style="Primary" Command="ToggleCommand"/>
-                
-                <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="-" Style="Primary" Width="40" Command="DecrementCommand"/>
+                <Button Content="+" Style="Primary" Width="40" Command="IncrementCommand"/>
+                <Button Content="Reset" Style="Danger" Margin="16,0,0,0" Command="ResetCommand"/>
             </StackPanel>
-        </Border>
-        
-        <!-- Items Section -->
-        <Border Background="#F5F5F5" Padding="16">
-            <StackPanel Orientation="Vertical" Spacing="12">
-                <TextBlock Text="Items" FontWeight="SemiBold" FontSize="16"/>
-                <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
-                
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Add Item" Style="Accent" Command="AddItemCommand"/>
-                    <Button Content="Clear Items" Style="Primary" Command="ClearItemsCommand"/>
-                </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Feature Toggle Section -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
+            
+            <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled}"/>
+            
+            <Button Content="Toggle Feature" Style="Primary" Command="ToggleCommand"/>
+            
+            <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Items Section -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Items" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Add Item" Style="Accent" Command="AddItemCommand"/>
+                <Button Content="Clear Items" Style="Primary" Command="ClearItemsCommand"/>
             </StackPanel>
-        </Border>
-        
-        <!-- Status Bar -->
-        <TextBlock Text="{Binding Status}" FontSize="12" FontStyle="Italic" Foreground="#757575" Margin="0,16,0,0"/>
-        
-    </StackPanel>
-</Window>
+        </StackPanel>
+    </Border>
+    
+    <!-- Status Bar -->
+    <TextBlock Text="{Binding Status}" FontSize="12" FontStyle="Italic" Foreground="#757575" Margin="0,16,0,0"/>
+    
+</StackPanel>

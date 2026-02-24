@@ -33,7 +33,7 @@ function CreateViewModel()
     
     -- Subscribe to collection changes
     self.Items:Subscribe(function(action, item, index)
-        LogInfo("Collection changed: " .. action .. " at index " .. index)
+        Log.infof("[Collection] %s at index %d", action, index)
         self:UpdateStatus()
     end)
     
@@ -52,7 +52,7 @@ function CreateViewModel()
         self.Counter = self._counter
         self:PropertyChanged("Counter")
         self:UpdateStatus()
-        LogInfo("Counter incremented to: " .. self.Counter)
+        Log.infof("[Command] Counter incremented to: %d", self.Counter)
     end)
     
     -- Decrement command
@@ -69,7 +69,7 @@ function CreateViewModel()
         self.IsFeatureEnabled = self._isFeatureEnabled
         self:PropertyChanged("IsFeatureEnabled")
         self:UpdateStatus()
-        LogInfo("Feature toggled: " .. tostring(self.IsFeatureEnabled))
+        Log.infof("[Command] Feature toggled: %s", tostring(self.IsFeatureEnabled))
     end)
     
     -- Add item command
@@ -107,7 +107,7 @@ function CreateViewModel()
         self.Items:Add({ Name = "Item 1", Value = 10 })
         
         self:UpdateStatus()
-        LogInfo("ViewModel reset")
+        Log.info("[Command] ViewModel reset")
     end)
     
     -- ========================================

@@ -308,6 +308,77 @@ endif()
 | Lua 5.4 | `third_party/lua/` | Header-only, for Lua scripting integration |
 | TinyXML2 | `third_party/tinyxml2/` | XML parsing for layouts |
 
+## Lua Scripting
+
+LuaUI provides comprehensive Lua bindings for UI automation and scripting.
+
+### Lua Logging API
+
+Lua scripts can use the `Log` table to write to the C++ logger:
+
+```lua
+-- Basic logging
+Log.debug("Debug message")
+Log.info("Info message")
+Log.warn("Warning message")
+Log.error("Error message")
+Log.trace("Trace message")
+Log.fatal("Fatal message")
+
+-- Multiple arguments (space-separated)
+Log.info("User", name, "logged in")
+
+-- Formatted logging (printf-style)
+Log.infof("User %s has %d messages", username, count)
+
+-- Log level management
+Log.setLevel("warn")  -- filter below warning
+local level = Log.getLevel()
+
+-- Global print() redirects to Log.info
+print("This goes to the logger")
+```
+
+### Lua Event Binding
+
+Lua functions can be registered as event handlers:
+
+```lua
+-- Button click event
+local button = Button.new()
+button:setText("Click Me")
+
+local connection = button:onClick(function()
+    Log.info("Button clicked!")
+end)
+
+-- Slider value changed
+local slider = Slider.new()
+slider:onValueChanged(function(value)
+    Log.infof("Value: %s", value)
+end)
+
+-- Disconnect when done
+connection:disconnect()
+```
+
+### Lua Command Pattern
+
+MVVM-style commands can be created in Lua:
+
+```lua
+local saveCommand = Command.create(
+    function() 
+        Log.info("Saving...") 
+    end,
+    function() 
+        return canSave  -- canExecute
+    end
+)
+
+saveCommand:execute()
+```
+
 ### Documentation Language
 
 Architecture documentation in `docs/architecture/` is primarily in **Chinese**.
@@ -318,7 +389,12 @@ Key files:
 
 ## Security Considerations
 
-- No sandboxing for Lua scripts is currently implemented (planned for Phase 4)
+- Lua sandboxing is implemented with configurable security policies:
+  - Memory limits (default: 64MB)
+  - Execution timeout (default: 30 seconds)
+  - File write restrictions
+  - Network access restrictions
+  - API whitelist
 - XML layouts can reference external resources - validate paths
 - No HTTPS/network security features currently active
 

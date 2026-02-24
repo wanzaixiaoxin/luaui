@@ -1,136 +1,78 @@
--- ViewModel.lua
--- MVVM ViewModel with data and commands
+-- LuaUI MVVM Demo - ViewModel
+-- 
+-- 使用方式：
+-- 1. 定义属性（普通 table 字段）
+-- 2. 定义命令（函数，以 Command 结尾自动绑定）
+-- 3. 修改属性后调用 Notify("PropertyName") 触发 UI 更新
 
--- Framework (embedded for simplicity)
-ViewModel = {}
-ViewModel.__index = ViewModel
+-- 启用日志
+Log.info("[ViewModel] Initializing...")
 
-function ViewModel.new()
-    local self = setmetatable({}, ViewModel)
-    self._listeners = {}
-    return self
+-- 创建 ViewModel
+local ViewModel = {}
+
+-- ============================================================================
+-- 属性（绑定到 XML 的 {Binding Property}）
+-- ============================================================================
+
+ViewModel.Title = "LuaUI MVVM Demo"
+ViewModel.Description = "Native Lua ViewModel with auto-binding"
+ViewModel.Counter = 0
+ViewModel.IsFeatureEnabled = false
+ViewModel.Status = "Ready"
+
+-- 计算属性
+function ViewModel:GetFeatureStatusText()
+    return self.IsFeatureEnabled and "Feature is ON" or "Feature is OFF"
 end
 
-function ViewModel:PropertyChanged(propertyName)
-    if self._listeners[propertyName] then
-        for _, callback in ipairs(self._listeners[propertyName]) do
-            callback(self[propertyName])
-        end
-    end
+-- ============================================================================
+-- 命令（以 Command 结尾自动绑定到 XML 的 Command="XXX"）
+-- ============================================================================
+
+function ViewModel:IncrementCommand()
+    self.Counter = self.Counter + 1
+    self:UpdateStatus()
+    Notify("Counter")  -- 触发 UI 更新
+    Log.infof("Counter incremented to: %d", self.Counter)
 end
 
-function ViewModel:Subscribe(propertyName, callback)
-    if not self._listeners[propertyName] then
-        self._listeners[propertyName] = {}
-    end
-    table.insert(self._listeners[propertyName], callback)
+function ViewModel:DecrementCommand()
+    self.Counter = self.Counter - 1
+    self:UpdateStatus()
+    Notify("Counter")
+    Log.infof("Counter decremented to: %d", self.Counter)
 end
 
-Command = {}
-Command.__index = Command
-
-function Command.new(execute, canExecute)
-    local self = setmetatable({}, Command)
-    self._execute = execute or function() end
-    self._canExecute = canExecute or function() return true end
-    return self
-end
-
-function Command:Execute(parameter)
-    if self:CanExecute(parameter) then
-        self._execute(parameter)
-    end
-end
-
-function Command:CanExecute(parameter)
-    return self._canExecute(parameter)
-end
-
--- ========================================
--- Main ViewModel
--- ========================================
-
-MainViewModel = {}
-MainViewModel.__index = MainViewModel
-setmetatable(MainViewModel, ViewModel)
-
-function MainViewModel.new()
-    local self = setmetatable(ViewModel.new(), MainViewModel)
-    
-    -- Properties
-    self.Title = "LuaUI MVVM Demo"
-    self.Description = "XML View + Lua ViewModel"
+function ViewModel:ResetCommand()
     self.Counter = 0
-    self.IsFeatureEnabled = false
-    self.FeatureStatusText = "Feature is currently disabled"
-    self.ItemCount = 2
-    self.Items = {
-        { Name = "Item A", Value = 100 },
-        { Name = "Item B", Value = 200 }
-    }
-    self.Status = "Ready"
-    
-    -- Commands
-    self.IncrementCommand = function()
-        self.Counter = self.Counter + 1
-        self:UpdateStatus()
-        print("Counter incremented to: " .. self.Counter)
-    end
-    
-    self.DecrementCommand = function()
-        self.Counter = self.Counter - 1
-        self:UpdateStatus()
-    end
-    
-    self.ToggleCommand = function()
-        self.IsFeatureEnabled = not self.IsFeatureEnabled
-        if self.IsFeatureEnabled then
-            self.FeatureStatusText = "Feature is currently enabled"
-        else
-            self.FeatureStatusText = "Feature is currently disabled"
-        end
-        self:UpdateStatus()
-        print("Feature toggled: " .. tostring(self.IsFeatureEnabled))
-    end
-    
-    self.AddItemCommand = function()
-        local count = #self.Items + 1
-        table.insert(self.Items, { Name = "Item " .. count, Value = math.random(10, 99) })
-        self.ItemCount = #self.Items
-        self:UpdateStatus()
-    end
-    
-    self.ClearItemsCommand = function()
-        self.Items = {}
-        self.ItemCount = 0
-        self:UpdateStatus()
-    end
-    
-    self.ResetCommand = function()
-        self.Counter = 0
-        self.IsFeatureEnabled = false
-        self.FeatureStatusText = "Feature is currently disabled"
-        self.Items = {
-            { Name = "Item A", Value = 100 },
-            { Name = "Item B", Value = 200 }
-        }
-        self.ItemCount = 2
-        self:UpdateStatus()
-        print("Reset completed")
-    end
-    
-    return self
+    self:UpdateStatus()
+    Notify("Counter")
+    Log.info("Counter reset")
 end
 
-function MainViewModel:UpdateStatus()
-    self.Status = string.format("Counter: %d | Items: %d | Feature: %s",
-        self.Counter,
-        self.ItemCount,
-        self.IsFeatureEnabled and "ON" or "OFF"
-    )
+function ViewModel:ToggleCommand()
+    self.IsFeatureEnabled = not self.IsFeatureEnabled
+    Notify("IsFeatureEnabled")
+    Notify("FeatureStatusText")  -- 计算属性也需要通知
+    Log.infof("Feature toggled: %s", self.IsFeatureEnabled and "ON" or "OFF")
 end
 
--- Create global instance
-_G.ViewModelInstance = MainViewModel.new()
+-- ============================================================================
+-- 辅助方法
+-- ============================================================================
 
-print("ViewModel loaded")
+function ViewModel:UpdateStatus()
+    self.Status = string.format("Counter: %d | Feature: %s", 
+        self.Counter, 
+        self.IsFeatureEnabled and "ON" or "OFF")
+    Notify("Status")
+end
+
+-- ============================================================================
+-- 注册到全局（框架通过 viewModelName 参数查找，默认为 "ViewModelInstance"）
+-- ============================================================================
+
+_G.ViewModelInstance = ViewModel
+
+Log.info("[ViewModel] Ready")

@@ -61,8 +61,7 @@ end
 function MainViewModel:IncrementCommand()
     self.Counter = self.Counter + 1
     self:UpdateStatus()
-    print("Counter: " .. self.Counter)
-    -- Note: In full implementation, this would trigger UI refresh
+    Log.debugf("[Command] Counter incremented to: %d", self.Counter)
 end
 
 function MainViewModel:DecrementCommand()
@@ -74,11 +73,12 @@ function MainViewModel:ToggleCommand()
     self.IsFeatureEnabled = not self.IsFeatureEnabled
     if self.IsFeatureEnabled then
         self.FeatureStatusText = "Feature is currently enabled"
+        Log.info("[Command] Feature enabled")
     else
         self.FeatureStatusText = "Feature is currently disabled"
+        Log.info("[Command] Feature disabled")
     end
     self:UpdateStatus()
-    print("Feature: " .. tostring(self.IsFeatureEnabled))
 end
 
 function MainViewModel:AddItemCommand()
@@ -104,7 +104,7 @@ function MainViewModel:ResetCommand()
     }
     self.ItemCount = 2
     self:UpdateStatus()
-    print("Reset")
+    Log.info("[Command] ViewModel reset")
 end
 
 -- ========================================
@@ -112,4 +112,4 @@ end
 -- ========================================
 
 _G.ViewModelInstance = MainViewModel.new()
-print("ViewModel loaded")
+Log.info("[App] ViewModel initialized and ready")

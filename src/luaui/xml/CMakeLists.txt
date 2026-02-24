@@ -9,11 +9,13 @@ target_include_directories(LuaUI_Xml
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/third_party/tinyxml2>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/third_party/lua>
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering
         ${CMAKE_SOURCE_DIR}/src/luaui/utils
         ${CMAKE_SOURCE_DIR}/src/luaui/controls
         ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/lua
 )
 
 target_link_libraries(LuaUI_Xml

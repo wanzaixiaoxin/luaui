@@ -80,6 +80,8 @@ void D2DRenderEngine::Shutdown() {
     m_context.reset();
     DiscardDeviceResources();
     
+    // Release COM factories in correct order
+    m_wicFactory.Reset();
     m_dwriteFactory.Reset();
     m_d2dFactory.Reset();
     

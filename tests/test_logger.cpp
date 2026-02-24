@@ -48,10 +48,12 @@ TEST(ConsoleLogger_Colored) {
 
 // ==================== FileLogger Tests ====================
 TEST(FileLogger_ConstructionAndLogging) {
-    std::string testFile = "test_log.txt";
+    std::string testFile = "test_log_construction.txt";
     
-    // Remove file if exists
-    std::filesystem::remove(testFile);
+    // Remove file if exists (ignore errors if file is locked)
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
     
     {
         FileLogger logger(testFile);
@@ -69,6 +71,7 @@ TEST(FileLogger_ConstructionAndLogging) {
     std::ifstream file(testFile);
     std::string content((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
+    file.close();
     
     ASSERT_TRUE(content.find("Test message 1") != std::string::npos);
     ASSERT_TRUE(content.find("Test message 2") != std::string::npos);
@@ -76,12 +79,18 @@ TEST(FileLogger_ConstructionAndLogging) {
     ASSERT_TRUE(content.find("WARN") != std::string::npos);
     
     // Cleanup
-    std::filesystem::remove(testFile);
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {
+        // Ignore cleanup errors on Windows
+    }
 }
 
 TEST(FileLogger_SetLevel) {
-    std::string testFile = "test_log_level.txt";
-    std::filesystem::remove(testFile);
+    std::string testFile = "test_log_level_filter.txt";
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
     
     {
         FileLogger logger(testFile);
@@ -96,17 +105,22 @@ TEST(FileLogger_SetLevel) {
     std::ifstream file(testFile);
     std::string content((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
+    file.close();
     
     // Should not contain debug message
     ASSERT_TRUE(content.find("Debug message") == std::string::npos);
     ASSERT_TRUE(content.find("Warning message") != std::string::npos);
     
-    std::filesystem::remove(testFile);
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
 }
 
 TEST(FileLogger_EnableDisable) {
-    std::string testFile = "test_log_disable.txt";
-    std::filesystem::remove(testFile);
+    std::string testFile = "test_log_enable_disable.txt";
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
     
     {
         FileLogger logger(testFile);
@@ -120,11 +134,14 @@ TEST(FileLogger_EnableDisable) {
     std::ifstream file(testFile);
     std::string content((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
+    file.close();
     
     ASSERT_TRUE(content.find("This should not be logged") == std::string::npos);
     ASSERT_TRUE(content.find("This should be logged") != std::string::npos);
     
-    std::filesystem::remove(testFile);
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
 }
 
 // ==================== MultiLogger Tests ====================
@@ -166,15 +183,19 @@ TEST(GlobalLogger_InitializeWithConsole) {
 
 TEST(GlobalLogger_InitializeWithFile) {
     Logger::Shutdown();
-    std::string testFile = "global_test_log.txt";
-    std::filesystem::remove(testFile);
+    std::string testFile = "global_logger_test.txt";
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
     
-    Logger::Initialize(testFile);
-    ASSERT_TRUE(Logger::IsInitialized());
-    
-    Logger::Info("Global logger test");
-    
-    Logger::Shutdown();
+    {
+        Logger::Initialize(testFile);
+        ASSERT_TRUE(Logger::IsInitialized());
+        
+        Logger::Info("Global logger test");
+        
+        Logger::Shutdown();
+    }
     
     // Verify file was created
     ASSERT_TRUE(std::filesystem::exists(testFile));
@@ -182,13 +203,19 @@ TEST(GlobalLogger_InitializeWithFile) {
     std::ifstream file(testFile);
     std::string content((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
+    file.close();
     ASSERT_TRUE(content.find("Global logger test") != std::string::npos);
     
-    std::filesystem::remove(testFile);
+    try {
+        std::filesystem::remove(testFile);
+    } catch (...) {}
 }
 
 TEST(GlobalLogger_InitializeWithConfig) {
     Logger::Shutdown();
+    
+    // Ensure clean state
+    ASSERT_FALSE(Logger::IsInitialized());
     
     LoggerConfig config;
     config.consoleEnabled = false;

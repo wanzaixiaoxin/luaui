@@ -165,7 +165,7 @@ std::string MainWindow::FindResourcePath(const std::string& filename) {
     std::vector<std::string> paths = {
         "mvvm_layouts/" + filename,
         "../mvvm_layouts/" + filename,
-        "examples/13_mvvm_demo/layouts/" + filename,
+        "examples/02_mvvm_demo/layouts/" + filename,
     };
     
     for (const auto& path : paths) {

@@ -182,9 +182,10 @@ function BindCommand(button, viewModel, commandName)
     end
 end
 
--- Use print if Log is not available
+-- Framework initialization logging
 if Log and Log.info then
-    Log.info("Framework loaded")
+    Log.info("[Framework] MVVM Framework loaded successfully")
 else
-    print("Framework loaded")
+    -- Fallback if Log is not available (should not happen with new Lua binding)
+    print("[Framework] MVVM Framework loaded")
 end

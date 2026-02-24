@@ -26,7 +26,9 @@ FileLogger::FileLogger(const std::string& filename)
 }
 
 FileLogger::~FileLogger() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_file.is_open()) {
+        m_file.flush();
         m_file.close();
     }
 }
@@ -367,9 +369,9 @@ void Logger::Initialize(const LoggerConfig& config) {
         multi->AddLogger(file);
     }
     
-    if (multi->GetLevel() != LogLevel::Debug || config.consoleEnabled || config.fileEnabled) {
-        s_instance = multi;
-    }
+    // Always set the instance, even if no loggers are enabled
+    // This ensures IsInitialized() returns true after Initialize() is called
+    s_instance = multi;
 }
 
 void Logger::Initialize(const std::string& logFile) {
@@ -425,6 +427,16 @@ void Logger::SetFileLevel(LogLevel level) {
 
 void Logger::Shutdown() {
     std::lock_guard<std::mutex> lock(s_mutex);
+    
+    // Flush and close file logger first
+    if (s_fileLogger) {
+        if (auto fileLogger = std::dynamic_pointer_cast<FileLogger>(s_fileLogger)) {
+            fileLogger->Flush();
+        }
+        s_fileLogger.reset();
+    }
+    
+    s_consoleLogger.reset();
     s_instance.reset();
 }
 

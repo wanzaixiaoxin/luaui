@@ -583,49 +583,7 @@ void LuaBinding::RegisterGrid(lua_State* L) {
     lua_pop(L, 1);
 }
 
-// ==================== Logger ====================
-
-void LuaBinding::RegisterLogger(lua_State* L) {
-    lua_newtable(L);
-    
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        const char* message = luaL_checkstring(L, 1);
-        std::string msg = "[Lua] ";
-        msg += message;
-        luaui::utils::Logger::Debug(msg);
-        return 0;
-    });
-    lua_setfield(L, -2, "debug");
-    
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        const char* message = luaL_checkstring(L, 1);
-        std::string msg = "[Lua] ";
-        msg += message;
-        luaui::utils::Logger::Info(msg);
-        return 0;
-    });
-    lua_setfield(L, -2, "info");
-    
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        const char* message = luaL_checkstring(L, 1);
-        std::string msg = "[Lua] ";
-        msg += message;
-        luaui::utils::Logger::Warning(msg);
-        return 0;
-    });
-    lua_setfield(L, -2, "warn");
-    
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        const char* message = luaL_checkstring(L, 1);
-        std::string msg = "[Lua] ";
-        msg += message;
-        luaui::utils::Logger::Error(msg);
-        return 0;
-    });
-    lua_setfield(L, -2, "error");
-    
-    lua_setglobal(L, "Log");
-}
+// Logger binding is implemented in LuaBinding_Logger.cpp
 
 // ==================== UIGlobal ====================
 
@@ -654,8 +612,7 @@ void LuaBinding::RegisterStatusBar(lua_State* L) { (void)L; }
 void LuaBinding::RegisterDialog(lua_State* L) { (void)L; }
 void LuaBinding::RegisterShapes(lua_State* L) { (void)L; }
 void LuaBinding::RegisterProperties(lua_State* L) { (void)L; }
-void LuaBinding::RegisterEvents(lua_State* L) { (void)L; }
-void LuaBinding::RegisterCommands(lua_State* L) { (void)L; }
+// Note: RegisterEvents, RegisterCommands, RegisterLogger are implemented in separate files
 void LuaBinding::RegisterBindings(lua_State* L) { (void)L; }
 void LuaBinding::RegisterAnimations(lua_State* L) { (void)L; }
 void LuaBinding::RegisterResources(lua_State* L) { (void)L; }

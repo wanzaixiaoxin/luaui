@@ -165,6 +165,9 @@ public:
     static void RegisterStorage(lua_State* L);
     static void RegisterTask(lua_State* L);
     
+    // MVVM 绑定
+    static void RegisterMVVM(lua_State* L);
+    
     // 全局UI对象
     static void RegisterUIGlobal(lua_State* L);
     
