@@ -74,16 +74,15 @@ void Button::OnRender(rendering::IRenderContext* context) {
         if (textBrush && textFormat) {
             textFormat->SetTextAlignment(rendering::TextAlignment::Center);
             textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
-            rendering::Point textPos(localRect.width / 2, localRect.height / 2);
-            context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
+            // 使用整个按钮区域作为文本绘制区域，让对齐方式在正确的范围内生效
+            context->DrawTextString(m_text, textFormat.get(), localRect, textBrush.get());
         } else {
             // Fallback: try with system font
             textFormat = context->CreateTextFormat(L"Arial", 14.0f);
             if (textBrush && textFormat) {
                 textFormat->SetTextAlignment(rendering::TextAlignment::Center);
                 textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
-                rendering::Point textPos(localRect.width / 2, localRect.height / 2);
-                context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
+                context->DrawTextString(m_text, textFormat.get(), localRect, textBrush.get());
             }
         }
     }

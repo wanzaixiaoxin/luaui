@@ -13,12 +13,25 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <Windows.h>
 
 namespace luaui {
 namespace xml {
 
 using namespace controls;
 using namespace rendering;
+
+// 辅助函数：将 UTF-8 字符串转换为 wstring (UTF-16)
+std::wstring Utf8ToWstring(const std::string& str) {
+    if (str.empty()) return std::wstring();
+    
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    if (sizeNeeded <= 0) return std::wstring();
+    
+    std::wstring result(sizeNeeded - 1, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], sizeNeeded);
+    return result;
+}
 
 // 辅助函数：清理字符串
 std::string Trim(const std::string& str) {
@@ -231,7 +244,7 @@ private:
             }
             // Text (TextBlock, TextBox, CheckBox, RadioButton, Button)
             else if (name == "Text") {
-                std::wstring wtext(value.begin(), value.end());
+                std::wstring wtext = Utf8ToWstring(value);
                 if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
                     tb->SetText(wtext);
                 } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
@@ -246,7 +259,8 @@ private:
             }
             // Content (Button)
             else if (name == "Content") {
-                std::wstring wtext(value.begin(), value.end());
+                std::wstring wtext = Utf8ToWstring(value);
+                luaui::utils::Logger::DebugF("[XML] Button Content attribute: '%s' -> wstring length=%zu", value.c_str(), wtext.length());
                 if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                     btn->SetText(wtext);
                 }
@@ -328,12 +342,19 @@ private:
                 auto it = m_clickHandlers.find(value);
                 if (it != m_clickHandlers.end()) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                        luaui::utils::Logger::DebugF("[XML] Binding Click event for button '%s' to handler '%s'", 
+                        luaui::utils::Logger::InfoF("[XML] Binding Click event for button '%s' to handler '%s'", 
                             control->GetName().c_str(), value.c_str());
-                        btn->Click.Add([handler = it->second](luaui::Control*) { handler(); });
+                        std::string handlerName = value;  // 复制值用于lambda捕获
+                        btn->Click.Add([handler = it->second, handlerName](luaui::Control*) { 
+                            luaui::utils::Logger::DebugF("[XML] Button clicked, invoking handler '%s'", handlerName.c_str());
+                            handler(); 
+                        });
+                    } else {
+                        luaui::utils::Logger::WarningF("[XML] Click attribute on non-button control: '%s'", control->GetTypeName().c_str());
                     }
                 } else {
-                    luaui::utils::Logger::WarningF("[XML] Click handler '%s' not found", value.c_str());
+                    luaui::utils::Logger::WarningF("[XML] Click handler '%s' not found (registered handlers: %zu)", 
+                        value.c_str(), m_clickHandlers.size());
                 }
             }
             // ValueChanged 事件 - XML 中写: ValueChanged="OnVolumeChanged"

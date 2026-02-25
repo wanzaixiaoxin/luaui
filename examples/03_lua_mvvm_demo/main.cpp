@@ -34,6 +34,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         config.fileEnabled = true;
         config.fileLevel = utils::LogLevel::Debug;
         config.logFilePath = "lua_mvvm_demo.log";
+        config.createConsoleWindow = true;  // GUI程序需要创建控制台窗口才能看到输出
+        config.consoleWindowTitle = "LuaUI MVVM Debug Console";
         utils::Logger::Initialize(config);
         
         utils::Logger::Info("============================================");

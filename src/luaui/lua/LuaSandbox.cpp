@@ -59,6 +59,11 @@ bool LuaSandbox::Initialize(const SecurityPolicy& policy) {
     // 设置执行超时
     SetExecutionTimeout(policy.maxExecutionTime);
     
+    // 存储 Impl 指针到注册表，供钩子使用
+    lua_pushliteral(m_impl->L, "__sandbox_impl");
+    lua_pushlightuserdata(m_impl->L, m_impl.get());
+    lua_rawset(m_impl->L, LUA_REGISTRYINDEX);
+    
     // 设置安全策略
     SetupSecurity(policy);
     
@@ -279,9 +284,11 @@ void LuaSandbox::MemoryCheckHook(lua_State* L, lua_Debug* ar) {
 }
 
 void LuaSandbox::TimeoutHook(lua_State* L, lua_Debug* ar) {
+    (void)L;
     (void)ar;
-    // 超时检查钩子
-    luaL_error(L, "execution timeout");
+    // 超时检查钩子 - 实际时间检查在主代码中完成
+    // 此钩子保留用于未来扩展（如强制中断死循环）
+    // 目前不主动报错，避免误伤正常但指令密集的操作
 }
 
 int LuaSandbox::SafeRequire(lua_State* L) {

@@ -2,6 +2,8 @@
 #include "Logger.h"
 #include "mvvm/MvvmXmlLoader.h"
 #include <cstring>
+#include <unordered_set>
+#include <functional>
 
 namespace luaui {
 namespace lua {
@@ -100,11 +102,11 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     lua_pop(m_L, 1);
     NotifyPropertyChanged(name);
     
-    // Special handling: if IsFeatureEnabled changed, call UpdateFeatureStatus
+    // Special handling: if IsFeatureEnabled changed, call UpdateStatus
     if (name == "IsFeatureEnabled") {
-        utils::Logger::Debug("[Lua] IsFeatureEnabled changed, calling UpdateFeatureStatus");
-        bool result = CallFunction("UpdateFeatureStatus");
-        utils::Logger::DebugF("[Lua] UpdateFeatureStatus call result: %s", result ? "success" : "failed");
+        utils::Logger::Debug("[Lua] IsFeatureEnabled changed, calling UpdateStatus");
+        bool result = CallFunction("UpdateStatus");
+        utils::Logger::DebugF("[Lua] UpdateStatus call result: %s", result ? "success" : "failed");
         NotifyPropertyChanged("FeatureStatusText");
     }
 }
@@ -236,45 +238,135 @@ std::shared_ptr<luaui::Control> LuaAwareMvvmLoader::Load(const std::string& file
 }
 
 void LuaAwareMvvmLoader::AutoBindCommands() {
-    if (!m_L || !m_notifier || !m_baseLoader) return;
+    utils::Logger::Info("[LuaAwareMvvmLoader] AutoBindCommands() started");
     
-    // 扫描 ViewModel 中的所有函数
+    if (!m_L) {
+        utils::Logger::Error("[LuaAwareMvvmLoader] AutoBindCommands: Lua state is null");
+        return;
+    }
+    if (!m_notifier) {
+        utils::Logger::Error("[LuaAwareMvvmLoader] AutoBindCommands: notifier is null");
+        return;
+    }
+    if (!m_baseLoader) {
+        utils::Logger::Error("[LuaAwareMvvmLoader] AutoBindCommands: baseLoader is null");
+        return;
+    }
+    
+    utils::Logger::InfoF("[LuaAwareMvvmLoader] Looking for ViewModel: '%s'", m_viewModelName.c_str());
+    
+    // 获取 ViewModel
     lua_getglobal(m_L, m_viewModelName.c_str());
     if (!lua_istable(m_L, -1)) {
+        utils::Logger::ErrorF("[LuaAwareMvvmLoader] ViewModel '%s' is not a table (type=%s)", 
+            m_viewModelName.c_str(), lua_typename(m_L, lua_type(m_L, -1)));
         lua_pop(m_L, 1);
         return;
     }
     
+    utils::Logger::Info("[LuaAwareMvvmLoader] ViewModel table found, discovering commands...");
+    
+    // 策略：通过名称直接查询已知命令模式
+    // 因为 ViewModel 可能使用代理模式（__index 为函数），无法遍历
+    const char* knownCommands[] = {
+        // Counter buttons
+        "IncrementCommand",
+        "DecrementCommand", 
+        "ResetCommand",
+        // Feature toggle
+        "ToggleCommand",
+        // Items
+        "AddItemCommand",
+        "ClearItemsCommand",
+        // Generic patterns
+        "ClickCommand",
+        "SubmitCommand",
+        "SaveCommand",
+        "DeleteCommand",
+        "UpdateCommand",
+        nullptr  // End marker
+    };
+    
     int commandCount = 0;
     
+    // 方法1：尝试遍历原始表（非代理）
     lua_pushnil(m_L);
     while (lua_next(m_L, -2) != 0) {
-        // Key at -2, Value at -1
         if (lua_type(m_L, -2) == LUA_TSTRING) {
             const char* key = lua_tostring(m_L, -2);
-            
-            // 自动识别命令：以 Command 或 Handler 结尾的函数
             if (lua_isfunction(m_L, -1)) {
+                utils::Logger::DebugF("[LuaAwareMvvmLoader] Direct table function: '%s'", key);
                 if (strstr(key, "Command") || strstr(key, "Handler")) {
+                    utils::Logger::InfoF("[LuaAwareMvvmLoader] Registering command: '%s'", key);
                     RegisterLuaCommand(key);
                     commandCount++;
                 }
             }
         }
-        lua_pop(m_L, 1);  // Pop value, keep key
+        lua_pop(m_L, 1);
+    }
+    
+    // 方法2：通过名称查询已知的命令
+    for (int i = 0; knownCommands[i] != nullptr; i++) {
+        const char* cmdName = knownCommands[i];
+        
+        // 查询 ViewModel[cmdName]
+        lua_getfield(m_L, -1, cmdName);
+        bool isFunction = lua_isfunction(m_L, -1);
+        lua_pop(m_L, 1);
+        
+        if (isFunction) {
+            utils::Logger::InfoF("[LuaAwareMvvmLoader] Found command by lookup: '%s'", cmdName);
+            RegisterLuaCommand(cmdName);
+            commandCount++;
+        }
+    }
+    
+    // 方法3：尝试扫描元表的 __index（如果是表的话）
+    if (lua_getmetatable(m_L, -1)) {
+        lua_getfield(m_L, -1, "__index");
+        if (lua_istable(m_L, -1)) {
+            utils::Logger::Info("[LuaAwareMvvmLoader] Scanning __index table...");
+            lua_pushnil(m_L);
+            while (lua_next(m_L, -2) != 0) {
+                if (lua_type(m_L, -2) == LUA_TSTRING) {
+                    const char* key = lua_tostring(m_L, -2);
+                    if (lua_isfunction(m_L, -1)) {
+                        if (strstr(key, "Command") || strstr(key, "Handler")) {
+                            utils::Logger::InfoF("[LuaAwareMvvmLoader] Found in __index: '%s'", key);
+                            RegisterLuaCommand(key);
+                            commandCount++;
+                        }
+                    }
+                }
+                lua_pop(m_L, 1);
+            }
+        }
+        lua_pop(m_L, 2);  // Pop __index and metatable
     }
     
     lua_pop(m_L, 1);  // Pop ViewModel
     
-    utils::Logger::InfoF("[LuaAwareMvvmLoader] Auto-bound %d commands", commandCount);
+    utils::Logger::InfoF("[LuaAwareMvvmLoader] Command binding completed: %d commands registered", commandCount);
 }
 
 void LuaAwareMvvmLoader::RegisterLuaCommand(const std::string& commandName) {
-    if (!m_baseLoader) return;
+    if (!m_baseLoader) {
+        utils::Logger::ErrorF("[LuaAwareMvvmLoader] Cannot register command '%s': baseLoader is null", commandName.c_str());
+        return;
+    }
+    
+    utils::Logger::DebugF("[LuaAwareMvvmLoader] Registering click handler for command: '%s'", commandName.c_str());
     
     m_baseLoader->RegisterClickHandler(commandName, [this, commandName]() {
+        utils::Logger::DebugF("[LuaAwareMvvmLoader] Command '%s' triggered, calling Lua function...", commandName.c_str());
         if (m_notifier) {
-            m_notifier->CallFunction(commandName);
+            bool result = m_notifier->CallFunction(commandName);
+            if (!result) {
+                utils::Logger::ErrorF("[LuaAwareMvvmLoader] Failed to execute command '%s'", commandName.c_str());
+            }
+        } else {
+            utils::Logger::ErrorF("[LuaAwareMvvmLoader] Cannot execute command '%s': notifier is null", commandName.c_str());
         }
     });
 }
