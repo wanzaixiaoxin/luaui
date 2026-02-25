@@ -42,7 +42,7 @@ std::string Trim(const std::string& str) {
 }
 
 // ============================================================================
-// XmlLoader 实现
+// XmlLoader 实现 - 支持 MVVM 数据绑定
 // ============================================================================
 class XmlLoader : public IXmlLoader {
 public:
@@ -51,6 +51,9 @@ public:
     }
     
     std::shared_ptr<luaui::Control> Load(const std::string& filePath) override {
+        // 清空之前的延迟绑定
+        m_deferredBindings.clear();
+        
         tinyxml2::XMLDocument doc;
         if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS) {
             throw XmlLayoutException("Failed to load XML file: " + filePath);
@@ -59,6 +62,9 @@ public:
     }
     
     std::shared_ptr<luaui::Control> LoadFromString(const std::string& xmlString) override {
+        // 清空之前的延迟绑定
+        m_deferredBindings.clear();
+        
         tinyxml2::XMLDocument doc;
         if (doc.Parse(xmlString.c_str()) != tinyxml2::XML_SUCCESS) {
             throw XmlLayoutException("Failed to parse XML string");
@@ -85,6 +91,12 @@ public:
         m_textChangedHandlers[methodName] = handler;
     }
     
+    // ========== MVVM 数据绑定 ==========
+    
+    std::vector<DeferredBinding> GetDeferredBindings() const override {
+        return m_deferredBindings;
+    }
+    
 protected:
     void BindEventsFromInstance(void* instance) override {
         (void)instance;
@@ -96,6 +108,9 @@ private:
     std::unordered_map<std::string, ClickHandler> m_clickHandlers;
     std::unordered_map<std::string, ValueChangedHandler> m_valueChangedHandlers;
     std::unordered_map<std::string, TextChangedHandler> m_textChangedHandlers;
+    
+    // MVVM 延迟绑定列表
+    std::vector<DeferredBinding> m_deferredBindings;
     
     void RegisterDefaultElements() {
         RegisterElement("StackPanel", []() { return std::make_shared<StackPanel>(); });
@@ -244,25 +259,52 @@ private:
             }
             // Text (TextBlock, TextBox, CheckBox, RadioButton, Button)
             else if (name == "Text") {
-                std::wstring wtext = Utf8ToWstring(value);
-                if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
-                    tb->SetText(wtext);
-                } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
-                    tx->SetText(wtext);
-                } else if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
-                    cb->SetText(wtext);
-                } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
-                    rb->SetText(wtext);
-                } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                    btn->SetText(wtext);
+                // 检查是否为绑定表达式
+                if (IsBindingExpression(value)) {
+                    // 记录延迟绑定，清空默认文本
+                    RecordDeferredBinding(control, "Text", value);
+                    std::wstring wtext = L"";
+                    if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                        tb->SetText(wtext);
+                    } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                        tx->SetText(wtext);
+                    } else if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
+                        cb->SetText(wtext);
+                    } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
+                        rb->SetText(wtext);
+                    } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetText(wtext);
+                    }
+                } else {
+                    std::wstring wtext = Utf8ToWstring(value);
+                    if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                        tb->SetText(wtext);
+                    } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                        tx->SetText(wtext);
+                    } else if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
+                        cb->SetText(wtext);
+                    } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
+                        rb->SetText(wtext);
+                    } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetText(wtext);
+                    }
                 }
             }
             // Content (Button)
             else if (name == "Content") {
-                std::wstring wtext = Utf8ToWstring(value);
-                luaui::utils::Logger::DebugF("[XML] Button Content attribute: '%s' -> wstring length=%zu", value.c_str(), wtext.length());
-                if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                    btn->SetText(wtext);
+                // 检查是否为绑定表达式
+                if (IsBindingExpression(value)) {
+                    // 记录延迟绑定，清空默认文本
+                    RecordDeferredBinding(control, "Content", value);
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetText(L"");
+                    }
+                } else {
+                    std::wstring wtext = Utf8ToWstring(value);
+                    luaui::utils::Logger::DebugF("[XML] Button Content attribute: '%s' -> wstring length=%zu", value.c_str(), wtext.length());
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetText(wtext);
+                    }
                 }
             }
             // FontSize
@@ -311,7 +353,11 @@ private:
             }
             // IsChecked (CheckBox, RadioButton)
             else if (name == "IsChecked") {
-                if (value == "True" || value == "true" || value == "1") {
+                // 检查是否为绑定表达式
+                if (IsBindingExpression(value)) {
+                    // 记录延迟绑定
+                    RecordDeferredBinding(control, "IsChecked", value);
+                } else if (value == "True" || value == "true" || value == "1") {
                     if (auto cb = std::dynamic_pointer_cast<controls::CheckBox>(control)) {
                         cb->SetIsChecked(true);
                     } else if (auto rb = std::dynamic_pointer_cast<controls::RadioButton>(control)) {
@@ -403,6 +449,31 @@ private:
                 panel->AddChild(child);
             }
         }
+    }
+    
+    // 检查是否为绑定表达式
+    bool IsBindingExpression(const std::string& value) {
+        return value.find("{Binding") == 0;
+    }
+    
+    // 记录延迟绑定
+    void RecordDeferredBinding(const std::shared_ptr<luaui::Control>& control,
+                               const std::string& propertyName,
+                               const std::string& expression) {
+        DeferredBinding binding;
+        binding.control = control;
+        binding.propertyName = propertyName;
+        binding.bindingExpression = expression;
+        m_deferredBindings.push_back(binding);
+        
+        utils::Logger::DebugF("[XML] Recorded deferred binding: %s.%s = %s",
+            control->GetTypeName().c_str(), propertyName.c_str(), expression.c_str());
+    }
+    
+    // 应用所有延迟绑定（由外部调用，如 MvvmXmlLoader）
+    void ApplyDeferredBindings() {
+        // 这个方法保留以便未来扩展，当前实现为空
+        // 延迟绑定会通过 GetDeferredBindings() 返回给调用者处理
     }
 };
 

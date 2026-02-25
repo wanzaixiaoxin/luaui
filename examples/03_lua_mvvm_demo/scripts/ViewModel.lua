@@ -66,9 +66,12 @@ end
 -- Items 相关
 -- ============================================================================
 ViewModel.Items = {}
+ViewModel.ItemCount = "Items: 0"
 
-function ViewModel:GetItemCount()
-    return string.format("Items: %d", #self.Items)
+function ViewModel:UpdateItemCount()
+    local count = #self.Items
+    self.ItemCount = string.format("Items: %d", count)
+    Log.infof("[ViewModel] ItemCount updated: %d", count)
 end
 
 function ViewModel:AddItemCommand()
@@ -77,6 +80,7 @@ function ViewModel:AddItemCommand()
         Name = "Item " .. tostring(#self.Items + 1), 
         Value = math.random(100) 
     })
+    self:UpdateItemCount()
     self:UpdateStatus()
     Log.infof("Added item, total: %d", #self.Items)
 end
@@ -84,6 +88,7 @@ end
 function ViewModel:ClearItemsCommand()
     Log.info("[ViewModel] ClearItemsCommand called")
     self.Items = {}
+    self:UpdateItemCount()
     self:UpdateStatus()
     Log.info("Items cleared")
 end

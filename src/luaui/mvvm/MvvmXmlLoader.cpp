@@ -26,55 +26,86 @@ MvvmXmlLoader::MvvmXmlLoader()
 std::shared_ptr<luaui::Control> MvvmXmlLoader::Load(const std::string& filePath) {
     utils::Logger::InfoF("[MVVM] Loading XML: %s", filePath.c_str());
     
-    // 清空之前的绑定信息
-    m_pendingBindingInfos.clear();
+    // 清空之前的待处理绑定
     m_pendingBindings.clear();
     
-    // 先扫描 XML 提取绑定表达式
-    tinyxml2::XMLDocument doc;
-    if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS) {
+    // 使用基础加载器加载控件树（会自动记录延迟绑定）
+    auto root = m_baseLoader->Load(filePath);
+    m_rootControl = root;
+    
+    if (!root) {
         utils::Logger::ErrorF("[MVVM] Failed to load XML: %s", filePath.c_str());
         return nullptr;
     }
     
-    // 提取绑定信息
-    ExtractBindings(doc.RootElement());
+    // 获取所有延迟绑定
+    auto deferredBindings = m_baseLoader->GetDeferredBindings();
+    utils::Logger::InfoF("[MVVM] Found %zu deferred bindings", deferredBindings.size());
     
-    // 使用基础加载器加载控件树
-    auto root = m_baseLoader->Load(filePath);
-    m_rootControl = root;
-    
-    // 应用绑定
-    if (root) {
-        ApplyBindingsToControl(root);
+    // 转换为待处理绑定
+    for (auto& deferred : deferredBindings) {
+        auto control = deferred.control.lock();
+        if (!control) continue;
+        
+        // 解析绑定表达式
+        auto expression = BindingEngine::Instance().ParseExpression(deferred.bindingExpression);
+        if (expression.isValid()) {
+            PendingBinding pending;
+            pending.control = deferred.control;
+            pending.propertyName = deferred.propertyName;
+            pending.expression = expression;
+            m_pendingBindings.push_back(pending);
+            
+            utils::Logger::DebugF("[MVVM] Queued binding: %s.%s -> %s",
+                control->GetTypeName().c_str(),
+                deferred.propertyName.c_str(),
+                expression.path.c_str());
+        }
     }
-    ApplyBindings();
+    
+    // 如果已有 DataContext，立即应用绑定
+    if (m_dataContext) {
+        ApplyBindings();
+    }
     
     return root;
 }
 
 std::shared_ptr<luaui::Control> MvvmXmlLoader::LoadFromString(const std::string& xmlString) {
-    // 清空之前的绑定信息
-    m_pendingBindingInfos.clear();
+    // 清空之前的待处理绑定
     m_pendingBindings.clear();
     
-    // 先扫描 XML 提取绑定表达式
-    tinyxml2::XMLDocument doc;
-    if (doc.Parse(xmlString.c_str()) != tinyxml2::XML_SUCCESS) {
+    // 使用基础加载器加载控件树
+    auto root = m_baseLoader->LoadFromString(xmlString);
+    m_rootControl = root;
+    
+    if (!root) {
         utils::Logger::Error("[MVVM] Failed to parse XML string");
         return nullptr;
     }
     
-    // 提取绑定信息
-    ExtractBindings(doc.RootElement());
+    // 获取所有延迟绑定
+    auto deferredBindings = m_baseLoader->GetDeferredBindings();
     
-    auto root = m_baseLoader->LoadFromString(xmlString);
-    m_rootControl = root;
-    
-    if (root) {
-        ApplyBindingsToControl(root);
+    // 转换为待处理绑定
+    for (auto& deferred : deferredBindings) {
+        auto control = deferred.control.lock();
+        if (!control) continue;
+        
+        auto expression = BindingEngine::Instance().ParseExpression(deferred.bindingExpression);
+        if (expression.isValid()) {
+            PendingBinding pending;
+            pending.control = deferred.control;
+            pending.propertyName = deferred.propertyName;
+            pending.expression = expression;
+            m_pendingBindings.push_back(pending);
+        }
     }
-    ApplyBindings();
+    
+    // 如果已有 DataContext，立即应用绑定
+    if (m_dataContext) {
+        ApplyBindings();
+    }
     return root;
 }
 
@@ -107,6 +138,8 @@ void MvvmXmlLoader::ExtractBindings(const tinyxml2::XMLElement* element, const s
             info.elementName = controlName;
             info.propertyName = attrName ? attrName : "";
             info.expressionString = attrValue;
+            info.controlTag = element->Name();  // 记录控件标签类型
+            info.index = static_cast<int>(m_pendingBindingInfos.size());  // 记录索引
             m_pendingBindingInfos.push_back(info);
         }
     }
@@ -197,26 +230,21 @@ void MvvmXmlLoader::ApplyBindings() {
 }
 
 // ============================================================================
-// 检查绑定表达式是否与控件严格匹配
-// 控件当前的属性值应该等于绑定表达式字符串
+// 检查绑定表达式是否与控件类型匹配
 // ============================================================================
 static bool IsBindingValidForControl(const PendingBindingInfo& bindingInfo,
                                       const std::shared_ptr<luaui::Control>& control) {
     const std::string& propertyName = bindingInfo.propertyName;
     const std::string& expressionStr = bindingInfo.expressionString;
     
-    // 获取控件当前的属性值（基础 XML 加载器设置的）
-    std::string currentValue;
+    // 根据属性名和控件类型进行匹配验证
     if (propertyName == "Text") {
-        if (auto tb = std::dynamic_pointer_cast<luaui::controls::TextBlock>(control)) {
-            auto wtext = tb->GetText();
-            currentValue = std::string(wtext.begin(), wtext.end());
-        } else if (auto tx = std::dynamic_pointer_cast<luaui::controls::TextBox>(control)) {
-            auto wtext = tx->GetText();
-            currentValue = std::string(wtext.begin(), wtext.end());
-        }
+        // Text 属性可以绑定到 TextBlock 或 TextBox
+        if (std::dynamic_pointer_cast<luaui::controls::TextBlock>(control) != nullptr) return true;
+        if (std::dynamic_pointer_cast<luaui::controls::TextBox>(control) != nullptr) return true;
+        return false;
     } else if (propertyName == "Value") {
-        // 对于数值属性，检查控件类型即可
+        // 对于数值属性，检查控件类型
         bool isSlider = std::dynamic_pointer_cast<luaui::controls::Slider>(control) != nullptr;
         bool isProgressBar = std::dynamic_pointer_cast<luaui::controls::ProgressBar>(control) != nullptr;
         
@@ -233,10 +261,12 @@ static bool IsBindingValidForControl(const PendingBindingInfo& bindingInfo,
         
         if (isCheckBox || isRadioButton) return true;
         return false;
+    } else if (propertyName == "ItemsSource") {
+        return std::dynamic_pointer_cast<luaui::controls::ListBox>(control) != nullptr;
     }
     
-    // 对于 Text 属性，当前值应该等于绑定表达式
-    return currentValue == expressionStr;
+    // 未知属性，允许绑定尝试
+    return true;
 }
 
 // ============================================================================
@@ -257,11 +287,15 @@ void MvvmXmlLoader::ApplyBindingsToControl(const std::shared_ptr<luaui::Control>
     // 然后处理当前控件
     if (m_pendingBindingInfos.empty()) return;
     
-    // 获取控件名称
+    // 获取控件名称和类型
     std::string controlName = control->GetName();
     std::string controlType = control->GetTypeName();
     
     // 查找匹配此控件的绑定信息
+    // 策略：
+    // 1. 如果控件有名称，按名称匹配
+    // 2. 如果控件没有名称，按类型匹配并使用索引确保顺序
+    
     for (auto it = m_pendingBindingInfos.begin(); it != m_pendingBindingInfos.end(); ) {
         // 检查绑定表达式是否与控件类型严格匹配
         if (!IsBindingValidForControl(*it, control)) {
@@ -269,23 +303,30 @@ void MvvmXmlLoader::ApplyBindingsToControl(const std::shared_ptr<luaui::Control>
             continue;
         }
         
-        // 如果 binding info 有指定名称，按名称匹配；否则按类型匹配
         bool match = false;
-        if (!it->elementName.empty()) {
+        
+        if (!controlName.empty() && !it->elementName.empty()) {
+            // 两个都有名称，按名称匹配
             match = (it->elementName == controlName);
-        } else {
-            // 没有名称的控件，按类型匹配（每个控件只取第一个匹配的属性）
-            match = true;
+        } else if (controlName.empty() && it->elementName.empty()) {
+            // 都没有名称，按类型匹配
+            // 检查控件类型是否与绑定的控件类型一致
+            match = (it->controlTag == controlType);
         }
+        // 其他情况（一个有名一个没名）不匹配
         
         if (match) {
             // 解析绑定表达式
             auto expression = ParseBinding(it->expressionString);
             if (expression.isValid()) {
-                utils::Logger::DebugF("[MVVM] Creating binding for %s.%s -> %s",
+                utils::Logger::DebugF("[MVVM] Creating binding for %s.%s -> %s (index=%d)",
                     controlType.c_str(),
                     it->propertyName.c_str(),
-                    expression.path.c_str());
+                    expression.path.c_str(),
+                    it->index);
+                
+                // 清空原始的绑定表达式文本，避免显示 {Binding XXX}
+                ClearBindingExpressionText(control, it->propertyName);
                 
                 // 如果已有 DataContext，立即创建绑定
                 if (m_dataContext) {
@@ -300,10 +341,27 @@ void MvvmXmlLoader::ApplyBindingsToControl(const std::shared_ptr<luaui::Control>
                 }
             }
             
-            // 移除已处理的绑定信息，继续处理下一个匹配项
+            // 移除已处理的绑定信息
             it = m_pendingBindingInfos.erase(it);
+            return;  // 一个控件只处理一个绑定
         } else {
             ++it;
+        }
+    }
+}
+
+// 清空绑定表达式文本，避免显示 {Binding XXX}
+void MvvmXmlLoader::ClearBindingExpressionText(const std::shared_ptr<luaui::Control>& control,
+                                                const std::string& propertyName) {
+    // 对于 TextBlock，如果当前文本是绑定表达式，清空它
+    if (auto textBlock = std::dynamic_pointer_cast<luaui::controls::TextBlock>(control)) {
+        if (propertyName == "Text") {
+            std::wstring currentText = textBlock->GetText();
+            std::wstring bindingPrefix = L"{Binding ";
+            if (currentText.find(bindingPrefix) != std::wstring::npos || 
+                currentText.find(L"{") != std::wstring::npos) {
+                textBlock->SetText(L"");
+            }
         }
     }
 }
@@ -398,8 +456,12 @@ void MvvmXmlLoader::BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> te
         std::any value = dataContext->GetPropertyValue(boundPropertyName);
         
         if (!value.has_value()) {
+            utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') returned empty", boundPropertyName.c_str());
             return;
         }
+        
+        utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') success, type=%s", 
+            boundPropertyName.c_str(), value.type().name());
         
         // 应用转换器
         if (converter) {
@@ -410,21 +472,30 @@ void MvvmXmlLoader::BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> te
         try {
             if (value.type() == typeid(std::string)) {
                 std::string str = std::any_cast<std::string>(value);
+                utils::Logger::DebugF("[MVVM] Setting TextBlock text to: %s", str.c_str());
                 textBlock->SetText(std::wstring(str.begin(), str.end()));
             } else if (value.type() == typeid(std::wstring)) {
-                textBlock->SetText(std::any_cast<std::wstring>(value));
+                std::wstring str = std::any_cast<std::wstring>(value);
+                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (wstring)");
+                textBlock->SetText(str);
             } else if (value.type() == typeid(double)) {
                 double val = std::any_cast<double>(value);
+                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (double): %f", val);
                 textBlock->SetText(std::to_wstring(val));
             } else if (value.type() == typeid(int)) {
                 int val = std::any_cast<int>(value);
+                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (int): %d", val);
                 textBlock->SetText(std::to_wstring(val));
             } else if (value.type() == typeid(bool)) {
                 bool val = std::any_cast<bool>(value);
+                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (bool): %s", val ? "true" : "false");
                 textBlock->SetText(val ? L"True" : L"False");
+            } else {
+                utils::Logger::DebugF("[MVVM] Unknown value type: %s", value.type().name());
             }
         } catch (...) {
             // 忽略转换错误
+            utils::Logger::Debug("[MVVM] Exception in SetText");
         }
     };
     

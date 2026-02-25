@@ -18,7 +18,12 @@ static const char* AUTO_VIEWMODEL_FRAMEWORK = R"LUAFW(
 -- 提供自动属性通知、批量更新、计算属性等功能
 
 local AutoViewModel = {}
-AutoViewModel.__index = AutoViewModel
+-- __index 设为函数，优先从 _data 表中查找动态属性
+AutoViewModel.__index = function(t, k)
+    local v = rawget(t._data, k)
+    if v ~= nil then return v end
+    return AutoViewModel[k]
+end
 
 function AutoViewModel.new()
     local self = setmetatable({}, AutoViewModel)
@@ -34,6 +39,10 @@ function AutoViewModel:EnableAutoNotify()
     local proxy = {}
     local mt = {
         __index = function(t, k)
+            -- 特殊处理 _data 访问，返回原始表的 _data（供 C++ 层直接访问）
+            if k == "_data" then
+                return selfRef._data
+            end
             local v = rawget(selfRef._data, k)
             if v ~= nil then return v end
             v = rawget(selfRef, k)
@@ -43,13 +52,17 @@ function AutoViewModel:EnableAutoNotify()
         __newindex = function(t, k, v)
             local oldValue = rawget(selfRef._data, k)
             if oldValue ~= v then
+                Log.debug("[__newindex] Setting '" .. tostring(k) .. "': " .. tostring(oldValue) .. " -> " .. tostring(v))
                 rawset(selfRef._data, k, v)
+                Log.debug("[__newindex] Notifying computed change for '" .. tostring(k) .. "'")
                 selfRef:_notifyComputedChange(k)
                 if selfRef._batchMode then
                     selfRef._pendingNotifications[k] = true
                 else
                     selfRef:_notifyChange(k)
                 end
+            else
+                Log.debug("[__newindex] Value unchanged for '" .. tostring(k) .. "': " .. tostring(v))
             end
         end
     }
@@ -64,10 +77,12 @@ function AutoViewModel:_notifyChange(propertyName)
 end
 
 function AutoViewModel:_notifyComputedChange(changedProperty)
+    Log.debug("[_notifyComputedChange] Property changed: " .. tostring(changedProperty))
     for name, computed in pairs(self._computed) do
         for _, dep in ipairs(computed.deps) do
             if dep == changedProperty then
                 local newValue = computed.fn(self)
+                Log.debug("[_notifyComputedChange] Recalculating '" .. name .. "': " .. tostring(newValue))
                 rawset(self._data, name, newValue)
                 if self._batchMode then
                     self._pendingNotifications[name] = true

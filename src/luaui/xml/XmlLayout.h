@@ -6,6 +6,7 @@
 #include <functional>
 #include <unordered_map>
 #include <any>
+#include <vector>
 
 namespace luaui {
 namespace xml {
@@ -20,7 +21,16 @@ using ValueChangedHandler = std::function<void(double)>;
 using TextChangedHandler = std::function<void(const std::wstring&)>;
 
 // ============================================================================
-// IXmlLoader - XML 布局加载器接口（支持声明式事件绑定）
+// 延迟绑定信息 - XML 解析时记录，等待外部处理
+// ============================================================================
+struct DeferredBinding {
+    std::weak_ptr<Control> control;
+    std::string propertyName;
+    std::string bindingExpression;
+};
+
+// ============================================================================
+// IXmlLoader - XML 布局加载器接口（支持声明式事件和数据绑定）
 // ============================================================================
 class IXmlLoader {
 public:
@@ -53,6 +63,11 @@ public:
         // 这个模板方法在头文件中实现，允许自动绑定
         BindEventsFromInstance(instance);
     }
+    
+    // ========== MVVM 数据绑定 ==========
+    
+    // 获取所有延迟绑定（供外部处理，通常由 MvvmXmlLoader 使用）
+    virtual std::vector<DeferredBinding> GetDeferredBindings() const = 0;
     
 protected:
     // 子类需要实现的内部方法

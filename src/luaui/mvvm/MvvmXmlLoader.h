@@ -28,6 +28,8 @@ struct PendingBindingInfo {
     std::string elementName;        // 控件名称（如果有）
     std::string propertyName;       // 属性名
     std::string expressionString;   // 原始绑定表达式字符串
+    std::string controlTag;         // 控件标签类型（如 TextBlock）
+    int index = -1;                 // 在绑定列表中的索引（用于按顺序匹配）
 };
 
 // ============================================================================
@@ -49,6 +51,9 @@ public:
                                      std::function<void(double)> handler) override;
     void RegisterTextChangedHandler(const std::string& methodName, 
                                     std::function<void(const std::wstring&)> handler) override;
+    
+    // 获取延迟绑定（实现 IXmlLoader 接口）
+    std::vector<xml::DeferredBinding> GetDeferredBindings() const override { return {}; }
     
     // ========== MVVM 扩展 ==========
     
@@ -91,6 +96,10 @@ private:
     void CreateBinding(const std::shared_ptr<luaui::Control>& control,
                        const std::string& propertyName,
                        const BindingExpression& expression);
+    
+    // 清空绑定表达式文本
+    void ClearBindingExpressionText(const std::shared_ptr<luaui::Control>& control,
+                                    const std::string& propertyName);
     
     // 控件特定的绑定创建
     void BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> textBlock,

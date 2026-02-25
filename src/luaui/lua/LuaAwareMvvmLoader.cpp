@@ -52,22 +52,92 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
+        utils::Logger::WarningF("[Lua] GetPropertyValue '%s': ViewModel is not a table (type=%s)", 
+            name.c_str(), lua_typename(m_L, lua_type(m_L, -1)));
         lua_pop(m_L, 1);
         return {};
     }
     
-    lua_getfield(m_L, -1, name.c_str());
     std::any result;
     
-    if (lua_isstring(m_L, -1)) {
-        result = std::string(lua_tostring(m_L, -1));
-    } else if (lua_isnumber(m_L, -1)) {
-        result = lua_tonumber(m_L, -1);
-    } else if (lua_isboolean(m_L, -1)) {
-        result = static_cast<bool>(lua_toboolean(m_L, -1));
+    // 首先尝试直接获取（处理非代理表或原始表）
+    lua_getfield(m_L, -1, name.c_str());
+    if (!lua_isnil(m_L, -1)) {
+        // 直接找到了
+        if (lua_isstring(m_L, -1)) {
+            result = std::string(lua_tostring(m_L, -1));
+        } else if (lua_isnumber(m_L, -1)) {
+            result = lua_tonumber(m_L, -1);
+        } else if (lua_isboolean(m_L, -1)) {
+            result = static_cast<bool>(lua_toboolean(m_L, -1));
+        }
+        lua_pop(m_L, 2);  // Pop value + ViewModel
+        return result;
+    }
+    lua_pop(m_L, 1);  // Pop nil
+    
+    // 尝试调用 __index 元方法（处理代理表）
+    lua_getmetatable(m_L, -1);
+    if (!lua_istable(m_L, -1)) {
+        lua_pop(m_L, 1);  // Pop metatable (nil)
+        lua_pop(m_L, 1);  // Pop ViewModel
+        return result;
     }
     
-    lua_pop(m_L, 2);
+    lua_getfield(m_L, -1, "__index");
+    int indexType = lua_type(m_L, -1);
+    
+    if (indexType == LUA_TFUNCTION) {
+        // __index 是函数，调用它: __index(viewModel, name)
+        lua_pushvalue(m_L, -3);  // Push ViewModel (第一个参数 self) - 注意此时栈: [ViewModel, metatable, __index, ViewModel]
+        lua_pushstring(m_L, name.c_str());  // Push 属性名 (第二个参数 key)
+        
+        utils::Logger::DebugF("[Lua] GetPropertyValue '%s': calling __index function", name.c_str());
+        int status = lua_pcall(m_L, 2, 1, 0);  // 安全调用
+        
+        if (status == LUA_OK) {
+            if (lua_isstring(m_L, -1)) {
+                result = std::string(lua_tostring(m_L, -1));
+            } else if (lua_isnumber(m_L, -1)) {
+                result = lua_tonumber(m_L, -1);
+            } else if (lua_isboolean(m_L, -1)) {
+                result = static_cast<bool>(lua_toboolean(m_L, -1));
+            }
+            lua_pop(m_L, 1);  // Pop 返回值, 栈: [ViewModel, metatable]
+        } else {
+            const char* error = lua_tostring(m_L, -1);
+            utils::Logger::ErrorF("[Lua] GetPropertyValue '%s': __index error: %s", 
+                name.c_str(), error ? error : "unknown");
+            lua_pop(m_L, 1);  // Pop 错误, 栈: [ViewModel, metatable]
+        }
+        lua_pop(m_L, 1);  // Pop metatable, 栈: [ViewModel]
+    } else if (indexType == LUA_TTABLE) {
+        // __index 是表，直接查找
+        lua_getfield(m_L, -1, name.c_str());
+        if (lua_isstring(m_L, -1)) {
+            result = std::string(lua_tostring(m_L, -1));
+        } else if (lua_isnumber(m_L, -1)) {
+            result = lua_tonumber(m_L, -1);
+        } else if (lua_isboolean(m_L, -1)) {
+            result = static_cast<bool>(lua_toboolean(m_L, -1));
+        }
+        lua_pop(m_L, 1);  // Pop value, 栈: [ViewModel, metatable, __index]
+        lua_pop(m_L, 1);  // Pop __index table, 栈: [ViewModel, metatable]
+        lua_pop(m_L, 1);  // Pop metatable, 栈: [ViewModel]
+    } else {
+        // __index 不是函数也不是表
+        utils::Logger::DebugF("[Lua] GetPropertyValue '%s': __index is not function or table (type=%s)", 
+            name.c_str(), lua_typename(m_L, indexType));
+        lua_pop(m_L, 1);  // Pop __index, 栈: [ViewModel, metatable]
+        lua_pop(m_L, 1);  // Pop metatable, 栈: [ViewModel]
+    }
+    
+    lua_pop(m_L, 1);  // Pop ViewModel
+    
+    if (!result.has_value()) {
+        utils::Logger::DebugF("[Lua] GetPropertyValue '%s': value not found", name.c_str());
+    }
+    
     return result;
 }
 
@@ -76,6 +146,7 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
+        utils::Logger::ErrorF("[Lua] SetPropertyValue '%s': ViewModel is not a table", name.c_str());
         lua_pop(m_L, 1);
         return;
     }
@@ -94,7 +165,9 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
             return;
         }
         
+        utils::Logger::DebugF("[Lua] Setting property '%s' in ViewModel", name.c_str());
         lua_setfield(m_L, -2, name.c_str());
+        utils::Logger::DebugF("[Lua] Property '%s' set successfully", name.c_str());
     } catch (...) {
         // Ignore conversion errors
     }
@@ -102,13 +175,9 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     lua_pop(m_L, 1);
     NotifyPropertyChanged(name);
     
-    // Special handling: if IsFeatureEnabled changed, call UpdateStatus
-    if (name == "IsFeatureEnabled") {
-        utils::Logger::Debug("[Lua] IsFeatureEnabled changed, calling UpdateStatus");
-        bool result = CallFunction("UpdateStatus");
-        utils::Logger::DebugF("[Lua] UpdateStatus call result: %s", result ? "success" : "failed");
-        NotifyPropertyChanged("FeatureStatusText");
-    }
+    // Note: FeatureStatusText is a computed property in Lua
+    // Lua's _notifyComputedChange handles the notification automatically
+    // when IsFeatureEnabled changes, no need to manually notify here
 }
 
 bool LuaPropertyNotifier::CallFunction(const std::string& name) {
