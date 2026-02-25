@@ -5,6 +5,7 @@
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
+#include <windows.h> // For VK_ constants
 
 namespace luaui {
 namespace controls {
@@ -532,6 +533,206 @@ void TreeView::ScrollToItem(const std::shared_ptr<TreeViewItem>& item) {
     (void)item;
     // 计算目标项的 Y 位置并调整滚动偏移
     // 简化实现
+}
+
+// ============================================================================
+// 键盘导航
+// ============================================================================
+void TreeView::OnKeyDown(KeyEventArgs& args) {
+    switch (args.keyCode) {
+        case VK_UP:
+            NavigateUp();
+            args.Handled = true;
+            break;
+        case VK_DOWN:
+            NavigateDown();
+            args.Handled = true;
+            break;
+        case VK_LEFT:
+            NavigateLeft();
+            args.Handled = true;
+            break;
+        case VK_RIGHT:
+            NavigateRight();
+            args.Handled = true;
+            break;
+        case VK_RETURN:
+            SelectCurrent();
+            args.Handled = true;
+            break;
+        case VK_SPACE:
+            ToggleCurrent();
+            args.Handled = true;
+            break;
+        case VK_HOME:
+            // 选中第一项
+            if (!m_roots.empty()) {
+                SetSelectedItem(m_roots[0]);
+            }
+            args.Handled = true;
+            break;
+        case VK_END:
+            // 选中最后一项（递归找到最后一个可见项）
+            if (!m_roots.empty()) {
+                SetSelectedItem(GetLastVisibleItem());
+            }
+            args.Handled = true;
+            break;
+    }
+}
+
+void TreeView::NavigateUp() {
+    auto current = m_selectedItem.lock();
+    if (!current) {
+        // 没有选中项，选中最后一项
+        if (!m_roots.empty()) {
+            SetSelectedItem(GetLastVisibleItem());
+        }
+        return;
+    }
+    
+    auto prev = GetPreviousVisibleItem(current);
+    if (prev) {
+        SetSelectedItem(prev);
+    }
+}
+
+void TreeView::NavigateDown() {
+    auto current = m_selectedItem.lock();
+    if (!current) {
+        // 没有选中项，选中第一项
+        if (!m_roots.empty()) {
+            SetSelectedItem(m_roots[0]);
+        }
+        return;
+    }
+    
+    auto next = GetNextVisibleItem(current);
+    if (next) {
+        SetSelectedItem(next);
+    }
+}
+
+void TreeView::NavigateLeft() {
+    auto current = m_selectedItem.lock();
+    if (!current) return;
+    
+    if (current->GetIsExpanded() && current->GetHasItems()) {
+        // 已展开，折叠它
+        current->SetIsExpanded(false);
+    } else {
+        // 已折叠或没有子项，移动到父节点
+        auto parent = current->GetParentItem();
+        if (parent) {
+            SetSelectedItem(parent);
+        }
+    }
+}
+
+void TreeView::NavigateRight() {
+    auto current = m_selectedItem.lock();
+    if (!current) return;
+    
+    if (!current->GetIsExpanded() && current->GetHasItems()) {
+        // 未展开，展开它
+        current->SetIsExpanded(true);
+    } else if (current->GetIsExpanded() && current->GetHasItems()) {
+        // 已展开，移动到第一个子节点
+        SetSelectedItem(current->GetChildren()[0]);
+    }
+}
+
+void TreeView::SelectCurrent() {
+    auto current = m_selectedItem.lock();
+    if (current) {
+        SelectedItemChanged.Invoke(this, current.get());
+    }
+}
+
+void TreeView::ToggleCurrent() {
+    auto current = m_selectedItem.lock();
+    if (current && current->GetHasItems()) {
+        current->ToggleExpand();
+    }
+}
+
+// 辅助函数：获取下一个可见项
+std::shared_ptr<TreeViewItem> TreeView::GetNextVisibleItem(const std::shared_ptr<TreeViewItem>& item) {
+    if (!item) return nullptr;
+    
+    // 如果有子项且已展开，返回第一个子项
+    if (item->GetIsExpanded() && item->GetHasItems()) {
+        return item->GetChildren()[0];
+    }
+    
+    // 向上查找兄弟或叔伯
+    auto current = item;
+    while (current) {
+        auto parent = current->GetParentItem();
+        if (parent) {
+            // 找下一个兄弟
+            const auto& siblings = parent->GetChildren();
+            for (size_t i = 0; i < siblings.size(); ++i) {
+                if (siblings[i] == current && i + 1 < siblings.size()) {
+                    return siblings[i + 1];
+                }
+            }
+            // 没有下一个兄弟，继续向上
+            current = parent;
+        } else {
+            // 根节点，找下一个根
+            for (size_t i = 0; i < m_roots.size(); ++i) {
+                if (m_roots[i] == current && i + 1 < m_roots.size()) {
+                    return m_roots[i + 1];
+                }
+            }
+            break;
+        }
+    }
+    return nullptr;
+}
+
+// 辅助函数：获取上一个可见项
+std::shared_ptr<TreeViewItem> TreeView::GetPreviousVisibleItem(const std::shared_ptr<TreeViewItem>& item) {
+    if (!item) return nullptr;
+    
+    auto parent = item->GetParentItem();
+    if (parent) {
+        // 找前一个兄弟
+        const auto& siblings = parent->GetChildren();
+        for (size_t i = 0; i < siblings.size(); ++i) {
+            if (siblings[i] == item && i > 0) {
+                // 返回前一个兄弟的最后一个可见后代
+                return GetLastVisibleDescendant(siblings[i - 1]);
+            }
+        }
+        // 没有前一个兄弟，返回父节点
+        return parent;
+    } else {
+        // 根节点，找前一个根
+        for (size_t i = 0; i < m_roots.size(); ++i) {
+            if (m_roots[i] == item && i > 0) {
+                return GetLastVisibleDescendant(m_roots[i - 1]);
+            }
+        }
+    }
+    return nullptr;
+}
+
+// 辅助函数：获取最后一个可见项
+std::shared_ptr<TreeViewItem> TreeView::GetLastVisibleItem() {
+    if (m_roots.empty()) return nullptr;
+    return GetLastVisibleDescendant(m_roots.back());
+}
+
+// 辅助函数：获取最后一个可见后代
+std::shared_ptr<TreeViewItem> TreeView::GetLastVisibleDescendant(const std::shared_ptr<TreeViewItem>& item) {
+    if (!item) return nullptr;
+    
+    if (item->GetIsExpanded() && item->GetHasItems()) {
+        return GetLastVisibleDescendant(item->GetChildren().back());
+    }
+    return item;
 }
 
 } // namespace controls

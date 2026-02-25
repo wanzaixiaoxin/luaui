@@ -72,11 +72,19 @@ bool D2DRenderEngine::Initialize(RenderAPI api) {
     // Create render context
     m_context = std::make_unique<D2DRenderContext>();
     
+    // Create resource cache
+    m_resourceCache = std::make_unique<ResourceCache>(m_context.get());
+    
     m_initialized = true;
     return true;
 }
 
 void D2DRenderEngine::Shutdown() {
+    // Clear resource cache before context
+    if (m_resourceCache) {
+        m_resourceCache->ClearAll();
+        m_resourceCache.reset();
+    }
     m_context.reset();
     DiscardDeviceResources();
     
@@ -246,16 +254,37 @@ void D2DRenderEngine::EnableStats(bool enable) {
 }
 
 void D2DRenderEngine::SetResourceCacheSize(size_t maxBytes) {
-    (void)maxBytes;
-    // TODO: Implement resource cache
+    m_maxCacheBytes = maxBytes;
+    // If current cache exceeds limit, trim it
+    if (m_resourceCache) {
+        size_t currentSize = (m_resourceCache->GetBrushCacheSize() + m_resourceCache->GetTextFormatCacheSize()) * 1024;
+        if (currentSize > m_maxCacheBytes) {
+            TrimResourceCache();
+        }
+    }
 }
 
 void D2DRenderEngine::ClearResourceCache() {
-    // TODO: Implement resource cache
+    if (m_resourceCache) {
+        m_resourceCache->ClearAll();
+    }
 }
 
 void D2DRenderEngine::TrimResourceCache() {
-    // TODO: Implement resource cache
+    if (!m_resourceCache) return;
+    
+    // Simple LRU-like strategy: clear half of the cache when trimming
+    // For now, just clear text formats first (they're cheaper to recreate)
+    size_t textFormatCount = m_resourceCache->GetTextFormatCacheSize();
+    if (textFormatCount > 10) {
+        m_resourceCache->ClearTextFormats();
+    }
+    
+    // If still over limit, clear brushes too
+    size_t brushCount = m_resourceCache->GetBrushCacheSize();
+    if (brushCount > 50) {
+        m_resourceCache->ClearBrushes();
+    }
 }
 
 bool D2DRenderEngine::IsDeviceLost() const {

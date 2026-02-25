@@ -83,6 +83,42 @@ void DataGridCell::SetIsEditing(bool editing) {
     if (m_isEditing != editing) {
         m_isEditing = editing;
         UpdateVisualState();
+        
+        if (m_row && m_row->GetDataGrid()) {
+            auto* grid = m_row->GetDataGrid();
+            int rowIndex = grid->GetRowIndex(m_row);
+            int colIndex = m_row->GetCellIndex(this);
+            
+            if (editing) {
+                // 开始编辑
+                grid->CellBeginEdit.Invoke(grid, this, rowIndex, colIndex, m_text);
+            } else {
+                // 结束编辑
+                grid->CellEndEdit.Invoke(grid, this, rowIndex, colIndex, m_text);
+            }
+        }
+    }
+}
+
+void DataGridCell::BeginEdit() {
+    // 检查列是否可编辑
+    if (m_column && m_column->GetIsReadOnly()) return;
+    if (m_row && m_row->GetDataGrid() && m_row->GetDataGrid()->GetIsReadOnly()) return;
+    
+    SetIsEditing(true);
+    
+    // 触发编辑事件，让外部可以显示编辑控件
+    EditCommitted.Invoke(this, m_text, false);
+}
+
+void DataGridCell::EndEdit(bool commit) {
+    if (!m_isEditing) return;
+    
+    SetIsEditing(false);
+    
+    if (commit) {
+        // 提交编辑
+        EditCommitted.Invoke(this, m_text, true);
     }
 }
 
@@ -106,6 +142,11 @@ void DataGridCell::OnClick() {
     if (m_row && m_row->GetDataGrid()) {
         m_row->GetDataGrid()->OnCellClicked(this);
     }
+}
+
+void DataGridCell::OnDoubleClick() {
+    // 双击进入编辑模式
+    BeginEdit();
 }
 
 rendering::Size DataGridCell::OnMeasure(const rendering::Size& availableSize) {
@@ -180,6 +221,15 @@ std::shared_ptr<DataGridCell> DataGridRow::GetCell(size_t index) {
         return m_cells[index];
     }
     return nullptr;
+}
+
+int DataGridRow::GetCellIndex(DataGridCell* cell) const {
+    for (size_t i = 0; i < m_cells.size(); ++i) {
+        if (m_cells[i].get() == cell) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
 }
 
 void DataGridRow::SetIsSelected(bool selected) {
@@ -695,6 +745,27 @@ void DataGrid::OnMouseDown(MouseEventArgs& args) {
     }
     
     args.Handled = true;
+}
+
+int DataGrid::GetRowIndex(DataGridRow* row) const {
+    for (size_t i = 0; i < m_rows.size(); ++i) {
+        if (m_rows[i].get() == row) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+int DataGrid::GetCellIndex(DataGridCell* cell) const {
+    if (!cell || !cell->GetRow()) return -1;
+    
+    auto* row = cell->GetRow();
+    for (size_t i = 0; i < row->GetCellCount(); ++i) {
+        if (row->GetCell(i).get() == cell) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
 }
 
 } // namespace controls

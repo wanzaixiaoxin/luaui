@@ -2,6 +2,7 @@
 
 #include "IRenderEngine.h"
 #include "D2DRenderContext.h"
+#include "ResourceCache.h"
 #include <d2d1.h>
 #include <dwrite.h>
 #include <wincodec.h>
@@ -98,6 +99,10 @@ private:
     
     // Render context
     std::unique_ptr<D2DRenderContext> m_context;
+    
+    // Resource cache
+    std::unique_ptr<ResourceCache> m_resourceCache;
+    size_t m_maxCacheBytes = 64 * 1024 * 1024; // 64MB default
     
     // Stats
     FrameStats m_stats;

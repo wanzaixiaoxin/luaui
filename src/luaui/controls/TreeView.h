@@ -184,6 +184,15 @@ protected:
     // 输入处理
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
+    void OnKeyDown(KeyEventArgs& args) override;
+    
+    // 键盘导航
+    void NavigateUp();      // 向上移动选中项
+    void NavigateDown();    // 向下移动选中项
+    void NavigateLeft();    // 折叠节点或移动到父节点
+    void NavigateRight();   // 展开节点或移动到第一个子节点
+    void SelectCurrent();   // 确认选择（Enter键）
+    void ToggleCurrent();   // 展开/折叠当前节点（Space键）
 
 private:
     friend class TreeViewItem;
@@ -205,6 +214,12 @@ private:
     // 展开/折叠所有（递归）
     void ExpandAllRecursive(const std::vector<std::shared_ptr<TreeViewItem>>& items);
     void CollapseAllRecursive(const std::vector<std::shared_ptr<TreeViewItem>>& items);
+    
+    // 键盘导航辅助函数
+    std::shared_ptr<TreeViewItem> GetNextVisibleItem(const std::shared_ptr<TreeViewItem>& item);
+    std::shared_ptr<TreeViewItem> GetPreviousVisibleItem(const std::shared_ptr<TreeViewItem>& item);
+    std::shared_ptr<TreeViewItem> GetLastVisibleItem();
+    std::shared_ptr<TreeViewItem> GetLastVisibleDescendant(const std::shared_ptr<TreeViewItem>& item);
     
     std::vector<std::shared_ptr<TreeViewItem>> m_roots;
     std::weak_ptr<TreeViewItem> m_selectedItem;

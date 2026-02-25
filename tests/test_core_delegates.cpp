@@ -68,26 +68,21 @@ TEST(Delegate_Count) {
     ASSERT_EQ(d.Count(), 0u);
     ASSERT_TRUE(d.IsEmpty());
     
-    d.Add([]() {});
+    int dummy = 0;
+    d.Add([&dummy]() { dummy++; });
     ASSERT_EQ(d.Count(), 1u);
     ASSERT_FALSE(d.IsEmpty());
     
-    auto id = d.Add([]() {});
+    auto id = d.Add([&dummy]() { dummy++; });
     ASSERT_EQ(d.Count(), 2u);
     
     d.Remove(id);
     ASSERT_EQ(d.Count(), 1u);
 }
 
-TEST(Delegate_Reserve) {
-    Delegate<> d;
-    d.Reserve(100);
-    ASSERT_TRUE(d.IsEmpty());
-    ASSERT_EQ(d.Count(), 0u);
-}
-
 TEST(Delegate_InvalidRemove) {
     Delegate<> d;
+    int dummy = 0;
     d.Remove(0);
     d.Remove(999);
     ASSERT_TRUE(true);

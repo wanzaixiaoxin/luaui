@@ -110,6 +110,15 @@ public:
     bool GetIsEditing() const { return m_isEditing; }
     void SetIsEditing(bool editing);
     
+    // 开始编辑（双击或F2）
+    void BeginEdit();
+    
+    // 结束编辑（Enter确认，Escape取消）
+    void EndEdit(bool commit);
+    
+    // 编辑完成事件 - 参数：单元格, 新值, 是否确认
+    luaui::Delegate<DataGridCell*, const std::wstring&, bool> EditCommitted;
+    
     // Hover state (for internal use)
     void SetIsHovered(bool hovered) { m_isHovered = hovered; }
 
@@ -121,6 +130,7 @@ protected:
     void OnMouseEnter() override;
     void OnMouseLeave() override;
     void OnClick() override;
+    void OnDoubleClick();
 
 private:
     void UpdateVisualState();
@@ -165,6 +175,7 @@ public:
     void ClearCells();
     size_t GetCellCount() const { return m_cells.size(); }
     std::shared_ptr<DataGridCell> GetCell(size_t index);
+    int GetCellIndex(DataGridCell* cell) const;
     
     // 是否选中
     bool GetIsSelected() const { return m_isSelected; }
@@ -253,6 +264,8 @@ public:
     void RemoveRow(const std::shared_ptr<DataGridRow>& row);
     void ClearRows();
     std::shared_ptr<DataGridRow> GetRow(size_t index);
+    int GetRowIndex(DataGridRow* row) const;  // 获取行索引
+    int GetCellIndex(DataGridCell* cell) const; // 获取单元格列索引
     
     // 选中
     SelectionMode GetSelectionMode() const { return m_selectionMode; }
@@ -268,6 +281,10 @@ public:
     luaui::Delegate<DataGrid*, DataGridRow*> SelectionChanged;
     luaui::Delegate<DataGrid*, DataGridCell*> CellClick;
     luaui::Delegate<DataGrid*, DataGridColumn*> ColumnHeaderClick;
+    
+    // 单元格编辑事件 - 参数：DataGrid, 单元格, 行索引, 列索引, 新值
+    luaui::Delegate<DataGrid*, DataGridCell*, int, int, const std::wstring&> CellBeginEdit;
+    luaui::Delegate<DataGrid*, DataGridCell*, int, int, const std::wstring&> CellEndEdit;
     
     // 外观
     bool GetAutoGenerateColumns() const { return m_autoGenerateColumns; }

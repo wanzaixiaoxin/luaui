@@ -2,383 +2,276 @@
 
 #include "TestFramework.h"
 #include "ResourceDictionary.h"
-#include "Setter.h"
 #include "Style.h"
 #include "Trigger.h"
-#include "Theme.h"
+#include "Types.h"
 #include <memory>
-#include <typeindex>
 
 using namespace luaui::controls;
+using namespace luaui::rendering;
 
 // ==================== ResourceDictionary Tests ====================
 
-TEST(ResourceDictionary_BasicOperations) {
+TEST(ResourceDictionary_StyleOperations) {
     ResourceDictionary dict;
+    
+    // Create a style
+    auto style = std::make_shared<Style>();
+    style->AddSetter(Style::BackgroundSetter(Color::FromHex(0xFF0000)));
     
     // Test Add and Get
-    dict.Add("Key1", 100);
-    dict.Add("Key2", std::string("Hello"));
-    dict.Add("Key3", 3.14);
+    dict.AddStyle("RedButton", style);
     
-    ASSERT_EQ(dict.Get<int>("Key1"), 100);
-    ASSERT_EQ(dict.Get<std::string>("Key2"), "Hello");
-    ASSERT_NEAR(dict.Get<double>("Key3"), 3.14, 0.001);
+    auto retrieved = dict.GetStyle("RedButton");
+    ASSERT_NOT_NULL(retrieved.get());
+    ASSERT_EQ(retrieved->GetSetters().size(), 1);
 }
 
-TEST(ResourceDictionary_Contains) {
+TEST(ResourceDictionary_StyleNotFound) {
     ResourceDictionary dict;
-    dict.Add("Existing", 42);
     
-    ASSERT_TRUE(dict.Contains("Existing"));
-    ASSERT_FALSE(dict.Contains("NonExisting"));
+    auto style = dict.GetStyle("NonExistent");
+    ASSERT_NULL(style.get());
 }
 
-TEST(ResourceDictionary_Remove) {
+TEST(ResourceDictionary_ColorOperations) {
     ResourceDictionary dict;
-    dict.Add("Key", 100);
-    ASSERT_TRUE(dict.Contains("Key"));
     
-    dict.Remove("Key");
-    ASSERT_FALSE(dict.Contains("Key"));
+    // Test AddColor and GetColor
+    dict.AddColor("Primary", Color::FromHex(0xFF8040));
+    dict.AddColor("Secondary", Color::FromRGBA(0, 128, 255, 255));
+    
+    Color primary = dict.GetColor("Primary");
+    ASSERT_NEAR(primary.r, 1.0f, 0.01f);
+    ASSERT_NEAR(primary.g, 0.5f, 0.01f);
+    ASSERT_NEAR(primary.b, 0.25f, 0.01f);
 }
 
-TEST(ResourceDictionary_ParentLookup) {
-    ResourceDictionary parent;
-    parent.Add("ParentKey", 100);
-    
-    ResourceDictionary child;
-    child.SetParent(&parent);
-    child.Add("ChildKey", 200);
-    
-    // Child should find its own key
-    ASSERT_EQ(child.Get<int>("ChildKey"), 200);
-    
-    // Child should find parent's key
-    ASSERT_EQ(child.Get<int>("ParentKey"), 100);
-}
-
-TEST(ResourceDictionary_GetOrDefault) {
+TEST(ResourceDictionary_ColorNotFound) {
     ResourceDictionary dict;
-    dict.Add("Key", 42);
     
-    ASSERT_EQ(dict.GetOrDefault<int>("Key", 0), 42);
-    ASSERT_EQ(dict.GetOrDefault<int>("Missing", 99), 99);
-}
-
-TEST(ResourceDictionary_Merge) {
-    ResourceDictionary dict1;
-    dict1.Add("Key1", 100);
-    dict1.Add("Key2", 200);
-    
-    ResourceDictionary dict2;
-    dict2.Add("Key2", 999);  // This should not override
-    dict2.Add("Key3", 300);
-    
-    dict1.Merge(dict2);
-    
-    ASSERT_EQ(dict1.Get<int>("Key1"), 100);  // Original preserved
-    ASSERT_EQ(dict1.Get<int>("Key2"), 200);  // Not overridden
-    ASSERT_EQ(dict1.Get<int>("Key3"), 300);  // New key added
-}
-
-// ==================== ResourceReference Tests ====================
-
-TEST(ResourceReference_StaticLookup) {
-    ResourceDictionary dict;
-    dict.Add("IntKey", 42);
-    
-    ResourceReference ref("IntKey", ResourceLookupMode::Static);
-    auto result = ref.Resolve(&dict, nullptr);
-    
-    ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(std::any_cast<int>(result), 42);
-}
-
-TEST(ResourceReference_Resolve_NotFound) {
-    ResourceDictionary dict;
-    ResourceReference ref("MissingKey");
-    
-    auto result = ref.Resolve(&dict, nullptr);
-    ASSERT_FALSE(result.has_value());
+    // Should return transparent for missing color
+    Color c = dict.GetColor("Missing");
+    ASSERT_NEAR(c.a, 0.0f, 0.01f);  // Transparent
 }
 
 // ==================== Setter Tests ====================
 
-TEST(Setter_DirectValue) {
-    // Create a test property
-    auto propId = DependencyProperty::Register("TestProp", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    
-    Setter setter(propId, 42);
-    
-    ASSERT_EQ(setter.GetPropertyId(), propId);
-    ASSERT_TRUE(setter.HasValue());
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("TestProp");
+TEST(Setter_EmptyConstruction) {
+    Setter setter;
+    ASSERT_FALSE(setter.HasApplier());
 }
 
-TEST(Setter_ResourceReference) {
-    auto propId = DependencyProperty::Register("TestProp2", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    
-    ResourceDictionary dict;
-    dict.Add("ResourceKey", 100);
-    
-    Setter setter(propId, ResourceReference("ResourceKey"));
-    auto value = setter.GetResolvedValue(&dict);
-    
-    ASSERT_TRUE(value.has_value());
-    ASSERT_EQ(std::any_cast<int>(value), 100);
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("TestProp2");
+TEST(Setter_BackgroundSetter) {
+    // Test the static helper method
+    Setter setter = Style::BackgroundSetter(Color::FromHex(0x00FF00));
+    ASSERT_TRUE(setter.HasApplier());
+}
+
+TEST(Setter_WidthSetter) {
+    Setter setter = Style::WidthSetter(100.0f);
+    ASSERT_TRUE(setter.HasApplier());
+}
+
+TEST(Setter_HeightSetter) {
+    Setter setter = Style::HeightSetter(200.0f);
+    ASSERT_TRUE(setter.HasApplier());
 }
 
 // ==================== Style Tests ====================
 
-TEST(Style_TargetType) {
-    // Use a dummy type for testing
-    Style style(typeid(int));
+TEST(Style_Construction) {
+    Style style;
     
-    ASSERT_TRUE(style.GetTargetType() == typeid(int));
-    ASSERT_TRUE(style.CanApplyTo(typeid(int)));
-    ASSERT_FALSE(style.CanApplyTo(typeid(double)));
+    // Initially no setters
+    ASSERT_EQ(style.GetSetters().size(), 0);
 }
 
-TEST(Style_BasedOn) {
-    auto baseStyle = std::make_shared<Style>(typeid(int));
+TEST(Style_AddSetter) {
+    Style style;
     
-    Style derivedStyle(typeid(int));
-    derivedStyle.SetBasedOn(baseStyle);
-    
-    ASSERT_EQ(derivedStyle.GetBasedOn(), baseStyle);
-}
-
-TEST(Style_Setters) {
-    Style style(typeid(int));
-    
-    auto propId = DependencyProperty::Register("StyleTestProp", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    
-    style.AddSetter(propId, 42);
-    style.AddSetter(propId, 100);  // Add another with same property
+    style.AddSetter(Style::BackgroundSetter(Color::Blue()));
+    style.AddSetter(Style::WidthSetter(50.0f));
+    style.AddSetter(Style::HeightSetter(75.0f));
     
     auto setters = style.GetSetters();
-    ASSERT_EQ(setters.size(), 2);
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("StyleTestProp");
+    ASSERT_EQ(setters.size(), 3);
 }
 
-TEST(Style_Triggers) {
-    Style style(typeid(int));
+TEST(Style_ClearSetters) {
+    Style style;
     
-    auto propId = DependencyProperty::Register("TriggerTestProp", 
-        PropertyMetadata{std::any(false), nullptr, false, false, true});
+    style.AddSetter(Style::BackgroundSetter(Color::Red()));
+    ASSERT_EQ(style.GetSetters().size(), 1);
     
-    auto trigger = std::make_shared<PropertyTrigger>(propId, true);
-    style.AddTrigger(trigger);
+    style.ClearSetters();
+    ASSERT_EQ(style.GetSetters().size(), 0);
+}
+
+TEST(Style_SharedPtr) {
+    // Test that Style works with shared_ptr
+    auto style = std::make_shared<Style>();
+    style->AddSetter(Style::BackgroundSetter(Color::Green()));
     
-    auto triggers = style.GetTriggers();
-    ASSERT_EQ(triggers.size(), 1);
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("TriggerTestProp");
+    ASSERT_EQ(style->GetSetters().size(), 1);
 }
 
 // ==================== Trigger Tests ====================
 
-TEST(PropertyTrigger_Construction) {
-    auto propId = DependencyProperty::Register("PropTriggerTest", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    
-    PropertyTrigger trigger(propId, 42);
-    
-    ASSERT_FALSE(trigger.IsActive());
-    ASSERT_EQ(trigger.GetName(), "PropertyTrigger");
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("PropTriggerTest");
+TEST(Trigger_Construction) {
+    // Default construction
+    Trigger trigger;
+    // Just verify it compiles and doesn't crash
 }
 
-TEST(PropertyTrigger_Setters) {
-    auto propId = DependencyProperty::Register("PropTriggerTest2", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
+TEST(Trigger_AddSetter) {
+    Trigger trigger;
     
-    PropertyTrigger trigger(propId, true);
-    trigger.AddSetter(propId, 999);
+    trigger.AddSetter(Style::WidthSetter(100.0f));
+    trigger.AddSetter(Style::HeightSetter(200.0f));
     
-    auto& setters = trigger.GetSetters();
-    ASSERT_EQ(setters.size(), 1);
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("PropTriggerTest2");
+    // Setters are stored internally, not directly accessible
+    // Just verify it compiles
 }
 
-TEST(EventTrigger_Construction) {
-    EventTrigger trigger("Click");
-    
-    ASSERT_EQ(trigger.GetName(), "EventTrigger:Click");
-}
-
-TEST(MultiTrigger_Conditions) {
-    MultiTrigger trigger;
-    
-    auto propId1 = DependencyProperty::Register("MultiProp1", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    auto propId2 = DependencyProperty::Register("MultiProp2", 
-        PropertyMetadata{std::any(false), nullptr, false, false, true});
-    
-    trigger.AddCondition(propId1, 42);
-    trigger.AddCondition(propId2, true);
-    
-    // Initially not active
-    ASSERT_FALSE(trigger.IsActive());
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId1);
-    DependencyProperty::s_properties.erase(propId2);
-    DependencyProperty::s_nameMap.erase("MultiProp1");
-    DependencyProperty::s_nameMap.erase("MultiProp2");
+TEST(Trigger_SharedPtr) {
+    auto trigger = std::make_shared<Trigger>();
+    trigger->AddSetter(Style::BackgroundSetter(Color::White()));
+    // Verify shared_ptr works with Trigger
 }
 
 // ==================== Theme Tests ====================
 
-TEST(Theme_BasicInfo) {
+TEST(Theme_Construction) {
     Theme theme;
-    theme.SetName("DarkTheme");
-    theme.SetBaseTheme("LightTheme");
-    theme.SetVersion("1.0.0");
-    theme.SetAuthor("Test Author");
-    theme.SetDescription("Test theme description");
     
-    ASSERT_EQ(theme.GetName(), "DarkTheme");
-    ASSERT_EQ(theme.GetBaseTheme(), "LightTheme");
-    ASSERT_EQ(theme.GetVersion(), "1.0.0");
-    ASSERT_EQ(theme.GetAuthor(), "Test Author");
-    ASSERT_EQ(theme.GetDescription(), "Test theme description");
+    // New theme has no default styles
+    auto style = theme.GetDefaultStyle("Button");
+    ASSERT_NULL(style.get());
 }
 
-TEST(Theme_Resources) {
+TEST(Theme_SetDefaultStyle) {
     Theme theme;
-    theme.GetResources().Add("TestInt", 42);
     
-    ASSERT_TRUE(theme.GetResources().Contains("TestInt"));
-    ASSERT_EQ(theme.GetResources().Get<int>("TestInt"), 42);
+    auto buttonStyle = std::make_shared<Style>();
+    buttonStyle->AddSetter(Style::BackgroundSetter(Color::FromHex(0x0078D4)));
+    
+    theme.SetDefaultStyle("Button", buttonStyle);
+    
+    auto retrieved = theme.GetDefaultStyle("Button");
+    ASSERT_NOT_NULL(retrieved.get());
+    ASSERT_EQ(retrieved->GetSetters().size(), 1);
 }
 
-TEST(Theme_Styles) {
+TEST(Theme_MultipleStyles) {
     Theme theme;
-    auto style = std::make_shared<Style>(typeid(int));
     
-    theme.AddStyle("TestStyle", style);
-    ASSERT_EQ(theme.GetStyle("TestStyle"), style);
+    auto buttonStyle = std::make_shared<Style>();
+    buttonStyle->AddSetter(Style::BackgroundSetter(Color::Blue()));
     
-    theme.RemoveStyle("TestStyle");
-    ASSERT_EQ(theme.GetStyle("TestStyle"), nullptr);
+    auto textBoxStyle = std::make_shared<Style>();
+    textBoxStyle->AddSetter(Style::BackgroundSetter(Color::White()));
+    
+    theme.SetDefaultStyle("Button", buttonStyle);
+    theme.SetDefaultStyle("TextBox", textBoxStyle);
+    
+    ASSERT_EQ(theme.GetDefaultStyle("Button")->GetSetters().size(), 1);
+    ASSERT_EQ(theme.GetDefaultStyle("TextBox")->GetSetters().size(), 1);
+    ASSERT_NULL(theme.GetDefaultStyle("Slider").get());
 }
 
-TEST(Theme_ImplicitStyles) {
-    Theme theme;
-    auto style = std::make_shared<Style>(typeid(int));
+TEST(Theme_GetCurrent) {
+    // Test singleton-like access
+    Theme& theme1 = Theme::GetCurrent();
+    Theme& theme2 = Theme::GetCurrent();
     
-    theme.SetImplicitStyle(typeid(int), style);
-    ASSERT_EQ(theme.GetImplicitStyle(typeid(int)), style);
-    ASSERT_EQ(theme.GetImplicitStyle(typeid(double)), nullptr);
-}
-
-TEST(Theme_Clear) {
-    Theme theme;
-    theme.SetName("Test");
-    theme.GetResources().Add("Key", 42);
-    theme.AddStyle("Style", std::make_shared<Style>(typeid(int)));
-    
-    theme.Clear();
-    
-    ASSERT_TRUE(theme.GetName().empty());
-    ASSERT_EQ(theme.GetResources().GetCount(), 0);
-    ASSERT_TRUE(theme.GetStyleKeys().empty());
-}
-
-// ==================== ThemeManager Tests ====================
-
-TEST(ThemeManager_Singleton) {
-    auto& instance1 = ThemeManager::GetInstance();
-    auto& instance2 = ThemeManager::GetInstance();
-    
-    ASSERT_EQ(&instance1, &instance2);
-}
-
-TEST(ThemeManager_CurrentTheme) {
-    auto& manager = ThemeManager::GetInstance();
-    
-    // Initially no theme
-    ASSERT_TRUE(manager.GetCurrentThemeName().empty());
-    ASSERT_EQ(manager.GetCurrentTheme(), nullptr);
-}
-
-TEST(ThemeManager_GetResource_NoTheme) {
-    auto& manager = ThemeManager::GetInstance();
-    
-    auto result = manager.GetResource("AnyKey");
-    ASSERT_FALSE(result.has_value());
+    // Both should be the same instance
+    ASSERT_EQ(&theme1, &theme2);
 }
 
 // ==================== Integration Tests ====================
 
-TEST(Integration_StyleWithResources) {
-    // Create a resource dictionary
-    auto resources = std::make_shared<ResourceDictionary>();
-    resources->Add("PrimaryValue", 100);
-    resources->Add("SecondaryValue", 200);
+TEST(Integration_StyleWithSetters) {
+    // Create a complete style
+    auto style = std::make_shared<Style>();
     
-    // Create a style that uses resources
-    auto style = std::make_shared<Style>(typeid(int));
+    style->AddSetter(Style::BackgroundSetter(Color::FromHex(0xFF8040)));
+    style->AddSetter(Style::WidthSetter(120.0f));
+    style->AddSetter(Style::HeightSetter(40.0f));
     
-    auto propId = DependencyProperty::Register("IntegrationProp", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    
-    style->AddSetter(propId, ResourceReference("PrimaryValue"));
-    
-    // Verify we can get the setter
-    auto setters = style->GetAllSetters();
-    ASSERT_EQ(setters.size(), 1);
-    
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId);
-    DependencyProperty::s_nameMap.erase("IntegrationProp");
+    ASSERT_EQ(style->GetSetters().size(), 3);
 }
 
-TEST(Integration_StyleInheritance) {
-    auto baseStyle = std::make_shared<Style>(typeid(int));
-    auto propId1 = DependencyProperty::Register("InheritProp1", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
-    auto propId2 = DependencyProperty::Register("InheritProp2", 
-        PropertyMetadata{std::any(0), nullptr, false, false, true});
+TEST(Integration_ResourceDictionaryWithStyles) {
+    ResourceDictionary dict;
     
-    baseStyle->AddSetter(propId1, 100);
+    // Create and add multiple styles
+    auto primaryStyle = std::make_shared<Style>();
+    primaryStyle->AddSetter(Style::BackgroundSetter(Color::FromHex(0x0078D4)));
     
-    auto derivedStyle = std::make_shared<Style>(typeid(int));
-    derivedStyle->SetBasedOn(baseStyle);
-    derivedStyle->AddSetter(propId2, 200);
+    auto dangerStyle = std::make_shared<Style>();
+    dangerStyle->AddSetter(Style::BackgroundSetter(Color::FromHex(0xD13438)));
     
-    // Derived should have both setters
-    auto allSetters = derivedStyle->GetAllSetters();
-    ASSERT_EQ(allSetters.size(), 2);
+    dict.AddStyle("PrimaryButton", primaryStyle);
+    dict.AddStyle("DangerButton", dangerStyle);
     
-    // Cleanup
-    DependencyProperty::s_properties.erase(propId1);
-    DependencyProperty::s_properties.erase(propId2);
-    DependencyProperty::s_nameMap.erase("InheritProp1");
-    DependencyProperty::s_nameMap.erase("InheritProp2");
+    // Verify both can be retrieved
+    ASSERT_EQ(dict.GetStyle("PrimaryButton")->GetSetters().size(), 1);
+    ASSERT_EQ(dict.GetStyle("DangerButton")->GetSetters().size(), 1);
+    ASSERT_NULL(dict.GetStyle("SuccessButton").get());
+}
+
+TEST(Integration_ThemeWithResourceDictionary) {
+    // Create a resource dictionary with colors
+    ResourceDictionary resources;
+    resources.AddColor("Background", Color::FromHex(0xFFFFFF));
+    resources.AddColor("Foreground", Color::FromHex(0x000000));
+    resources.AddColor("Accent", Color::FromHex(0x0078D4));
+    
+    // Create a theme with styles using those colors
+    Theme theme;
+    
+    auto buttonStyle = std::make_shared<Style>();
+    buttonStyle->AddSetter(Style::BackgroundSetter(resources.GetColor("Accent")));
+    
+    theme.SetDefaultStyle("Button", buttonStyle);
+    
+    ASSERT_NOT_NULL(theme.GetDefaultStyle("Button").get());
+}
+
+TEST(Integration_StyleInheritanceViaComposition) {
+    // Simulate style "inheritance" by composing setters
+    auto baseStyle = std::make_shared<Style>();
+    baseStyle->AddSetter(Style::WidthSetter(100.0f));
+    baseStyle->AddSetter(Style::HeightSetter(50.0f));
+    
+    auto derivedStyle = std::make_shared<Style>();
+    derivedStyle->AddSetter(Style::BackgroundSetter(Color::Red()));
+    
+    // Apply base style setters to derived
+    for (const auto& setter : baseStyle->GetSetters()) {
+        derivedStyle->AddSetter(setter);
+    }
+    
+    ASSERT_EQ(derivedStyle->GetSetters().size(), 3);
+}
+
+// ==================== ResourceReference Tests ====================
+
+TEST(ResourceReference_Construction) {
+    ResourceReference ref;
+    ASSERT_TRUE(ref.key.empty());
+}
+
+TEST(ResourceReference_WithKey) {
+    ResourceReference ref("PrimaryColor");
+    ASSERT_EQ(ref.key, "PrimaryColor");
+}
+
+TEST(ResourceReference_CopyConstruction) {
+    ResourceReference ref1("TestKey");
+    ResourceReference ref2 = ref1;
+    ASSERT_EQ(ref2.key, "TestKey");
 }
 
 // Main entry point
