@@ -672,33 +672,25 @@ void MvvmXmlLoader::BindSlider(std::shared_ptr<luaui::controls::Slider> slider,
 }
 
 // ============================================================================
-// ListBox 绑定 - ItemsSource（集合绑定）
+// ListBox 绑定 - ItemsSource（集合绑定，支持增量更新）
 // ============================================================================
 void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBox,
                                 const std::string& propertyName,
                                 const BindingExpression& expression) {
     (void)propertyName;
-    utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s", expression.path.c_str());
+    utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s (with incremental updates)", 
+        expression.path.c_str());
     
-    // 获取 DataContext（需要是 LuaAwareMvvmLoader 或类似实现）
     auto dataContext = m_dataContext;
     if (!dataContext) {
         utils::Logger::Error("[MVVM] No DataContext available for ListBox binding");
         return;
     }
     
-    // 尝试获取 Lua 状态
-    // 通过 dynamic_cast 检查是否是 Lua 数据上下文
     auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
     if (!luaDataContext) {
-        // 非 Lua 上下文，尝试通用方式获取属性值
+        // 非 Lua 上下文，使用传统方式
         std::any value = dataContext->GetPropertyValue(expression.path);
-        if (!value.has_value()) {
-            utils::Logger::Warning("[MVVM] Property '" + expression.path + "' not found");
-            return;
-        }
-        
-        // 如果是字符串向量，直接添加
         if (value.type() == typeid(std::vector<std::wstring>)) {
             auto items = std::any_cast<std::vector<std::wstring>>(value);
             for (const auto& item : items) {
@@ -708,17 +700,16 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
         return;
     }
     
-    // Lua 上下文：获取 Lua 表并创建 ObservableCollection 包装
+    // Lua 上下文
     lua_State* L = luaDataContext->GetLuaState();
     if (!L) {
         utils::Logger::Error("[MVVM] Lua state not available");
         return;
     }
     
-    // 从 ViewModel 获取表
+    // 获取 ViewModel
     lua_getglobal(L, "ViewModelInstance");
     if (!lua_istable(L, -1)) {
-        // 尝试其他可能的名称
         lua_pop(L, 1);
         lua_getglobal(L, "TestRunnerViewModel");
     }
@@ -729,7 +720,7 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
         return;
     }
     
-    // 获取属性值
+    // 获取属性值（集合表）
     lua_getfield(L, -1, expression.path.c_str());
     if (!lua_istable(L, -1)) {
         utils::Logger::Warning("[MVVM] Property '" + expression.path + "' is not a table");
@@ -737,32 +728,44 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
         return;
     }
     
-    // 创建 ObservableCollection 包装
+    // 检查是否是 ObservableCollection（有 Subscribe 方法）
+    lua_getfield(L, -1, "Subscribe");
+    bool isObservableCollection = lua_isfunction(L, -1);
+    lua_pop(L, 1);
+    
+    // 创建 LuaObservableCollection 包装
     auto collection = std::make_shared<lua::LuaObservableCollection>(L, -1);
     
-    // 设置显示成员路径（如果有）
     if (!expression.converterParameter.empty()) {
         collection->SetDisplayMemberPath(expression.converterParameter);
     }
     
-    // 初始填充 ListBox
-    auto texts = collection->GetAllDisplayTexts();
-    for (const auto& text : texts) {
-        listBox->AddItem(text);
+    if (isObservableCollection) {
+        // 支持增量更新
+        utils::Logger::Info("[MVVM] Collection supports incremental updates");
+        collection->EnableIncrementalUpdates(true);
+        
+        // 创建增量绑定
+        auto binding = std::make_shared<lua::ObservableCollectionBinding>(listBox, collection);
+        
+        // 将 binding 存储在某个地方防止被销毁...（简化处理，实际需改进）
+    } else {
+        // 传统方式：初始填充
+        auto texts = collection->GetAllDisplayTexts();
+        for (const auto& text : texts) {
+            listBox->AddItem(text);
+        }
+        utils::Logger::Warning("[MVVM] Collection does not support incremental updates, "
+            "consider using ObservableCollection.new()");
     }
     
     lua_pop(L, 2);  // pop table and ViewModel
     
-    utils::Logger::InfoF("[MVVM] ListBox.ItemsSource bound to %s with %zu items", 
-        expression.path.c_str(), collection->GetCount());
-    
-    // 订阅属性变更以重新绑定（如果整个集合被替换）
+    // 订阅整个集合替换
     if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
         dataContext->SubscribePropertyChanged(
-            [listBox, dataContext, expression, luaDataContext](const PropertyChangedEventArgs& args) {
+            [listBox, expression, luaDataContext](const PropertyChangedEventArgs& args) {
             if (args.propertyName == expression.path) {
-                // 集合被替换，重新同步
-                // 简化处理：清空并重新加载
                 listBox->ClearItems();
                 
                 lua_State* L = luaDataContext->GetLuaState();

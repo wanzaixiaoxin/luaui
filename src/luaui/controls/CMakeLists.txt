@@ -19,6 +19,8 @@ add_library(LuaUI_Controls STATIC
     Notification.h
     ListBox.cpp
     ListBox.h
+    VirtualizingPanel.cpp
+    VirtualizingPanel.h
     ComboBox.cpp
     ComboBox.h
     TreeView.cpp

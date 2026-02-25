@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- VirtualizationTest - 10,000+ 行性能测试 -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="12">
+    
+    <!-- Header -->
+    <StackPanel Orientation="Vertical" Spacing="4">
+        <TextBlock Text="Virtualization Performance Test" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
+        <TextBlock Text="Testing ListBox virtualization with 10,000+ items" FontSize="12" Foreground="#757575"/>
+    </StackPanel>
+    
+    <!-- Controls -->
+    <Border Background="#F5F5F5" Padding="12" CornerRadius="4">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Load Test Data" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="1,000 Items" Command="{Binding Load1000Command}" Style="Primary"/>
+                <Button Content="10,000 Items" Command="{Binding Load10000Command}" Style="Primary"/>
+                <Button Content="100,000 Items" Command="{Binding Load100000Command}" Style="Primary"/>
+                <Button Content="Clear" Command="{Binding ClearCommand}" Style="Secondary"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Scroll to Middle" Command="{Binding ScrollToMiddleCommand}" Style="Secondary"/>
+                <Button Content="Scroll to End" Command="{Binding ScrollToEndCommand}" Style="Secondary"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Virtualized ListBox -->
+    <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Virtualized ListBox (only visible items rendered):" FontWeight="SemiBold" FontSize="13"/>
+            <!-- 
+                注意：这里假设 ListBox 支持 Virtualization 属性
+                实际实现可能需要通过代码设置 IsVirtualizing = true
+            -->
+            <ListBox ItemsSource="{Binding DisplayCount}" Height="400"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Status -->
+    <Border Background="#E8F5E9" Padding="8" CornerRadius="2">
+        <StackPanel Orientation="Vertical" Spacing="4">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#2E7D32"/>
+            <TextBlock Text="Load Time: {Binding LoadTime}" FontSize="11" Foreground="#388E3C"/>
+            <TextBlock Text="Mode: Virtualization (Recycling)" FontSize="10" Foreground="#666666" FontStyle="Italic"/>
+        </StackPanel>
+    </Border>
+    
+</StackPanel>

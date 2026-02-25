@@ -183,7 +183,7 @@ function AutoViewModel:ClearItems(arrayPropertyName)
     end
 end
 
--- ObservableCollection
+-- ObservableCollection - 支持增量更新的集合
 local ObservableCollection = {}
 ObservableCollection.__index = ObservableCollection
 
@@ -191,19 +191,115 @@ function ObservableCollection.new()
     local self = setmetatable({}, ObservableCollection)
     self._items = {}
     self._listeners = {}
+    self._nextToken = 1
     return self
+end
+
+-- 订阅集合变更（供 C++ 端调用）
+function ObservableCollection:Subscribe(callback)
+    local token = self._nextToken
+    self._nextToken = self._nextToken + 1
+    self._listeners[token] = callback
+    
+    Log.debug("[ObservableCollection] Subscribed, token=" .. token)
+    
+    -- 返回订阅 token，用于取消订阅
+    return token
+end
+
+-- 取消订阅
+function ObservableCollection:Unsubscribe(token)
+    if self._listeners[token] then
+        self._listeners[token] = nil
+        Log.debug("[ObservableCollection] Unsubscribed, token=" .. token)
+    end
+end
+
+-- 内部通知方法
+function ObservableCollection:_notify(action, item, index)
+    Log.debug("[ObservableCollection] Notify: " .. action .. " at " .. index)
+    for token, callback in pairs(self._listeners) do
+        local success, err = pcall(callback, action, index, item)
+        if not success then
+            Log.error("[ObservableCollection] Listener error: " .. tostring(err))
+        end
+    end
 end
 
 function ObservableCollection:Add(item)
     table.insert(self._items, item)
-    self:_notify("Added", item, #self._items)
+    self:_notify("Add", item, #self._items)
+end
+
+function ObservableCollection:Insert(index, item)
+    if index < 1 or index > #self._items + 1 then return end
+    table.insert(self._items, index, item)
+    self:_notify("Add", item, index)
 end
 
 function ObservableCollection:Remove(item)
     for i, v in ipairs(self._items) do
         if v == item then
             table.remove(self._items, i)
-            self:_notify("Removed", item, i)
+            self:_notify("Remove", item, i)
+            return true
+        end
+    end
+    return false
+end
+
+function ObservableCollection:RemoveAt(index)
+    if index < 1 or index > #self._items then return nil end
+    local item = table.remove(self._items, index)
+    self:_notify("Remove", item, index)
+    return item
+end
+
+function ObservableCollection:Clear()
+    self._items = {}
+    self:_notify("Reset", nil, 0)
+end
+
+function ObservableCollection:Replace(index, newItem)
+    if index < 1 or index > #self._items then return end
+    local oldItem = self._items[index]
+    self._items[index] = newItem
+    self:_notify("Replace", newItem, index)
+    return oldItem
+end
+
+function ObservableCollection:Move(oldIndex, newIndex)
+    if oldIndex < 1 or oldIndex > #self._items then return end
+    if newIndex < 1 or newIndex > #self._items then return end
+    
+    local item = table.remove(self._items, oldIndex)
+    table.insert(self._items, newIndex, item)
+    self:_notify("Move", item, newIndex)  -- C++ 端需要根据 action 处理
+end
+
+function ObservableCollection:Get(index)
+    return self._items[index]
+end
+
+function ObservableCollection:Count()
+    return #self._items
+end
+
+function ObservableCollection:GetAll()
+    -- 返回副本
+    local copy = {}
+    for i, v in ipairs(self._items) do
+        copy[i] = v
+    end
+    return copy
+end
+
+-- 兼容旧版的 Remove 方法
+function ObservableCollection:_oldRemove(item)
+    for i, v in ipairs(self._items) do
+        if v == item then
+            table.remove(self._items, i)
+            self:_notify("Remove", item, i)
             return true
         end
     end

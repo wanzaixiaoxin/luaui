@@ -8,6 +8,7 @@ add_library(LuaUI_MVVM STATIC
     XmlBindingExtension.cpp
     MvvmXmlLoader.cpp
     ViewModelBase.cpp
+    INotifyCollectionChanged.h
 )
 
 target_include_directories(LuaUI_MVVM
