@@ -649,7 +649,9 @@ void MvvmXmlLoader::BindCheckBox(std::shared_ptr<luaui::controls::CheckBox> chec
     
     // TwoWay：监听控件状态变化并更新 ViewModel
     if (expression.mode == BindingMode::TwoWay) {
+        utils::Logger::Debug("[MVVM] Setting up TwoWay binding for CheckBox");
         checkBox->CheckedChanged.Add([dataContext, boundPropertyName, converter, converterParameter](luaui::controls::CheckBox*, bool isChecked) {
+            utils::Logger::DebugF("[MVVM] CheckBox.CheckedChanged: %s -> %s", boundPropertyName.c_str(), isChecked ? "true" : "false");
             std::any value = isChecked;
             if (converter) {
                 value = converter->Convert(value, converterParameter);

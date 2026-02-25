@@ -99,21 +99,35 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     
     lua_pop(m_L, 1);
     NotifyPropertyChanged(name);
+    
+    // Special handling: if IsFeatureEnabled changed, call UpdateFeatureStatus
+    if (name == "IsFeatureEnabled") {
+        utils::Logger::Debug("[Lua] IsFeatureEnabled changed, calling UpdateFeatureStatus");
+        bool result = CallFunction("UpdateFeatureStatus");
+        utils::Logger::DebugF("[Lua] UpdateFeatureStatus call result: %s", result ? "success" : "failed");
+        NotifyPropertyChanged("FeatureStatusText");
+    }
 }
 
 bool LuaPropertyNotifier::CallFunction(const std::string& name) {
-    if (!m_L) return false;
+    if (!m_L) {
+        utils::Logger::Error("[Lua] CallFunction: Lua state is null");
+        return false;
+    }
     
     utils::Logger::DebugF("[Lua] CallFunction '%s' started", name.c_str());
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
+        utils::Logger::ErrorF("[Lua] CallFunction '%s': ViewModel is not a table", name.c_str());
         lua_pop(m_L, 1);
         return false;
     }
     
     lua_getfield(m_L, -1, name.c_str());
     if (!lua_isfunction(m_L, -1)) {
+        utils::Logger::ErrorF("[Lua] CallFunction '%s': not a function (type=%s)", 
+            name.c_str(), lua_typename(m_L, lua_type(m_L, -1)));
         lua_pop(m_L, 2);
         return false;
     }

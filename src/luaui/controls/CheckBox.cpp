@@ -107,6 +107,7 @@ void CheckBox::SetIsChecked(bool checked) {
         m_isChecked = checked;
         m_isIndeterminate = false;
         UpdateVisualState();
+        utils::Logger::DebugF("[CheckBox] CheckedChanged invoked, new state: %s", m_isChecked ? "true" : "false");
         CheckedChanged.Invoke(this, m_isChecked);
     }
 }

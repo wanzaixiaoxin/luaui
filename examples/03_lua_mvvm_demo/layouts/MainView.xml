@@ -30,7 +30,7 @@
         <StackPanel Orientation="Vertical" Spacing="12">
             <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
             
-            <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled}"/>
+            <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}"/>
             
             <Button Content="Toggle Feature" Style="Primary" Click="ToggleCommand"/>
             

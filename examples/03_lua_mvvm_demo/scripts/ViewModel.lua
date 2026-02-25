@@ -26,11 +26,12 @@ ViewModel.Title = "LuaUI MVVM Demo"
 ViewModel.Description = "Native Lua ViewModel with auto-binding"
 ViewModel.Counter = 0
 ViewModel.IsFeatureEnabled = false
+ViewModel.FeatureStatusText = "Feature is OFF"  -- 计算属性，需要手动维护
 ViewModel.Status = "Ready"
 
--- 计算属性
-function ViewModel:GetFeatureStatusText()
-    return self.IsFeatureEnabled and "Feature is ON" or "Feature is OFF"
+-- 更新 FeatureStatusText 计算属性
+function ViewModel:UpdateFeatureStatus()
+    self.FeatureStatusText = self.IsFeatureEnabled and "Feature is ON" or "Feature is OFF"
 end
 
 -- ============================================================================
@@ -70,6 +71,7 @@ function ViewModel:ResetCommand()
     Log.info("[ViewModel] ResetCommand called")
     self.Counter = 0
     self.IsFeatureEnabled = false
+    self:UpdateFeatureStatus()  -- 更新计算属性
     self:UpdateStatus()
     
     if type(Notify) == "function" then
@@ -84,6 +86,7 @@ end
 function ViewModel:ToggleCommand()
     Log.info("[ViewModel] ToggleCommand called")
     self.IsFeatureEnabled = not self.IsFeatureEnabled
+    self:UpdateFeatureStatus()  -- 更新计算属性
     
     if type(Notify) == "function" then
         Notify("IsFeatureEnabled")
