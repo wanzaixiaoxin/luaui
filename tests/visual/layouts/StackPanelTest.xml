@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- StackPanel Layout Test -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="16">
+    
+    <!-- Title -->
+    <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- Vertical StackPanel Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Vertical StackPanel (Spacing=8)" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Vertical" Spacing="{Binding VerticalSpacing}">
+                <Border Background="#FF5733" Height="50" CornerRadius="4">
+                    <TextBlock Text="{Binding Item1Text}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#33FF57" Height="60" CornerRadius="4">
+                    <TextBlock Text="{Binding Item2Text}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#3357FF" Height="40" CornerRadius="4">
+                    <TextBlock Text="{Binding Item3Text}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
+            
+            <!-- Spacing Control -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                <TextBlock Text="Spacing:" VerticalAlignment="Center"/>
+                <Slider Value="{Binding VerticalSpacing, Mode=TwoWay}" Minimum="0" Maximum="30" Width="150"/>
+                <TextBlock Text="{Binding VerticalSpacingText}" VerticalAlignment="Center" Width="40"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Horizontal StackPanel Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Horizontal StackPanel (Spacing=5)" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="{Binding HorizontalSpacing}">
+                <Border Background="#FF5733" Width="100" Height="50" CornerRadius="4">
+                    <TextBlock Text="100x50" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#33FF57" Width="80" Height="60" CornerRadius="4">
+                    <TextBlock Text="80x60" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#3357FF" Width="120" Height="50" CornerRadius="4">
+                    <TextBlock Text="120x50" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
+            
+            <!-- Spacing Control -->
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                <TextBlock Text="Spacing:" VerticalAlignment="Center"/>
+                <Slider Value="{Binding HorizontalSpacing, Mode=TwoWay}" Minimum="0" Maximum="30" Width="150"/>
+                <TextBlock Text="{Binding HorizontalSpacingText}" VerticalAlignment="Center" Width="40"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Controls -->
+    <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+        <Button Content="Add Item" Click="AddItemCommand" Style="Primary"/>
+        <Button Content="Remove Item" Click="RemoveItemCommand" Style="Danger"/>
+        <Button Content="Toggle Orientation" Click="ToggleOrientationCommand" Style="Accent"/>
+    </StackPanel>
+    
+    <!-- Dynamic Items -->
+    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Dynamic Items (Bound to ViewModel)" FontWeight="SemiBold" FontSize="14"/>
+            <ItemsControl ItemsSource="{Binding DynamicItems}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{Binding Color}" Height="40" Margin="0,4" CornerRadius="4">
+                            <TextBlock Text="{Binding Label}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+    
+</StackPanel>

@@ -145,4 +145,7 @@ if(TARGET LuaUI_MVVM)
     add_test(NAME MvvmBindingTest COMMAND test_mvvm_binding)
 endif()
 
+# Visual Tests with Lua MVVM
+add_subdirectory(visual)
+
 

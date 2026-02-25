@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- LuaUI Visual Test Runner - Production MVVM Demo -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="12">
+    
+    <!-- Header -->
+    <StackPanel Orientation="Vertical" Spacing="4">
+        <TextBlock Text="LuaUI Visual Test Suite" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
+        <TextBlock Text="{Binding TestCountText}" FontSize="12" Foreground="#757575"/>
+    </StackPanel>
+    
+    <!-- Nested Property Demo -->
+    <Border Background="#E8F5E9" Padding="12" CornerRadius="4">
+        <StackPanel Orientation="Vertical" Spacing="4">
+            <TextBlock Text="Nested Property Demo" FontWeight="SemiBold" FontSize="13" Foreground="#2E7D32"/>
+            <TextBlock Text="{Binding User.Profile.Name}" FontSize="11" Foreground="#388E3C"/>
+            <TextBlock Text="{Binding User.Profile.Settings.Theme}" FontSize="11" Foreground="#388E3C"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Filter Section -->
+    <Border Background="#F5F5F5" Padding="12" CornerRadius="4">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Filter Tests" FontWeight="SemiBold" FontSize="14"/>
+            
+            <!-- Category Filters -->
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <CheckBox Content="Layout Tests" IsChecked="{Binding ShowLayoutTests, Mode=TwoWay}"/>
+                <CheckBox Content="Control Tests" IsChecked="{Binding ShowControlTests, Mode=TwoWay}"/>
+                <CheckBox Content="MVVM Tests" IsChecked="{Binding ShowMvvmTests, Mode=TwoWay}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Test List -->
+    <Border Background="White" BorderBrush="#E0E0E0" BorderThickness="1" Padding="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Available Tests:" FontWeight="SemiBold" FontSize="13"/>
+            <ListBox ItemsSource="{Binding FilteredTests}" Height="150"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Command Buttons -->
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+        <Button Content="Add Test" Command="{Binding AddTestCommand}" Style="Secondary"/>
+        <Button Content="Clear Filter" Command="{Binding ClearFilterCommand}" Style="Secondary"/>
+        <Button Content="Refresh" Command="{Binding RefreshCommand}" Style="Secondary"/>
+    </StackPanel>
+    
+    <!-- Status Bar -->
+    <Border Background="#FAFAFA" Padding="8" CornerRadius="2">
+        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#757575"/>
+    </Border>
+    
+</StackPanel>

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <unordered_set>
 #include <functional>
+#include <sstream>
 
 namespace luaui {
 namespace lua {
@@ -47,8 +48,91 @@ void LuaPropertyNotifier::NotifyPropertyChanged(const std::string& propertyName)
     }
 }
 
+// ============================================================================
+// 辅助函数：分割字符串
+// ============================================================================
+static std::vector<std::string> SplitPath(const std::string& path, char delimiter = '.') {
+    std::vector<std::string> parts;
+    std::stringstream ss(path);
+    std::string part;
+    while (std::getline(ss, part, delimiter)) {
+        if (!part.empty()) {
+            parts.push_back(part);
+        }
+    }
+    return parts;
+}
+
+// ============================================================================
+// 辅助函数：从当前栈顶表获取属性值（支持嵌套路径）
+// 调用前：栈顶是一个表
+// 返回后：栈顶是最终值，返回 true 表示成功
+// ============================================================================
+static bool GetNestedProperty(lua_State* L, const std::vector<std::string>& pathParts, int startIndex = 0) {
+    if (pathParts.empty()) return false;
+    
+    // 获取当前栈顶的表
+    if (!lua_istable(L, -1) && startIndex > 0) {
+        return false;  // 中间路径不是表，无法继续
+    }
+    
+    for (size_t i = startIndex; i < pathParts.size(); ++i) {
+        const std::string& part = pathParts[i];
+        
+        // 处理数组索引，如 Users[0] 或 Users.0
+        size_t bracketPos = part.find('[');
+        std::string key = part;
+        int arrayIndex = -1;
+        
+        if (bracketPos != std::string::npos) {
+            key = part.substr(0, bracketPos);
+            size_t endBracket = part.find(']', bracketPos);
+            if (endBracket != std::string::npos) {
+                try {
+                    arrayIndex = std::stoi(part.substr(bracketPos + 1, endBracket - bracketPos - 1));
+                } catch (...) {
+                    // 解析失败，当作普通key处理
+                }
+            }
+        }
+        
+        // 获取字段值
+        if (!key.empty()) {
+            lua_getfield(L, -1, key.c_str());
+        } else {
+            // 纯数组索引
+            lua_pushnil(L);
+        }
+        
+        // 处理数组索引
+        if (arrayIndex >= 0 && lua_istable(L, -1)) {
+            lua_rawgeti(L, -1, arrayIndex + 1);  // Lua数组是1-based
+            lua_remove(L, -2);  // 移除表，保留值
+        }
+        
+        // 如果不是最后一个，需要确保是表
+        if (i < pathParts.size() - 1) {
+            if (!lua_istable(L, -1)) {
+                // 不是表，返回失败
+                lua_pop(L, 1);  // 移除值
+                return false;
+            }
+            // 继续循环，当前栈顶已经是下一个表
+        } else {
+            // 最后一个路径部分，返回值
+            return true;
+        }
+    }
+    
+    return true;
+}
+
 std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     if (!m_L) return {};
+    
+    // 分割路径
+    auto pathParts = SplitPath(name);
+    if (pathParts.empty()) return {};
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
@@ -61,7 +145,18 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     std::any result;
     
     // 首先尝试直接获取（处理非代理表或原始表）
-    lua_getfield(m_L, -1, name.c_str());
+    if (pathParts.size() == 1) {
+        // 单级属性，直接获取
+        lua_getfield(m_L, -1, pathParts[0].c_str());
+    } else {
+        // 嵌套属性，使用递归获取
+        if (!GetNestedProperty(m_L, pathParts, 0)) {
+            lua_pop(m_L, 1);  // Pop ViewModel
+            return result;
+        }
+    }
+    
+    // 检查是否找到值
     if (!lua_isnil(m_L, -1)) {
         // 直接找到了
         if (lua_isstring(m_L, -1)) {
@@ -89,13 +184,34 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     
     if (indexType == LUA_TFUNCTION) {
         // __index 是函数，调用它: __index(viewModel, name)
-        lua_pushvalue(m_L, -3);  // Push ViewModel (第一个参数 self) - 注意此时栈: [ViewModel, metatable, __index, ViewModel]
-        lua_pushstring(m_L, name.c_str());  // Push 属性名 (第二个参数 key)
+        lua_pushvalue(m_L, -3);  // Push ViewModel (第一个参数 self)
+        lua_pushstring(m_L, pathParts[0].c_str());  // Push 属性名 (第二个参数 key)
         
         utils::Logger::DebugF("[Lua] GetPropertyValue '%s': calling __index function", name.c_str());
         int status = lua_pcall(m_L, 2, 1, 0);  // 安全调用
         
         if (status == LUA_OK) {
+            // 对于嵌套路径，需要继续获取
+            if (pathParts.size() > 1 && lua_istable(m_L, -1)) {
+                lua_remove(m_L, -2);  // 移除 metatable，栈: [ViewModel, value]
+                lua_remove(m_L, -2);  // 移除 ViewModel，栈: [value]
+                
+                if (GetNestedProperty(m_L, pathParts, 1)) {
+                    // 成功获取嵌套值
+                    if (lua_isstring(m_L, -1)) {
+                        result = std::string(lua_tostring(m_L, -1));
+                    } else if (lua_isnumber(m_L, -1)) {
+                        result = lua_tonumber(m_L, -1);
+                    } else if (lua_isboolean(m_L, -1)) {
+                        result = static_cast<bool>(lua_toboolean(m_L, -1));
+                    }
+                    lua_pop(m_L, 1);  // Pop value
+                } else {
+                    lua_pop(m_L, 1);  // Pop value (table or nil)
+                }
+                return result;
+            }
+            
             if (lua_isstring(m_L, -1)) {
                 result = std::string(lua_tostring(m_L, -1));
             } else if (lua_isnumber(m_L, -1)) {
@@ -113,7 +229,29 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
         lua_pop(m_L, 1);  // Pop metatable, 栈: [ViewModel]
     } else if (indexType == LUA_TTABLE) {
         // __index 是表，直接查找
-        lua_getfield(m_L, -1, name.c_str());
+        lua_getfield(m_L, -1, pathParts[0].c_str());
+        
+        // 对于嵌套路径，继续获取
+        if (pathParts.size() > 1 && lua_istable(m_L, -1)) {
+            lua_remove(m_L, -2);  // 移除 __index table
+            lua_remove(m_L, -2);  // 移除 metatable
+            lua_remove(m_L, -2);  // 移除 ViewModel
+            
+            if (GetNestedProperty(m_L, pathParts, 1)) {
+                if (lua_isstring(m_L, -1)) {
+                    result = std::string(lua_tostring(m_L, -1));
+                } else if (lua_isnumber(m_L, -1)) {
+                    result = lua_tonumber(m_L, -1);
+                } else if (lua_isboolean(m_L, -1)) {
+                    result = static_cast<bool>(lua_toboolean(m_L, -1));
+                }
+                lua_pop(m_L, 1);  // Pop value
+            } else {
+                lua_pop(m_L, 1);  // Pop value (table or nil)
+            }
+            return result;
+        }
+        
         if (lua_isstring(m_L, -1)) {
             result = std::string(lua_tostring(m_L, -1));
         } else if (lua_isnumber(m_L, -1)) {
@@ -141,8 +279,94 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     return result;
 }
 
+// ============================================================================
+// 辅助函数：设置嵌套属性值
+// ============================================================================
+static bool SetNestedProperty(lua_State* L, const std::vector<std::string>& pathParts, int valueIndex) {
+    if (pathParts.empty()) return false;
+    
+    // 遍历到倒数第二个路径部分，确保都是表
+    for (size_t i = 0; i < pathParts.size() - 1; ++i) {
+        const std::string& part = pathParts[i];
+        
+        // 处理数组索引
+        size_t bracketPos = part.find('[');
+        std::string key = part;
+        int arrayIndex = -1;
+        
+        if (bracketPos != std::string::npos) {
+            key = part.substr(0, bracketPos);
+            size_t endBracket = part.find(']', bracketPos);
+            if (endBracket != std::string::npos) {
+                try {
+                    arrayIndex = std::stoi(part.substr(bracketPos + 1, endBracket - bracketPos - 1));
+                } catch (...) {}
+            }
+        }
+        
+        // 获取字段
+        if (!key.empty()) {
+            lua_getfield(L, -1, key.c_str());
+        } else {
+            lua_pushnil(L);
+        }
+        
+        if (arrayIndex >= 0 && lua_istable(L, -1)) {
+            lua_rawgeti(L, -1, arrayIndex + 1);
+            lua_remove(L, -2);  // 移除外层表
+        }
+        
+        if (!lua_istable(L, -1)) {
+            // 路径不存在，无法设置
+            lua_pop(L, 1);  // Pop nil/error value
+            return false;
+        }
+        // 栈顶现在是下一个表，继续循环
+    }
+    
+    // 设置最后一个路径部分
+    const std::string& lastKey = pathParts.back();
+    
+    // 处理数组索引
+    size_t bracketPos = lastKey.find('[');
+    std::string key = lastKey;
+    int arrayIndex = -1;
+    
+    if (bracketPos != std::string::npos) {
+        key = lastKey.substr(0, bracketPos);
+        size_t endBracket = lastKey.find(']', bracketPos);
+        if (endBracket != std::string::npos) {
+            try {
+                arrayIndex = std::stoi(lastKey.substr(bracketPos + 1, endBracket - bracketPos - 1));
+            } catch (...) {}
+        }
+    }
+    
+    // 复制值到栈顶
+    lua_pushvalue(L, valueIndex);
+    
+    if (arrayIndex >= 0 && !key.empty()) {
+        // 先获取数组表
+        lua_getfield(L, -2, key.c_str());
+        if (lua_istable(L, -1)) {
+            lua_pushvalue(L, -2);  // 复制值
+            lua_rawseti(L, -2, arrayIndex + 1);  // 设置数组元素
+        }
+        lua_pop(L, 1);  // Pop 数组表
+        lua_pop(L, 1);  // Pop 值
+    } else if (!key.empty()) {
+        lua_setfield(L, -2, key.c_str());
+    }
+    
+    return true;
+}
+
 void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::any& value) {
     if (!m_L) return;
+    
+    // 分割路径
+    auto pathParts = SplitPath(name);
+    if (pathParts.empty()) return;
     
     PushViewModel();
     if (!lua_istable(m_L, -1)) {
@@ -152,6 +376,7 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     }
     
     try {
+        // 压入值
         if (value.type() == typeid(std::string)) {
             lua_pushstring(m_L, std::any_cast<std::string>(value).c_str());
         } else if (value.type() == typeid(double)) {
@@ -166,7 +391,22 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
         }
         
         utils::Logger::DebugF("[Lua] Setting property '%s' in ViewModel", name.c_str());
-        lua_setfield(m_L, -2, name.c_str());
+        
+        if (pathParts.size() == 1) {
+            // 单级属性
+            lua_setfield(m_L, -2, pathParts[0].c_str());
+        } else {
+            // 嵌套属性
+            if (SetNestedProperty(m_L, pathParts, -1)) {
+                lua_pop(m_L, 1);  // Pop value
+                utils::Logger::DebugF("[Lua] Property '%s' set successfully", name.c_str());
+            } else {
+                lua_pop(m_L, 1);  // Pop value
+                lua_pop(m_L, 1);  // Pop ViewModel
+                return;
+            }
+        }
+        
         utils::Logger::DebugF("[Lua] Property '%s' set successfully", name.c_str());
     } catch (...) {
         // Ignore conversion errors
@@ -174,10 +414,6 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     
     lua_pop(m_L, 1);
     NotifyPropertyChanged(name);
-    
-    // Note: FeatureStatusText is a computed property in Lua
-    // Lua's _notifyComputedChange handles the notification automatically
-    // when IsFeatureEnabled changes, no need to manually notify here
 }
 
 bool LuaPropertyNotifier::CallFunction(const std::string& name) {
@@ -262,10 +498,8 @@ LuaAwareMvvmLoader::~LuaAwareMvvmLoader() {
 
 void LuaAwareMvvmLoader::SetLuaState(lua_State* L) {
     m_L = L;
-    // Create notifier early so it can be registered before Load()
-    if (L && !m_viewModelName.empty()) {
-        m_notifier = std::make_shared<LuaPropertyNotifier>(L, m_viewModelName);
-    }
+    // Don't create notifier here, wait until SetViewModelName is called
+    // or Load() is called with the correct viewModelName
 }
 
 void LuaAwareMvvmLoader::SetViewModelName(const std::string& name) {

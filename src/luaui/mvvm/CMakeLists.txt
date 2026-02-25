@@ -28,6 +28,7 @@ target_link_libraries(LuaUI_MVVM
         LuaUI_Controls
         LuaUI_Utils
         LuaUI_Xml
+        LuaUI_Lua
 )
 
 # 设置C++标准

@@ -122,6 +122,67 @@ function AutoViewModel:SetRaw(propertyName, value)
     rawset(self._data, propertyName, value)
 end
 
+-- ============================================================================
+-- 数组操作方法 - 支持集合绑定
+-- ============================================================================
+
+-- 添加项到数组并触发通知
+function AutoViewModel:AddItem(arrayPropertyName, item)
+    local arr = rawget(self._data, arrayPropertyName)
+    if type(arr) ~= "table" then
+        arr = {}
+        rawset(self._data, arrayPropertyName, arr)
+    end
+    table.insert(arr, item)
+    
+    -- 触发属性变更通知
+    if self._batchMode then
+        self._pendingNotifications[arrayPropertyName] = true
+    else
+        self:_notifyChange(arrayPropertyName)
+    end
+    
+    return #arr
+end
+
+-- 移除数组中的项
+function AutoViewModel:RemoveItem(arrayPropertyName, index)
+    local arr = rawget(self._data, arrayPropertyName)
+    if type(arr) ~= "table" then return nil end
+    
+    if index >= 1 and index <= #arr then
+        local item = table.remove(arr, index)
+        
+        -- 触发属性变更通知
+        if self._batchMode then
+            self._pendingNotifications[arrayPropertyName] = true
+        else
+            self:_notifyChange(arrayPropertyName)
+        end
+        
+        return item
+    end
+    return nil
+end
+
+-- 清空数组
+function AutoViewModel:ClearItems(arrayPropertyName)
+    local arr = rawget(self._data, arrayPropertyName)
+    if type(arr) ~= "table" then return end
+    
+    -- 清空表
+    for k in pairs(arr) do
+        arr[k] = nil
+    end
+    
+    -- 触发属性变更通知
+    if self._batchMode then
+        self._pendingNotifications[arrayPropertyName] = true
+    else
+        self:_notifyChange(arrayPropertyName)
+    end
+end
+
 -- ObservableCollection
 local ObservableCollection = {}
 ObservableCollection.__index = ObservableCollection

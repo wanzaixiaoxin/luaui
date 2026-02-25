@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Simple Test Runner Layout -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="12">
+    
+    <TextBlock Text="LuaUI Visual Test Runner" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestCountText}" FontSize="12" Foreground="#757575"/>
+    
+    <Border Background="#F5F5F5" Padding="12">
+        <TextBlock Text="Select a test to run:" FontWeight="SemiBold"/>
+    </Border>
+    
+    <!-- Simple test list -->
+    <StackPanel Orientation="Vertical" Spacing="8">
+        <Button Content="StackPanel Layout Test" Click="RunStackPanelTest" Style="Primary"/>
+        <Button Content="Grid Layout Test" Click="RunGridTest" Style="Primary"/>
+    </StackPanel>
+    
+    <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#757575"/>
+    
+</StackPanel>

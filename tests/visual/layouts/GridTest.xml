@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Grid Layout Test -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="16">
+    
+    <!-- Title -->
+    <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- Grid Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="2x2 Grid with Star Sizing" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Grid Height="250">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Cell 0,0 -->
+                <Border Grid.Row="0" Grid.Column="0" Background="#FF5733" Margin="4" CornerRadius="4">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Row 0, Col 0" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Cell00Text}" Foreground="White" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Cell 0,1 -->
+                <Border Grid.Row="0" Grid.Column="1" Background="#33FF57" Margin="4" CornerRadius="4">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Row 0, Col 1" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Cell01Text}" Foreground="White" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Cell 1,0 -->
+                <Border Grid.Row="1" Grid.Column="0" Background="#3357FF" Margin="4" CornerRadius="4">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Row 1, Col 0" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Cell10Text}" Foreground="White" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Cell 1,1 -->
+                <Border Grid.Row="1" Grid.Column="1" Background="#FF33F5" Margin="4" CornerRadius="4">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Row 1, Col 1" Foreground="White" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Cell11Text}" Foreground="White" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            
+        </StackPanel>
+    </Border>
+    
+    <!-- Column Span Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Column Span Demo" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Grid Height="150">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Header spanning all columns -->
+                <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" 
+                        Background="#1976D2" Margin="2" CornerRadius="4" Padding="8">
+                    <TextBlock Text="Header (ColumnSpan=3)" Foreground="White" HorizontalAlignment="Center"/>
+                </Border>
+                
+                <!-- Content cells -->
+                <Border Grid.Row="1" Grid.Column="0" Background="#E3F2FD" Margin="2" CornerRadius="4">
+                    <TextBlock Text="Col 1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Background="#E3F2FD" Margin="2" CornerRadius="4">
+                    <TextBlock Text="Col 2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Grid.Row="1" Grid.Column="2" Background="#E3F2FD" Margin="2" CornerRadius="4">
+                    <TextBlock Text="Col 3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+            
+        </StackPanel>
+    </Border>
+    
+    <!-- Grid Sizing Controls -->
+    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Grid Sizing Controls" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Col 1 Width:" VerticalAlignment="Center" Width="100"/>
+                <Slider Value="{Binding Col1Width, Mode=TwoWay}" Minimum="0.5" Maximum="3" Width="150"/>
+                <TextBlock Text="{Binding Col1WidthText}" VerticalAlignment="Center" Width="50"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Col 2 Width:" VerticalAlignment="Center" Width="100"/>
+                <Slider Value="{Binding Col2Width, Mode=TwoWay}" Minimum="0.5" Maximum="3" Width="150"/>
+                <TextBlock Text="{Binding Col2WidthText}" VerticalAlignment="Center" Width="50"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Equal Columns" Click="EqualColumnsCommand" Style="Primary"/>
+                <Button Content="Reset" Click="ResetCommand" Style="Accent"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+</StackPanel>

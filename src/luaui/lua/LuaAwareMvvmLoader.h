@@ -37,6 +37,9 @@ public:
     // 检查字段是否存在
     bool HasProperty(const std::string& name) const;
     bool HasFunction(const std::string& name) const;
+    
+    // 获取 Lua 状态（用于集合绑定等高级功能）
+    lua_State* GetLuaState() const { return m_L; }
 
 private:
     lua_State* m_L = nullptr;

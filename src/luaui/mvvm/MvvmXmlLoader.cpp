@@ -7,6 +7,12 @@
 
 // Controls - 统一包含所有控件
 #include "Controls.h"
+#include "Button.h"
+#include "ComboBox.h"
+
+// Lua binding for collection support
+#include "../lua/LuaObservableCollection.h"
+#include "../lua/LuaAwareMvvmLoader.h"
 
 #include <tinyxml2.h>
 #include <sstream>
@@ -425,6 +431,13 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
     else if (auto listBox = std::dynamic_pointer_cast<luaui::controls::ListBox>(control)) {
         if (propertyName == "ItemsSource") {
             BindListBox(listBox, propertyName, expression);
+        } else if (propertyName == "SelectedItem" || propertyName == "SelectedIndex") {
+            BindListBoxSelectedItem(listBox, expression);
+        }
+    }
+    else if (auto comboBox = std::dynamic_pointer_cast<luaui::controls::ComboBox>(control)) {
+        if (propertyName == "ItemsSource" || propertyName == "SelectedItem" || propertyName == "SelectedIndex") {
+            BindComboBox(comboBox, propertyName, expression);
         }
     }
     else if (auto checkBox = std::dynamic_pointer_cast<luaui::controls::CheckBox>(control)) {
@@ -435,6 +448,11 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
     else if (auto radioButton = std::dynamic_pointer_cast<luaui::controls::RadioButton>(control)) {
         if (propertyName == "IsChecked") {
             BindRadioButton(radioButton, propertyName, expression);
+        }
+    }
+    else if (auto button = std::dynamic_pointer_cast<luaui::controls::Button>(control)) {
+        if (propertyName == "Command") {
+            BindButtonCommand(button, expression);
         }
     }
 }
@@ -662,14 +680,306 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
     (void)propertyName;
     utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s", expression.path.c_str());
     
-    // TODO: 实现集合绑定
-    // 需要：
-    // 1. 从 ViewModel 获取 ObservableCollection
-    // 2. 监听 CollectionChanged 事件
-    // 3. 同步到 ListBox 的 Items
-    // 4. 支持 SelectedItem 双向绑定
+    // 获取 DataContext（需要是 LuaAwareMvvmLoader 或类似实现）
+    auto dataContext = m_dataContext;
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for ListBox binding");
+        return;
+    }
     
-    (void)listBox;
+    // 尝试获取 Lua 状态
+    // 通过 dynamic_cast 检查是否是 Lua 数据上下文
+    auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    if (!luaDataContext) {
+        // 非 Lua 上下文，尝试通用方式获取属性值
+        std::any value = dataContext->GetPropertyValue(expression.path);
+        if (!value.has_value()) {
+            utils::Logger::Warning("[MVVM] Property '" + expression.path + "' not found");
+            return;
+        }
+        
+        // 如果是字符串向量，直接添加
+        if (value.type() == typeid(std::vector<std::wstring>)) {
+            auto items = std::any_cast<std::vector<std::wstring>>(value);
+            for (const auto& item : items) {
+                listBox->AddItem(item);
+            }
+        }
+        return;
+    }
+    
+    // Lua 上下文：获取 Lua 表并创建 ObservableCollection 包装
+    lua_State* L = luaDataContext->GetLuaState();
+    if (!L) {
+        utils::Logger::Error("[MVVM] Lua state not available");
+        return;
+    }
+    
+    // 从 ViewModel 获取表
+    lua_getglobal(L, "ViewModelInstance");
+    if (!lua_istable(L, -1)) {
+        // 尝试其他可能的名称
+        lua_pop(L, 1);
+        lua_getglobal(L, "TestRunnerViewModel");
+    }
+    
+    if (!lua_istable(L, -1)) {
+        utils::Logger::Error("[MVVM] ViewModel not found in Lua");
+        lua_pop(L, 1);
+        return;
+    }
+    
+    // 获取属性值
+    lua_getfield(L, -1, expression.path.c_str());
+    if (!lua_istable(L, -1)) {
+        utils::Logger::Warning("[MVVM] Property '" + expression.path + "' is not a table");
+        lua_pop(L, 2);
+        return;
+    }
+    
+    // 创建 ObservableCollection 包装
+    auto collection = std::make_shared<lua::LuaObservableCollection>(L, -1);
+    
+    // 设置显示成员路径（如果有）
+    if (!expression.converterParameter.empty()) {
+        collection->SetDisplayMemberPath(expression.converterParameter);
+    }
+    
+    // 初始填充 ListBox
+    auto texts = collection->GetAllDisplayTexts();
+    for (const auto& text : texts) {
+        listBox->AddItem(text);
+    }
+    
+    lua_pop(L, 2);  // pop table and ViewModel
+    
+    utils::Logger::InfoF("[MVVM] ListBox.ItemsSource bound to %s with %zu items", 
+        expression.path.c_str(), collection->GetCount());
+    
+    // 订阅属性变更以重新绑定（如果整个集合被替换）
+    if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+        dataContext->SubscribePropertyChanged(
+            [listBox, dataContext, expression, luaDataContext](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == expression.path) {
+                // 集合被替换，重新同步
+                // 简化处理：清空并重新加载
+                listBox->ClearItems();
+                
+                lua_State* L = luaDataContext->GetLuaState();
+                if (!L) return;
+                
+                lua_getglobal(L, "ViewModelInstance");
+                if (!lua_istable(L, -1)) {
+                    lua_pop(L, 1);
+                    lua_getglobal(L, "TestRunnerViewModel");
+                }
+                
+                if (lua_istable(L, -1)) {
+                    lua_getfield(L, -1, expression.path.c_str());
+                    if (lua_istable(L, -1)) {
+                        auto newCollection = std::make_shared<lua::LuaObservableCollection>(L, -1);
+                        auto texts = newCollection->GetAllDisplayTexts();
+                        for (const auto& text : texts) {
+                            listBox->AddItem(text);
+                        }
+                    }
+                    lua_pop(L, 1);
+                }
+                lua_pop(L, 1);
+            }
+        });
+    }
+}
+
+// ============================================================================
+// ListBox SelectedItem 绑定 - 支持 TwoWay
+// ============================================================================
+void MvvmXmlLoader::BindListBoxSelectedItem(
+    std::shared_ptr<luaui::controls::ListBox> listBox,
+    const BindingExpression& expression) {
+    
+    auto dataContext = m_dataContext;
+    auto propertyName = expression.path;
+    
+    utils::Logger::InfoF("[MVVM] Binding ListBox.SelectedItem to %s", propertyName.c_str());
+    
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for ListBox SelectedItem binding");
+        return;
+    }
+    
+    auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    if (!luaDataContext) {
+        utils::Logger::Warning("[MVVM] SelectedItem binding only supported with Lua ViewModel");
+        return;
+    }
+    
+    // ViewModel -> View: 当 SelectedItem 变更时，更新 ListBox 选择
+    auto updateView = [listBox, dataContext, propertyName]() {
+        std::any value = dataContext->GetPropertyValue(propertyName);
+        if (!value.has_value()) return;
+        
+        // 获取索引值（假设 ViewModel 存储的是索引）
+        try {
+            if (value.type() == typeid(int)) {
+                int index = std::any_cast<int>(value);
+                listBox->SetSelectedIndex(index);
+            } else if (value.type() == typeid(double)) {
+                int index = static_cast<int>(std::any_cast<double>(value));
+                listBox->SetSelectedIndex(index);
+            }
+        } catch (...) {
+            // 忽略转换错误
+        }
+    };
+    
+    // 应用初始值
+    updateView();
+    
+    // 订阅属性变更
+    if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+        dataContext->SubscribePropertyChanged(
+            [propertyName, updateView](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == propertyName) {
+                updateView();
+            }
+        });
+    }
+    
+    // TwoWay: View -> ViewModel
+    if (expression.mode == BindingMode::TwoWay) {
+        listBox->SelectionChanged.Add([dataContext, propertyName](luaui::controls::ListBox*, int selectedIndex) {
+            utils::Logger::DebugF("[MVVM] ListBox.SelectionChanged: %s -> %d", propertyName.c_str(), selectedIndex);
+            dataContext->SetPropertyValue(propertyName, selectedIndex);
+        });
+    }
+}
+
+// ============================================================================
+// ComboBox 绑定 - ItemsSource 和 SelectedItem
+// ============================================================================
+void MvvmXmlLoader::BindComboBox(std::shared_ptr<luaui::controls::ComboBox> comboBox,
+                                 const std::string& propertyName,
+                                 const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for ComboBox binding");
+        return;
+    }
+    
+    auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    
+    if (propertyName == "ItemsSource") {
+        utils::Logger::InfoF("[MVVM] Binding ComboBox.ItemsSource to %s", expression.path.c_str());
+        
+        if (!luaDataContext) {
+            // 非 Lua 上下文，尝试通用方式
+            std::any value = dataContext->GetPropertyValue(expression.path);
+            if (value.type() == typeid(std::vector<std::wstring>)) {
+                auto items = std::any_cast<std::vector<std::wstring>>(value);
+                for (const auto& item : items) {
+                    comboBox->AddItem(item);
+                }
+            }
+            return;
+        }
+        
+        // Lua 上下文
+        lua_State* L = luaDataContext->GetLuaState();
+        if (!L) return;
+        
+        lua_getglobal(L, "ViewModelInstance");
+        if (!lua_istable(L, -1)) {
+            lua_pop(L, 1);
+            lua_getglobal(L, "TestRunnerViewModel");
+        }
+        
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, expression.path.c_str());
+            if (lua_istable(L, -1)) {
+                auto collection = std::make_shared<lua::LuaObservableCollection>(L, -1);
+                auto texts = collection->GetAllDisplayTexts();
+                for (const auto& text : texts) {
+                    comboBox->AddItem(text);
+                }
+            }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+        
+        // 订阅变更
+        if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+            dataContext->SubscribePropertyChanged(
+                [comboBox, dataContext, expression, luaDataContext](const PropertyChangedEventArgs& args) {
+                if (args.propertyName == expression.path) {
+                    comboBox->ClearItems();
+                    
+                    lua_State* L = luaDataContext->GetLuaState();
+                    if (!L) return;
+                    
+                    lua_getglobal(L, "ViewModelInstance");
+                    if (!lua_istable(L, -1)) {
+                        lua_pop(L, 1);
+                        lua_getglobal(L, "TestRunnerViewModel");
+                    }
+                    
+                    if (lua_istable(L, -1)) {
+                        lua_getfield(L, -1, expression.path.c_str());
+                        if (lua_istable(L, -1)) {
+                            auto newCollection = std::make_shared<lua::LuaObservableCollection>(L, -1);
+                            auto texts = newCollection->GetAllDisplayTexts();
+                            for (const auto& text : texts) {
+                                comboBox->AddItem(text);
+                            }
+                        }
+                        lua_pop(L, 1);
+                    }
+                    lua_pop(L, 1);
+                }
+            });
+        }
+    }
+    else if (propertyName == "SelectedItem" || propertyName == "SelectedIndex") {
+        utils::Logger::InfoF("[MVVM] Binding ComboBox.SelectedItem to %s", expression.path.c_str());
+        
+        // ViewModel -> View
+        auto updateView = [comboBox, dataContext, expression]() {
+            std::any value = dataContext->GetPropertyValue(expression.path);
+            if (!value.has_value()) return;
+            
+            try {
+                int index = -1;
+                if (value.type() == typeid(int)) {
+                    index = std::any_cast<int>(value);
+                } else if (value.type() == typeid(double)) {
+                    index = static_cast<int>(std::any_cast<double>(value));
+                }
+                if (index >= 0) {
+                    comboBox->SetSelectedIndex(index);
+                }
+            } catch (...) {}
+        };
+        
+        updateView();
+        
+        // 订阅变更
+        if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
+            dataContext->SubscribePropertyChanged(
+                [expression, updateView](const PropertyChangedEventArgs& args) {
+                if (args.propertyName == expression.path) {
+                    updateView();
+                }
+            });
+        }
+        
+        // TwoWay: View -> ViewModel
+        if (expression.mode == BindingMode::TwoWay && luaDataContext) {
+            comboBox->SelectionChanged.Add([dataContext, expression](luaui::controls::ComboBox*, int selectedIndex) {
+                utils::Logger::DebugF("[MVVM] ComboBox.SelectionChanged: %s -> %d", expression.path.c_str(), selectedIndex);
+                dataContext->SetPropertyValue(expression.path, selectedIndex);
+            });
+        }
+    }
 }
 
 // ============================================================================
@@ -787,6 +1097,47 @@ void MvvmXmlLoader::BindRadioButton(std::shared_ptr<luaui::controls::RadioButton
             dataContext->SetPropertyValue(boundPropertyName, value);
         });
     }
+}
+
+// ============================================================================
+// Button 绑定 - Command（点击命令）
+// ============================================================================
+void MvvmXmlLoader::BindButtonCommand(std::shared_ptr<luaui::controls::Button> button,
+                                      const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto commandName = expression.path;
+    
+    utils::Logger::InfoF("[MVVM] Binding Button.Command to %s", commandName.c_str());
+    
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for Button Command binding");
+        return;
+    }
+    
+    // 尝试转换为 LuaPropertyNotifier
+    auto luaNotifier = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    if (luaNotifier) {
+        // Lua ViewModel：检查函数是否存在
+        if (!luaNotifier->HasFunction(commandName)) {
+            utils::Logger::Warning("[MVVM] Command '" + commandName + "' not found in Lua ViewModel");
+            return;
+        }
+        
+        // 绑定点击事件到 Lua 函数
+        button->Click.Add([luaNotifier, commandName](luaui::Control*) {
+            utils::Logger::InfoF("[MVVM] Executing Lua command: %s", commandName.c_str());
+            bool result = luaNotifier->CallFunction(commandName);
+            if (!result) {
+                utils::Logger::Warning("[MVVM] Lua command '" + commandName + "' execution failed");
+            }
+        });
+    } else {
+        // C++ ViewModel：暂不支持，记录警告
+        utils::Logger::Warning("[MVVM] Button Command binding only supported with Lua ViewModel");
+        return;
+    }
+    
+    utils::Logger::InfoF("[MVVM] Button command '%s' bound successfully", commandName.c_str());
 }
 
 // ============================================================================
