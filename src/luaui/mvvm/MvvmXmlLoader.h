@@ -117,6 +117,9 @@ private:
     void BindListBox(std::shared_ptr<luaui::controls::ListBox> listBox,
                      const std::string& propertyName,
                      const BindingExpression& expression);
+    void BindDataGrid(std::shared_ptr<luaui::controls::DataGrid> dataGrid,
+                      const std::string& propertyName,
+                      const BindingExpression& expression);
     void BindListBoxSelectedItem(std::shared_ptr<luaui::controls::ListBox> listBox,
                                  const BindingExpression& expression);
     void BindComboBox(std::shared_ptr<luaui::controls::ComboBox> comboBox,

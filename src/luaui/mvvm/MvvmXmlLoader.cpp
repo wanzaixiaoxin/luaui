@@ -17,9 +17,291 @@
 #include <tinyxml2.h>
 #include <sstream>
 #include <algorithm>
+#include <Windows.h>
 
 namespace luaui {
 namespace mvvm {
+namespace {
+
+struct DataGridColumnSpec {
+    std::string header;
+    std::string path;
+};
+
+std::string TrimString(const std::string& value) {
+    size_t first = value.find_first_not_of(" \t\n\r");
+    if (first == std::string::npos) {
+        return "";
+    }
+
+    size_t last = value.find_last_not_of(" \t\n\r");
+    return value.substr(first, last - first + 1);
+}
+
+std::vector<std::string> SplitString(const std::string& value, char delimiter) {
+    std::vector<std::string> parts;
+    std::stringstream ss(value);
+    std::string part;
+    while (std::getline(ss, part, delimiter)) {
+        part = TrimString(part);
+        if (!part.empty()) {
+            parts.push_back(part);
+        }
+    }
+    return parts;
+}
+
+std::wstring Utf8ToWString(const std::string& value) {
+    if (value.empty()) {
+        return L"";
+    }
+
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, nullptr, 0);
+    if (sizeNeeded <= 0) {
+        return L"";
+    }
+
+    std::wstring result(sizeNeeded - 1, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, result.data(), sizeNeeded);
+    return result;
+}
+
+bool PushLuaViewModel(lua_State* L) {
+    if (!L) {
+        return false;
+    }
+
+    lua_getglobal(L, "ViewModelInstance");
+    if (lua_istable(L, -1)) {
+        return true;
+    }
+
+    lua_pop(L, 1);
+    lua_getglobal(L, "TestRunnerViewModel");
+    if (lua_istable(L, -1)) {
+        return true;
+    }
+
+    lua_pop(L, 1);
+    return false;
+}
+
+bool PushLuaPathFromTable(lua_State* L, int tableIndex, const std::string& path) {
+    if (!L || path.empty()) {
+        return false;
+    }
+
+    int absTableIndex = lua_absindex(L, tableIndex);
+    lua_pushvalue(L, absTableIndex);
+
+    for (const auto& part : SplitString(path, '.')) {
+        if (!lua_istable(L, -1)) {
+            lua_pop(L, 1);
+            return false;
+        }
+
+        lua_getfield(L, -1, part.c_str());
+        lua_remove(L, -2);
+    }
+
+    return true;
+}
+
+bool PushLuaCollection(lua_State* L, const std::string& path) {
+    if (!PushLuaViewModel(L)) {
+        return false;
+    }
+
+    if (!PushLuaPathFromTable(L, -1, path)) {
+        lua_pop(L, 1);
+        return false;
+    }
+
+    lua_remove(L, -2);
+
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        return false;
+    }
+
+    lua_getfield(L, -1, "_items");
+    if (lua_istable(L, -1)) {
+        lua_remove(L, -2);
+        return true;
+    }
+
+    lua_pop(L, 1);
+    return true;
+}
+
+std::wstring LuaValueToDisplayText(lua_State* L, int valueIndex) {
+    if (!L) {
+        return L"";
+    }
+
+    int absValueIndex = lua_absindex(L, valueIndex);
+
+    if (lua_isnil(L, absValueIndex)) {
+        return L"";
+    }
+
+    if (lua_isboolean(L, absValueIndex)) {
+        return lua_toboolean(L, absValueIndex) ? L"True" : L"False";
+    }
+
+    if (lua_isinteger(L, absValueIndex)) {
+        return std::to_wstring(static_cast<long long>(lua_tointeger(L, absValueIndex)));
+    }
+
+    if (lua_isnumber(L, absValueIndex)) {
+        std::ostringstream stream;
+        stream << lua_tonumber(L, absValueIndex);
+        return Utf8ToWString(stream.str());
+    }
+
+    if (lua_isstring(L, absValueIndex)) {
+        return Utf8ToWString(lua_tostring(L, absValueIndex));
+    }
+
+    if (lua_istable(L, absValueIndex)) {
+        lua_getfield(L, absValueIndex, "Name");
+        if (lua_isstring(L, -1)) {
+            std::wstring value = Utf8ToWString(lua_tostring(L, -1));
+            lua_pop(L, 1);
+            return value;
+        }
+        lua_pop(L, 1);
+    }
+
+    lua_getglobal(L, "tostring");
+    lua_pushvalue(L, absValueIndex);
+    if (lua_pcall(L, 1, 1, 0) == LUA_OK) {
+        std::wstring value = lua_isstring(L, -1) ? Utf8ToWString(lua_tostring(L, -1)) : L"";
+        lua_pop(L, 1);
+        return value;
+    }
+
+    lua_pop(L, 1);
+    return L"";
+}
+
+std::vector<DataGridColumnSpec> ParseDataGridColumnSpecs(const std::string& parameter) {
+    std::vector<DataGridColumnSpec> specs;
+    if (parameter.empty()) {
+        return specs;
+    }
+
+    for (const auto& token : SplitString(parameter, '|')) {
+        DataGridColumnSpec spec;
+        size_t separator = token.find(':');
+        if (separator == std::string::npos) {
+            spec.header = token;
+            spec.path = token;
+        } else {
+            spec.header = TrimString(token.substr(0, separator));
+            spec.path = TrimString(token.substr(separator + 1));
+        }
+
+        if (!spec.path.empty()) {
+            if (spec.header.empty()) {
+                spec.header = spec.path;
+            }
+            specs.push_back(spec);
+        }
+    }
+
+    return specs;
+}
+
+std::vector<DataGridColumnSpec> BuildDataGridColumnSpecsFromLuaCollection(
+    lua_State* L,
+    int collectionIndex,
+    const std::string& parameter) {
+    std::vector<DataGridColumnSpec> specs = ParseDataGridColumnSpecs(parameter);
+    if (!specs.empty()) {
+        return specs;
+    }
+
+    int absCollectionIndex = lua_absindex(L, collectionIndex);
+    if (lua_rawlen(L, absCollectionIndex) == 0) {
+        return specs;
+    }
+
+    lua_rawgeti(L, absCollectionIndex, 1);
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        specs.push_back({"Value", ""});
+        return specs;
+    }
+
+    std::vector<std::string> keys;
+    lua_pushnil(L);
+    while (lua_next(L, -2) != 0) {
+        if (lua_type(L, -2) == LUA_TSTRING && lua_type(L, -1) != LUA_TFUNCTION) {
+            std::string key = lua_tostring(L, -2);
+            if (!key.empty() && key[0] != '_') {
+                keys.push_back(key);
+            }
+        }
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    std::sort(keys.begin(), keys.end());
+    for (const auto& key : keys) {
+        specs.push_back({key, key});
+    }
+
+    return specs;
+}
+
+std::vector<DataGridColumnSpec> BuildDataGridColumnSpecsFromControl(
+    const std::shared_ptr<luaui::controls::DataGrid>& dataGrid) {
+    std::vector<DataGridColumnSpec> specs;
+    if (!dataGrid) {
+        return specs;
+    }
+
+    for (size_t i = 0; i < dataGrid->GetColumnCount(); ++i) {
+        auto column = dataGrid->GetColumn(i);
+        if (!column) {
+            continue;
+        }
+
+        std::string header(column->GetHeader().begin(), column->GetHeader().end());
+        std::string path(column->GetBindingPath().begin(), column->GetBindingPath().end());
+        if (path.empty()) {
+            path = header;
+        }
+
+        if (!path.empty()) {
+            specs.push_back({header.empty() ? path : header, path});
+        }
+    }
+
+    return specs;
+}
+
+std::wstring GetLuaCellText(lua_State* L, int itemIndex, const DataGridColumnSpec& spec) {
+    if (!L) {
+        return L"";
+    }
+
+    int absItemIndex = lua_absindex(L, itemIndex);
+    if (spec.path.empty() || !lua_istable(L, absItemIndex)) {
+        return LuaValueToDisplayText(L, absItemIndex);
+    }
+
+    if (!PushLuaPathFromTable(L, absItemIndex, spec.path)) {
+        return L"";
+    }
+
+    std::wstring value = LuaValueToDisplayText(L, -1);
+    lua_pop(L, 1);
+    return value;
+}
+
+} // namespace
 
 // ============================================================================
 // MvvmXmlLoader 实现
@@ -268,7 +550,10 @@ static bool IsBindingValidForControl(const PendingBindingInfo& bindingInfo,
         if (isCheckBox || isRadioButton) return true;
         return false;
     } else if (propertyName == "ItemsSource") {
-        return std::dynamic_pointer_cast<luaui::controls::ListBox>(control) != nullptr;
+        bool isListBox = std::dynamic_pointer_cast<luaui::controls::ListBox>(control) != nullptr;
+        bool isComboBox = std::dynamic_pointer_cast<luaui::controls::ComboBox>(control) != nullptr;
+        bool isDataGrid = std::dynamic_pointer_cast<luaui::controls::DataGrid>(control) != nullptr;
+        return isListBox || isComboBox || isDataGrid;
     }
     
     // 未知属性，允许绑定尝试
@@ -433,6 +718,11 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
             BindListBox(listBox, propertyName, expression);
         } else if (propertyName == "SelectedItem" || propertyName == "SelectedIndex") {
             BindListBoxSelectedItem(listBox, expression);
+        }
+    }
+    else if (auto dataGrid = std::dynamic_pointer_cast<luaui::controls::DataGrid>(control)) {
+        if (propertyName == "ItemsSource") {
+            BindDataGrid(dataGrid, propertyName, expression);
         }
     }
     else if (auto comboBox = std::dynamic_pointer_cast<luaui::controls::ComboBox>(control)) {
@@ -797,6 +1087,92 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
 // ============================================================================
 // ListBox SelectedItem 绑定 - 支持 TwoWay
 // ============================================================================
+// ============================================================================
+// DataGrid 缁戝畾 - ItemsSource
+// ============================================================================
+void MvvmXmlLoader::BindDataGrid(std::shared_ptr<luaui::controls::DataGrid> dataGrid,
+                                 const std::string& propertyName,
+                                 const BindingExpression& expression) {
+    (void)propertyName;
+
+    auto dataContext = m_dataContext;
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for DataGrid binding");
+        return;
+    }
+
+    auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    if (!luaDataContext) {
+        utils::Logger::Warning("[MVVM] DataGrid.ItemsSource currently requires a Lua ViewModel");
+        return;
+    }
+
+    auto updateView = [dataGrid, expression, luaDataContext]() {
+        lua_State* L = luaDataContext->GetLuaState();
+        if (!L) {
+            return;
+        }
+
+        if (!PushLuaCollection(L, expression.path)) {
+            utils::Logger::WarningF("[MVVM] DataGrid source '%s' not found or not a collection",
+                expression.path.c_str());
+            dataGrid->ClearRows();
+            if (dataGrid->GetAutoGenerateColumns()) {
+                dataGrid->ClearColumns();
+            }
+            dataGrid->Refresh();
+            return;
+        }
+
+        std::vector<DataGridColumnSpec> specs;
+        if (!dataGrid->GetAutoGenerateColumns() && dataGrid->GetColumnCount() > 0) {
+            specs = BuildDataGridColumnSpecsFromControl(dataGrid);
+        } else {
+            specs = BuildDataGridColumnSpecsFromLuaCollection(L, -1, expression.converterParameter);
+            dataGrid->ClearColumns();
+            for (const auto& spec : specs) {
+                auto column = std::make_shared<luaui::controls::DataGridColumn>(Utf8ToWString(spec.header));
+                column->SetBindingPath(Utf8ToWString(spec.path));
+                dataGrid->AddColumn(column);
+            }
+        }
+
+        dataGrid->ClearRows();
+
+        int absCollectionIndex = lua_absindex(L, -1);
+        size_t count = lua_rawlen(L, absCollectionIndex);
+        for (size_t i = 0; i < count; ++i) {
+            lua_rawgeti(L, absCollectionIndex, static_cast<int>(i) + 1);
+
+            auto row = std::make_shared<luaui::controls::DataGridRow>();
+            for (const auto& spec : specs) {
+                auto cell = std::make_shared<luaui::controls::DataGridCell>();
+                cell->SetText(GetLuaCellText(L, -1, spec));
+                row->AddCell(cell);
+            }
+
+            dataGrid->AddRow(row);
+            lua_pop(L, 1);
+        }
+
+        lua_pop(L, 1);
+        dataGrid->Refresh();
+    };
+
+    utils::Logger::InfoF("[MVVM] Binding DataGrid.ItemsSource to %s", expression.path.c_str());
+
+    updateView();
+
+    if (expression.mode != BindingMode::OneTime) {
+        dataContext->SubscribePropertyChanged(
+            [expression, updateView](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == expression.path || args.propertyName.empty()) {
+                updateView();
+            }
+        });
+    }
+}
+
 void MvvmXmlLoader::BindListBoxSelectedItem(
     std::shared_ptr<luaui::controls::ListBox> listBox,
     const BindingExpression& expression) {

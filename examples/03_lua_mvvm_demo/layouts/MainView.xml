@@ -41,13 +41,37 @@
     <!-- Items Section -->
     <Border Background="#F5F5F5" Padding="16">
         <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Items" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="Items Collection (ListBox Demo)" FontWeight="SemiBold" FontSize="16"/>
             <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
-            
+
+            <!-- ListBox displaying Items collection - with border for visibility -->
+            <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
+                <ListBox ItemsSource="{Binding Items}"
+                         SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+                         Height="120"/>
+            </Border>
+
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Add Item" Style="Accent" Click="AddItemCommand"/>
-                <Button Content="Clear Items" Style="Primary" Click="ClearItemsCommand"/>
+                <Button Content="Remove Selected" Style="Warning" Click="RemoveItemCommand"/>
+                <Button Content="Clear All" Style="Primary" Click="ClearItemsCommand"/>
             </StackPanel>
+
+            <!-- Selected item details -->
+            <TextBlock Text="{Binding SelectedItemText}" FontSize="12" Foreground="#2196F3"/>
+        </StackPanel>
+    </Border>
+
+    <!-- DataGrid Section -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Items Collection (DataGrid Demo)" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="Same Lua collection rendered as a table. Add, remove, and clear actions rebuild the grid." FontSize="12" Foreground="#757575"/>
+
+            <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
+                <DataGrid Height="180"
+                          ItemsSource="{Binding Items, ConverterParameter='Product:Name|Category:Category|Price:Value|Stock:Stock'}"/>
+            </Border>
         </StackPanel>
     </Border>
     

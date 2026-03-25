@@ -574,12 +574,13 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
     const char* knownCommands[] = {
         // Counter buttons
         "IncrementCommand",
-        "DecrementCommand", 
+        "DecrementCommand",
         "ResetCommand",
         // Feature toggle
         "ToggleCommand",
         // Items
         "AddItemCommand",
+        "RemoveItemCommand",
         "ClearItemsCommand",
         // Generic patterns
         "ClickCommand",

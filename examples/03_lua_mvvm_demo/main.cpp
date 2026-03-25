@@ -6,6 +6,7 @@
 // - 支持 {Binding Property} 和 Notify("Property")
 
 #include <luaui/lua/LuaMvvmHost.h>
+#include <luaui/core/Window.h>
 #include <luaui/utils/Logger.h>
 #include <windows.h>
 #include <iostream>
@@ -53,6 +54,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
             utils::Logger::Error("[Main] Initialization failed!");
             MessageBoxA(NULL, "Initialization failed. Check console for details.", "Error", MB_ICONERROR);
             return 1;
+        }
+
+        if (auto* window = host.GetWindow()) {
+            ::SetWindowPos(window->GetHandle(), nullptr, 0, 0, 980, 860,
+                SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
         }
         
         utils::Logger::Info("[Main] Initialization successful, starting message loop...");

@@ -9,7 +9,7 @@
 #include "Border.h"
 #include "CheckBox.h"      // CheckBox and RadioButton
 #include "ListBox.h"       // ListBox and ListBoxItem
-#include "Image.h"
+#include "DataGrid.h"      // DataGrid
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -126,6 +126,7 @@ private:
         RegisterElement("ProgressBar", []() { return std::make_shared<ProgressBar>(); });
         RegisterElement("ListBox", []() { return std::make_shared<ListBox>(); });
         RegisterElement("ListBoxItem", []() { return std::make_shared<ListBoxItem>(); });
+        RegisterElement("DataGrid", []() { return std::make_shared<DataGrid>(); });
         RegisterElement("Image", []() { return std::make_shared<Image>(); });
         RegisterElement("Rectangle", []() { return std::make_shared<Rectangle>(); });
         RegisterElement("Ellipse", []() { return std::make_shared<Ellipse>(); });
@@ -379,6 +380,24 @@ private:
                 if (colors.size() >= 3) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetStateColors(colors[0], colors[1], colors[2]);
+                    }
+                }
+            }
+            // ItemsSource (ListBox, ComboBox) - 绑定表达式
+            else if (name == "ItemsSource") {
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "ItemsSource", value);
+                }
+            }
+            // SelectedIndex (ListBox, ComboBox) - 绑定表达式
+            else if (name == "SelectedIndex") {
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "SelectedIndex", value);
+                } else {
+                    // 直接设置整数值
+                    if (auto listBox = std::dynamic_pointer_cast<controls::ListBox>(control)) {
+                        int index = std::stoi(value);
+                        listBox->SetSelectedIndex(index);
                     }
                 }
             }

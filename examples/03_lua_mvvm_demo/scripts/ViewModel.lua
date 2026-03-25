@@ -63,31 +63,79 @@ function ViewModel:ToggleCommand()
 end
 
 -- ============================================================================
--- Items 相关
+-- Items 相关 - 列表控件演示
 -- ============================================================================
-ViewModel.Items = {}
-ViewModel.ItemCount = "Items: 0"
+-- 使用 AutoViewModel 提供的数组操作方法：AddItem, RemoveItem, ClearItems
+-- 这些方法会自动触发属性变更通知
+-- 初始添加一些演示数据
+ViewModel.Items = {
+    { Name = "Apple", Category = "Fruit", Value = 10, Stock = 32 },
+    { Name = "Banana", Category = "Fruit", Value = 25, Stock = 18 },
+    { Name = "Cherry", Category = "Fruit", Value = 50, Stock = 64 }
+}
+ViewModel.ItemCount = "Items: 3"
+ViewModel.SelectedIndex = -1  -- -1 表示无选中项
+
+-- 计算属性：显示选中项的详细信息
+ViewModel:DefineComputed("SelectedItemText",
+    {"Items", "SelectedIndex"},
+    function(self)
+        local idx = self.SelectedIndex
+        if idx and idx >= 0 and idx < #self.Items then
+            local item = self.Items[idx + 1]  -- Lua 索引从 1 开始
+            return string.format("Selected: %s (Value: %d)", item.Name, item.Value)
+        end
+        return "No item selected"
+    end
+)
 
 function ViewModel:UpdateItemCount()
     local count = #self.Items
     self.ItemCount = string.format("Items: %d", count)
+    -- 如果选中项超出范围，重置选择
+    if self.SelectedIndex >= count then
+        self.SelectedIndex = count - 1
+    end
     Log.infof("[ViewModel] ItemCount updated: %d", count)
 end
 
 function ViewModel:AddItemCommand()
-    Log.info("[ViewModel] AddItemCommand called")
-    table.insert(self.Items, { 
-        Name = "Item " .. tostring(#self.Items + 1), 
-        Value = math.random(100) 
-    })
+    local categories = { "Fruit", "Snack", "Drink", "Office" }
+    local newItem = {
+        Name = "Item " .. tostring(#self.Items + 1),
+        Category = categories[(#self.Items % #categories) + 1],
+        Value = math.random(100),
+        Stock = math.random(5, 80)
+    }
+    -- 使用 AutoViewModel 提供的 AddItem 方法（自动触发通知）
+    self:AddItem("Items", newItem)
     self:UpdateItemCount()
     self:UpdateStatus()
-    Log.infof("Added item, total: %d", #self.Items)
+end
+
+function ViewModel:RemoveItemCommand()
+    Log.info("[ViewModel] RemoveItemCommand called")
+    local idx = self.SelectedIndex
+    if idx and idx >= 0 and idx < #self.Items then
+        -- 使用 AutoViewModel 提供的 RemoveItem 方法（自动触发通知）
+        local removed = self:RemoveItem("Items", idx + 1)  -- Lua 索引从 1 开始
+        -- 调整选中索引
+        if idx >= #self.Items then
+            self.SelectedIndex = #self.Items - 1
+        end
+        self:UpdateItemCount()
+        self:UpdateStatus()
+        Log.infof("Removed item: %s", removed and removed.Name or "unknown")
+    else
+        Log.warn("[ViewModel] No item selected to remove")
+    end
 end
 
 function ViewModel:ClearItemsCommand()
     Log.info("[ViewModel] ClearItemsCommand called")
-    self.Items = {}
+    self.SelectedIndex = -1
+    -- 使用 AutoViewModel 提供的 ClearItems 方法（自动触发通知）
+    self:ClearItems("Items")
     self:UpdateItemCount()
     self:UpdateStatus()
     Log.info("Items cleared")
