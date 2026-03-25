@@ -9,6 +9,38 @@
 namespace luaui {
 namespace controls {
 
+namespace {
+
+rendering::Rect GetGlobalRenderRect(Control* control) {
+    rendering::Rect globalRect;
+    if (!control) {
+        return globalRect;
+    }
+
+    if (auto* render = control->GetRender()) {
+        globalRect = render->GetRenderRect();
+    }
+
+    auto parent = control->GetParent();
+    while (parent) {
+        auto* parentControl = dynamic_cast<Control*>(parent.get());
+        if (!parentControl) {
+            break;
+        }
+
+        if (auto* parentRender = parentControl->GetRender()) {
+            globalRect.x += parentRender->GetRenderRect().x;
+            globalRect.y += parentRender->GetRenderRect().y;
+        }
+
+        parent = parentControl->GetParent();
+    }
+
+    return globalRect;
+}
+
+} // namespace
+
 // ============================================================================
 // DataGridColumn
 // ============================================================================
@@ -161,7 +193,7 @@ void DataGridCell::OnRender(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
     
-    auto rect = render->GetRenderRect();
+    rendering::Rect rect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
     // 绘制背景
     rendering::Color bgColor = m_normalBg;
@@ -185,8 +217,7 @@ void DataGridCell::OnRender(rendering::IRenderContext* context) {
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
         
         if (textBrush && textFormat) {
-            rendering::Point textPos(rect.x + m_padding, 
-                                     rect.y + (rect.height - m_fontSize) / 2);
+            rendering::Point textPos(m_padding, (rect.height - m_fontSize) / 2);
             context->DrawTextString(m_text, textFormat.get(), textPos, textBrush.get());
         }
     }
@@ -495,10 +526,7 @@ void DataGrid::CalculateColumnWidths(float totalWidth) {
 }
 
 int DataGrid::HitTestColumnHeader(float x) {
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
+    rendering::Rect rect = GetGlobalRenderRect(this);
     
     float currentX = rect.x - m_scrollOffsetX;
     for (size_t i = 0; i < m_columns.size(); ++i) {
@@ -512,10 +540,7 @@ int DataGrid::HitTestColumnHeader(float x) {
 }
 
 int DataGrid::HitTestRow(float y) {
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
+    rendering::Rect rect = GetGlobalRenderRect(this);
     
     float rowStartY = rect.y + m_headerHeight - m_scrollOffsetY;
     
@@ -563,20 +588,15 @@ rendering::Size DataGrid::OnMeasureChildren(const rendering::Size& availableSize
 }
 
 rendering::Size DataGrid::OnArrangeChildren(const rendering::Size& finalSize) {
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
-    
     // 排列行
-    float y = rect.y + m_headerHeight - m_scrollOffsetY;
+    float y = m_headerHeight - m_scrollOffsetY;
     for (auto& row : m_rows) {
         if (auto* layoutable = row->AsLayoutable()) {
-            layoutable->Arrange(rendering::Rect(rect.x, y, finalSize.width, m_rowHeight));
+            layoutable->Arrange(rendering::Rect(0, y, finalSize.width, m_rowHeight));
         }
         
         // 排列单元格
-        float x = rect.x - m_scrollOffsetX;
+        float x = -m_scrollOffsetX;
         for (size_t i = 0; i < row->GetCellCount() && i < m_columns.size(); ++i) {
             if (auto cell = row->GetCell(i)) {
                 if (auto* cellLayoutable = cell->AsLayoutable()) {
@@ -596,10 +616,10 @@ rendering::Size DataGrid::OnArrangeChildren(const rendering::Size& finalSize) {
 void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
     if (!context) return;
     
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
+    auto* render = GetRender();
+    if (!render) return;
+
+    rendering::Rect rect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
     // 绘制边框
     auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
@@ -611,7 +631,14 @@ void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
     RenderHeader(context);
     
     // 绘制行（可见区域）
-    float rowStartY = rect.y + m_headerHeight;
+    rendering::Rect contentRect(0, m_headerHeight, rect.width, rect.height - m_headerHeight);
+    if (contentRect.height <= 0) {
+        return;
+    }
+
+    context->PushClip(contentRect);
+
+    float rowStartY = m_headerHeight;
     float contentHeight = rect.height - m_headerHeight;
     
     for (size_t i = 0; i < m_rows.size(); ++i) {
@@ -627,7 +654,7 @@ void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
             auto altBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0xF5F5F5));
             if (altBrush) {
                 context->FillRectangle(
-                    rendering::Rect(rect.x + 1, rowY, rect.width - 2, m_rowHeight),
+                    rendering::Rect(1, rowY, rect.width - 2, m_rowHeight),
                     altBrush.get());
             }
         }
@@ -644,8 +671,8 @@ void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
         // 绘制行分隔线
         auto lineBrush = context->CreateSolidColorBrush(m_gridLineColor);
         if (lineBrush) {
-            context->DrawLine(rendering::Point(rect.x, rowY + m_rowHeight),
-                              rendering::Point(rect.x + rect.width, rowY + m_rowHeight),
+            context->DrawLine(rendering::Point(0, rowY + m_rowHeight),
+                              rendering::Point(rect.width, rowY + m_rowHeight),
                               lineBrush.get(), 1.0f);
         }
     }
@@ -654,28 +681,29 @@ void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
     if (!m_columns.empty()) {
         auto lineBrush = context->CreateSolidColorBrush(m_gridLineColor);
         if (lineBrush) {
-            float x = rect.x - m_scrollOffsetX;
+            float x = -m_scrollOffsetX;
             for (size_t i = 0; i < m_columns.size(); ++i) {
                 x += m_columns[i]->GetActualWidth();
-                if (x > rect.x && x < rect.x + rect.width) {
-                    context->DrawLine(rendering::Point(x, rect.y + m_headerHeight),
-                                      rendering::Point(x, rect.y + rect.height),
+                if (x > 0 && x < rect.width) {
+                    context->DrawLine(rendering::Point(x, m_headerHeight),
+                                      rendering::Point(x, rect.height),
                                       lineBrush.get(), 1.0f);
                 }
             }
         }
     }
+
+    context->PopClip();
 }
 
 void DataGrid::RenderHeader(rendering::IRenderContext* context) {
     if (!context || m_columns.empty()) return;
     
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
-    
-    rendering::Rect headerRect(rect.x, rect.y, rect.width, m_headerHeight);
+    auto* render = GetRender();
+    if (!render) return;
+
+    rendering::Rect rect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
+    rendering::Rect headerRect(0, 0, rect.width, m_headerHeight);
     
     // 绘制列头背景
     auto bgBrush = context->CreateSolidColorBrush(m_headerBg);
@@ -694,7 +722,8 @@ void DataGrid::RenderHeader(rendering::IRenderContext* context) {
     auto textBrush = context->CreateSolidColorBrush(rendering::Color::Black());
     
     if (textFormat && textBrush) {
-        float x = rect.x - m_scrollOffsetX;
+        context->PushClip(headerRect);
+        float x = -m_scrollOffsetX;
         for (auto& col : m_columns) {
             if (!col->GetIsVisible()) continue;
             
@@ -702,20 +731,21 @@ void DataGrid::RenderHeader(rendering::IRenderContext* context) {
             
             // 绘制列分隔线
             if (borderBrush) {
-                context->DrawLine(rendering::Point(x + colWidth, rect.y),
-                                  rendering::Point(x + colWidth, rect.y + m_headerHeight),
+                context->DrawLine(rendering::Point(x + colWidth, 0),
+                                  rendering::Point(x + colWidth, m_headerHeight),
                                   borderBrush.get(), 1.0f);
             }
             
             // 绘制标题文本
             if (!col->GetHeader().empty()) {
-                rendering::Point textPos(x + 8, rect.y + (m_headerHeight - 14) / 2);
+                rendering::Point textPos(x + 8, (m_headerHeight - 14) / 2);
                 context->DrawTextString(col->GetHeader(), textFormat.get(), 
                                         textPos, textBrush.get());
             }
             
             x += colWidth;
         }
+        context->PopClip();
     }
 }
 
@@ -725,18 +755,18 @@ void DataGrid::OnMouseMove(MouseEventArgs& args) {
 }
 
 void DataGrid::OnMouseDown(MouseEventArgs& args) {
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
+    rendering::Rect rect = GetGlobalRenderRect(this);
     
     // 检查是否点击列头
-    if (args.y < rect.y + m_headerHeight) {
+    if (args.x >= rect.x && args.x <= rect.x + rect.width &&
+        args.y >= rect.y && args.y <= rect.y + rect.height &&
+        args.y < rect.y + m_headerHeight) {
         int colIndex = HitTestColumnHeader(args.x);
         if (colIndex >= 0 && colIndex < static_cast<int>(m_columns.size())) {
             ColumnHeaderClick.Invoke(this, m_columns[colIndex].get());
         }
-    } else {
+    } else if (args.x >= rect.x && args.x <= rect.x + rect.width &&
+               args.y >= rect.y && args.y <= rect.y + rect.height) {
         // 检查是否点击行
         int rowIndex = HitTestRow(args.y);
         if (rowIndex >= 0 && rowIndex < static_cast<int>(m_rows.size())) {

@@ -73,7 +73,7 @@ void ListBoxItem::OnRender(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
     
-    auto bounds = render->GetRenderRect();
+    rendering::Rect bounds(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
     // 绘制背景 - 使用刷子
     auto bgBrush = context->CreateSolidColorBrush(bgColor);

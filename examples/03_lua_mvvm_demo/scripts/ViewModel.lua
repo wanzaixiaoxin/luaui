@@ -109,6 +109,7 @@ function ViewModel:AddItemCommand()
     }
     -- 使用 AutoViewModel 提供的 AddItem 方法（自动触发通知）
     self:AddItem("Items", newItem)
+    self:AddItem("Items", newItem)
     self:UpdateItemCount()
     self:UpdateStatus()
 end
