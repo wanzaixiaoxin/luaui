@@ -311,12 +311,46 @@ TEST(Grid_NegativeSpanValues) {
     Grid grid;
     auto btn = std::make_shared<Button>();
     
-    // Test negative values (should still be stored)
+    // WARNING: Negative values are stored but may cause undefined behavior
+    // in layout calculations. This test documents current behavior.
+    // TODO: Grid should validate and clamp negative values to 0
     grid.SetColumn(btn, -1);
     grid.SetRow(btn, -2);
     
+    // Current implementation stores negative values as-is
+    // This is a potential bug - should be clamped to valid range
     ASSERT_EQ(grid.GetColumn(btn), -1);
     ASSERT_EQ(grid.GetRow(btn), -2);
+    
+    // Test that negative spans are stored
+    grid.SetColumnSpan(btn, -1);
+    grid.SetRowSpan(btn, -1);
+    
+    ASSERT_EQ(grid.GetColumnSpan(btn), -1);
+    ASSERT_EQ(grid.GetRowSpan(btn), -1);
+}
+
+TEST(Grid_BoundaryValues) {
+    Grid grid;
+    auto btn = std::make_shared<Button>();
+    
+    // Test zero values (valid)
+    grid.SetColumn(btn, 0);
+    grid.SetRow(btn, 0);
+    grid.SetColumnSpan(btn, 1);
+    grid.SetRowSpan(btn, 1);
+    
+    ASSERT_EQ(grid.GetColumn(btn), 0);
+    ASSERT_EQ(grid.GetRow(btn), 0);
+    ASSERT_EQ(grid.GetColumnSpan(btn), 1);
+    ASSERT_EQ(grid.GetRowSpan(btn), 1);
+    
+    // Test large values
+    grid.SetColumn(btn, 1000000);
+    grid.SetRow(btn, 1000000);
+    
+    ASSERT_EQ(grid.GetColumn(btn), 1000000);
+    ASSERT_EQ(grid.GetRow(btn), 1000000);
 }
 
 // ==================== Performance Tests ====================

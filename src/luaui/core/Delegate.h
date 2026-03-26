@@ -96,8 +96,21 @@ public:
     ID Add(void(*func)(Args...)) {
         if (!func) return INVALID_ID;
         
+        // Create a wrapper for static functions
+        struct StaticWrapper {
+            void(*func)(Args...);
+            static void Invoke(void* target, Args... args) {
+                auto* w = static_cast<StaticWrapper*>(target);
+                w->func(args...);
+            }
+        };
+        
+        auto wrapper = std::make_shared<StaticWrapper>(StaticWrapper{func});
+        void* target = wrapper.get();
+        CallbackType callback = &StaticWrapper::Invoke;
+        
         ID id = m_nextId++;
-        m_entries.emplace_back(nullptr, func, id);
+        m_entries.emplace_back(target, callback, id, wrapper);
         return id;
     }
 
@@ -106,13 +119,8 @@ public:
      */
     template<typename Lambda>
     ID Add(Lambda&& lambda) {
-        // 检查是否可以转换为函数指针（无捕获lambda）
-        if constexpr (std::is_convertible_v<Lambda, void(*)(Args...)>) {
-            return Add(static_cast<void(*)(Args...)>(lambda));
-        } else {
-            // 有捕获的lambda：使用std::function包装
-            return AddWrapped(std::forward<Lambda>(lambda));
-        }
+        // Always use wrapped version to avoid signature issues
+        return AddWrapped(std::forward<Lambda>(lambda));
     }
     
 private:

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dashboard layout test -->
+<StackPanel Orientation="Horizontal" Spacing="0">
+    <!-- Sidebar -->
+    <Border Background="#F5F5F5" Width="200">
+        <StackPanel Orientation="Vertical" Spacing="4" Margin="8">
+            <TextBlock Text="Navigation" FontWeight="Bold" Margin="0,0,0,8"/>
+            <Button Content="Home"/>
+            <Button Content="Dashboard"/>
+            <Button Content="Settings"/>
+            <Button Content="About"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- Main content -->
+    <StackPanel Orientation="Vertical" Spacing="8" Margin="16">
+        <TextBlock Text="Dashboard" FontSize="24" FontWeight="Bold"/>
+        
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <Border Background="#E3F2FD" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Total Users" Foreground="#1976D2"/>
+                    <TextBlock Text="1,234" FontSize="32" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+            <Border Background="#E8F5E9" Padding="16">
+                <StackPanel>
+                    <TextBlock Text="Active Sessions" Foreground="#388E3C"/>
+                    <TextBlock Text="567" FontSize="32" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        
+        <TextBlock Text="Recent Activity" FontWeight="Bold"/>
+    </StackPanel>
+</StackPanel>

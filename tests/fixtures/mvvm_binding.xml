@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MVVM binding test layout -->
+<StackPanel Orientation="Vertical" Spacing="10">
+    <TextBlock Text="{Binding Title}"/>
+    <TextBlock Text="{Binding Counter}"/>
+    <Button Content="Increment" Click="IncrementCommand"/>
+    <Button Content="Decrement" Click="DecrementCommand"/>
+    <CheckBox Content="Active" IsChecked="{Binding IsActive}"/>
+    <TextBox Text="{Binding Title, Mode=TwoWay}" Width="200"/>
+</StackPanel>

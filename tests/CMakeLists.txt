@@ -145,6 +145,81 @@ if(TARGET LuaUI_MVVM)
     add_test(NAME MvvmBindingTest COMMAND test_mvvm_binding)
 endif()
 
+# Test executable for extended controls (Slider, ProgressBar, TextBox, Image)
+if(TARGET LuaUI_Controls)
+    add_executable(test_controls_extended test_controls_extended.cpp)
+    target_link_libraries(test_controls_extended PRIVATE LuaUI_Controls LuaUI_Core LuaUI_Rendering)
+    target_include_directories(test_controls_extended PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+    add_test(NAME ControlsExtendedTest COMMAND test_controls_extended)
+endif()
+
+# Test executable for event system (Delegate)
+if(TARGET LuaUI_Core AND TARGET LuaUI_Controls)
+    add_executable(test_events test_events.cpp)
+    target_link_libraries(test_events PRIVATE LuaUI_Core LuaUI_Controls)
+    target_include_directories(test_events PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+    add_test(NAME EventsTest COMMAND test_events)
+endif()
+
+# Test executable for XML integration (XML layout loading, MVVM binding, XML+Lua integration)
+if(TARGET LuaUI_Xml AND TARGET LuaUI_MVVM AND TARGET LuaUI_Lua)
+    add_executable(test_xml_integration test_xml_integration.cpp)
+    target_link_libraries(test_xml_integration PRIVATE 
+        LuaUI_Xml 
+        LuaUI_MVVM 
+        LuaUI_Lua 
+        LuaUI_Core 
+        LuaUI_Controls
+    )
+    target_include_directories(test_xml_integration PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/xml
+        ${CMAKE_SOURCE_DIR}/src/luaui/mvvm
+        ${CMAKE_SOURCE_DIR}/src/luaui/lua
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+        ${CMAKE_SOURCE_DIR}/third_party/lua
+    )
+    add_test(NAME XmlIntegrationTest COMMAND test_xml_integration)
+endif()
+
+# Test executable for E2E integration (complete XML+Lua+MVVM pipeline)
+if(TARGET LuaUI_Xml AND TARGET LuaUI_MVVM AND TARGET LuaUI_Lua)
+    add_executable(test_e2e_integration test_e2e_integration.cpp)
+    target_link_libraries(test_e2e_integration PRIVATE 
+        LuaUI_Xml 
+        LuaUI_MVVM 
+        LuaUI_Lua 
+        LuaUI_Core 
+        LuaUI_Controls
+    )
+    target_include_directories(test_e2e_integration PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/xml
+        ${CMAKE_SOURCE_DIR}/src/luaui/mvvm
+        ${CMAKE_SOURCE_DIR}/src/luaui/lua
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+        ${CMAKE_SOURCE_DIR}/third_party/lua
+    )
+    add_test(NAME E2EIntegrationTest COMMAND test_e2e_integration)
+endif()
+
 # Visual Tests with Lua MVVM
 add_subdirectory(visual)
 
