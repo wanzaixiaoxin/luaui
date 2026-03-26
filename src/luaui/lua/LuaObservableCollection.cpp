@@ -286,11 +286,11 @@ std::vector<std::wstring> LuaObservableCollection::GetAllDisplayTexts() const {
     std::vector<std::wstring> result;
     size_t count = GetCount();
     result.reserve(count);
-    
+
     for (size_t i = 0; i < count; ++i) {
         result.push_back(GetItemDisplayText(i));
     }
-    
+
     return result;
 }
 
@@ -299,19 +299,17 @@ std::vector<std::wstring> LuaObservableCollection::GetAllDisplayTexts() const {
 // ============================================================================
 ObservableCollectionBinding::ObservableCollectionBinding(
     std::shared_ptr<luaui::controls::ListBox> listBox,
-    std::shared_ptr<mvvm::INotifyCollectionChanged> collection)
+    std::shared_ptr<LuaObservableCollection> collection)
     : m_listBox(listBox)
     , m_collection(collection)
 {
-    // 初始同步
     SyncAllItems();
-    
-    // 订阅增量变更
+
     m_handler = [this](const mvvm::NotifyCollectionChangedEventArgs& args) {
         OnCollectionChanged(args);
     };
     m_collection->SubscribeCollectionChanged(m_handler);
-    
+
     utils::Logger::Info("[ObservableCollectionBinding] Created with incremental updates");
 }
 
@@ -377,13 +375,15 @@ void ObservableCollectionBinding::OnCollectionChanged(const mvvm::NotifyCollecti
 }
 
 void ObservableCollectionBinding::SyncAllItems() {
-    if (!m_listBox) return;
-    
+    if (!m_listBox || !m_collection) return;
+
     m_listBox->ClearItems();
-    
-    // 这里需要重新从集合获取所有项
-    // 实际实现可能需要访问原始数据源
-    
+
+    auto texts = m_collection->GetAllDisplayTexts();
+    for (const auto& text : texts) {
+        m_listBox->AddItem(text);
+    }
+
     utils::Logger::Info("[ObservableCollectionBinding] Full sync completed");
 }
 

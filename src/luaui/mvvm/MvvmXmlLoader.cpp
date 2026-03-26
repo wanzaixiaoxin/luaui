@@ -968,18 +968,17 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
                                 const std::string& propertyName,
                                 const BindingExpression& expression) {
     (void)propertyName;
-    utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s (with incremental updates)", 
+    utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s (with incremental updates)",
         expression.path.c_str());
-    
+
     auto dataContext = m_dataContext;
     if (!dataContext) {
         utils::Logger::Error("[MVVM] No DataContext available for ListBox binding");
         return;
     }
-    
+
     auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
     if (!luaDataContext) {
-        // 非 Lua 上下文，使用传统方式
         std::any value = dataContext->GetPropertyValue(expression.path);
         if (value.type() == typeid(std::vector<std::wstring>)) {
             auto items = std::any_cast<std::vector<std::wstring>>(value);
@@ -989,58 +988,52 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
         }
         return;
     }
-    
-    // Lua 上下文
+
     lua_State* L = luaDataContext->GetLuaState();
     if (!L) {
         utils::Logger::Error("[MVVM] Lua state not available");
         return;
     }
-    
-    // 获取 ViewModel
+
     lua_getglobal(L, "ViewModelInstance");
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
         lua_getglobal(L, "TestRunnerViewModel");
     }
-    
+
     if (!lua_istable(L, -1)) {
         utils::Logger::Error("[MVVM] ViewModel not found in Lua");
         lua_pop(L, 1);
         return;
     }
-    
-    // 获取属性值（集合表）
+
     lua_getfield(L, -1, expression.path.c_str());
     if (!lua_istable(L, -1)) {
         utils::Logger::Warning("[MVVM] Property '" + expression.path + "' is not a table");
         lua_pop(L, 2);
         return;
     }
-    
-    // 检查是否是 ObservableCollection（有 Subscribe 方法）
+
     lua_getfield(L, -1, "Subscribe");
     bool isObservableCollection = lua_isfunction(L, -1);
     lua_pop(L, 1);
-    
-    // 创建 LuaObservableCollection 包装
+
     auto collection = std::make_shared<lua::LuaObservableCollection>(L, -1);
-    
+
     if (!expression.converterParameter.empty()) {
         collection->SetDisplayMemberPath(expression.converterParameter);
     }
-    
+
     if (isObservableCollection) {
-        // 支持增量更新
         utils::Logger::Info("[MVVM] Collection supports incremental updates");
         collection->EnableIncrementalUpdates(true);
-        
-        // 创建增量绑定
+
         auto binding = std::make_shared<lua::ObservableCollectionBinding>(listBox, collection);
-        
-        // 将 binding 存储在某个地方防止被销毁...（简化处理，实际需改进）
+        m_collectionBindings.push_back(binding);
+
+        utils::Logger::InfoF("[MVVM] ObservableCollectionBinding saved, total bindings: %zu",
+            m_collectionBindings.size());
     } else {
-        // 传统方式：初始填充
         auto texts = collection->GetAllDisplayTexts();
         for (const auto& text : texts) {
             listBox->AddItem(text);
@@ -1048,35 +1041,56 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
         utils::Logger::Warning("[MVVM] Collection does not support incremental updates, "
             "consider using ObservableCollection.new()");
     }
-    
-    lua_pop(L, 2);  // pop table and ViewModel
-    
-    // 订阅整个集合替换
+
+    lua_pop(L, 2);
+
     if (expression.mode == BindingMode::OneWay || expression.mode == BindingMode::TwoWay) {
         dataContext->SubscribePropertyChanged(
-            [listBox, expression, luaDataContext](const PropertyChangedEventArgs& args) {
+            [listBox, expression, luaDataContext, isObservableCollection](const PropertyChangedEventArgs& args) {
             if (args.propertyName == expression.path) {
+                utils::Logger::InfoF("[MVVM] Property changed: %s, isObservable=%d", 
+                    args.propertyName.c_str(), isObservableCollection);
+                if (isObservableCollection) {
+                    // ObservableCollection 的更新由 ObservableCollectionBinding 处理
+                    return;
+                }
+                // 非 ObservableCollection：属性变更时重新加载整个列表
+                utils::Logger::InfoF("[MVVM] Clearing ListBox (had %zu items)", listBox->GetItemCount());
                 listBox->ClearItems();
-                
+                utils::Logger::Info("[MVVM] ListBox cleared");
+
                 lua_State* L = luaDataContext->GetLuaState();
-                if (!L) return;
-                
+                if (!L) {
+                    utils::Logger::Error("[MVVM] Lua state is null");
+                    return;
+                }
+
                 lua_getglobal(L, "ViewModelInstance");
                 if (!lua_istable(L, -1)) {
                     lua_pop(L, 1);
                     lua_getglobal(L, "TestRunnerViewModel");
                 }
-                
+
                 if (lua_istable(L, -1)) {
                     lua_getfield(L, -1, expression.path.c_str());
                     if (lua_istable(L, -1)) {
+                        size_t count = lua_rawlen(L, -1);
+                        utils::Logger::InfoF("[MVVM] Reloading %zu items", count);
                         auto newCollection = std::make_shared<lua::LuaObservableCollection>(L, -1);
                         auto texts = newCollection->GetAllDisplayTexts();
+                        utils::Logger::InfoF("[MVVM] Got %zu display texts", texts.size());
                         for (const auto& text : texts) {
+                            utils::Logger::InfoF("[MVVM] Adding item: %s", 
+                                std::string(text.begin(), text.end()).c_str());
                             listBox->AddItem(text);
                         }
+                        utils::Logger::InfoF("[MVVM] ListBox now has %zu items", listBox->GetItemCount());
+                    } else {
+                        utils::Logger::Warning("[MVVM] Property is not a table");
                     }
                     lua_pop(L, 1);
+                } else {
+                    utils::Logger::Warning("[MVVM] ViewModel not found");
                 }
                 lua_pop(L, 1);
             }
@@ -1107,67 +1121,81 @@ void MvvmXmlLoader::BindDataGrid(std::shared_ptr<luaui::controls::DataGrid> data
         return;
     }
 
-    auto updateView = [dataGrid, expression, luaDataContext]() {
-        lua_State* L = luaDataContext->GetLuaState();
-        if (!L) {
-            return;
+    lua_State* L = luaDataContext->GetLuaState();
+    if (!L) {
+        utils::Logger::Error("[MVVM] Lua state not available");
+        return;
+    }
+
+    lua_getglobal(L, "ViewModelInstance");
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        lua_getglobal(L, "TestRunnerViewModel");
+    }
+
+    if (!lua_istable(L, -1)) {
+        utils::Logger::Error("[MVVM] ViewModel not found in Lua");
+        lua_pop(L, 1);
+        return;
+    }
+
+    lua_getfield(L, -1, expression.path.c_str());
+    if (!lua_istable(L, -1)) {
+        utils::Logger::Warning("[MVVM] Property '" + expression.path + "' is not a table");
+        lua_pop(L, 2);
+        return;
+    }
+
+    lua_getfield(L, -1, "Subscribe");
+    bool isObservableCollection = lua_isfunction(L, -1);
+    lua_pop(L, 1);
+
+    auto collection = std::make_shared<lua::LuaObservableCollection>(L, -1);
+
+    if (!expression.converterParameter.empty()) {
+        collection->SetDisplayMemberPath(expression.converterParameter);
+    }
+
+    auto columnSpecs = BuildDataGridColumnSpecsFromLuaCollection(L, -1, expression.converterParameter);
+    dataGrid->ClearColumns();
+    for (const auto& spec : columnSpecs) {
+        auto column = std::make_shared<luaui::controls::DataGridColumn>(Utf8ToWString(spec.header));
+        column->SetBindingPath(Utf8ToWString(spec.path));
+        dataGrid->AddColumn(column);
+    }
+
+    int collectionIndex = lua_absindex(L, -1);
+    size_t count = lua_rawlen(L, collectionIndex);
+    for (size_t i = 0; i < count; ++i) {
+        lua_rawgeti(L, collectionIndex, static_cast<int>(i) + 1);
+
+        auto row = std::make_shared<luaui::controls::DataGridRow>();
+        for (const auto& spec : columnSpecs) {
+            auto cell = std::make_shared<luaui::controls::DataGridCell>();
+            cell->SetText(GetLuaCellText(L, -1, spec));
+            row->AddCell(cell);
         }
-
-        if (!PushLuaCollection(L, expression.path)) {
-            utils::Logger::WarningF("[MVVM] DataGrid source '%s' not found or not a collection",
-                expression.path.c_str());
-            dataGrid->ClearRows();
-            if (dataGrid->GetAutoGenerateColumns()) {
-                dataGrid->ClearColumns();
-            }
-            dataGrid->Refresh();
-            return;
-        }
-
-        std::vector<DataGridColumnSpec> specs;
-        if (!dataGrid->GetAutoGenerateColumns() && dataGrid->GetColumnCount() > 0) {
-            specs = BuildDataGridColumnSpecsFromControl(dataGrid);
-        } else {
-            specs = BuildDataGridColumnSpecsFromLuaCollection(L, -1, expression.converterParameter);
-            dataGrid->ClearColumns();
-            for (const auto& spec : specs) {
-                auto column = std::make_shared<luaui::controls::DataGridColumn>(Utf8ToWString(spec.header));
-                column->SetBindingPath(Utf8ToWString(spec.path));
-                dataGrid->AddColumn(column);
-            }
-        }
-
-        dataGrid->ClearRows();
-
-        int absCollectionIndex = lua_absindex(L, -1);
-        size_t count = lua_rawlen(L, absCollectionIndex);
-        for (size_t i = 0; i < count; ++i) {
-            lua_rawgeti(L, absCollectionIndex, static_cast<int>(i) + 1);
-
-            auto row = std::make_shared<luaui::controls::DataGridRow>();
-            for (const auto& spec : specs) {
-                auto cell = std::make_shared<luaui::controls::DataGridCell>();
-                cell->SetText(GetLuaCellText(L, -1, spec));
-                row->AddCell(cell);
-            }
-
-            dataGrid->AddRow(row);
-            lua_pop(L, 1);
-        }
+        dataGrid->AddRow(row);
 
         lua_pop(L, 1);
-        dataGrid->Refresh();
-    };
+    }
 
-    utils::Logger::InfoF("[MVVM] Binding DataGrid.ItemsSource to %s", expression.path.c_str());
+    if (isObservableCollection) {
+        utils::Logger::Info("[MVVM] DataGrid collection supports incremental updates (initial sync only for now)");
+    } else {
+        utils::Logger::Warning("[MVVM] DataGrid collection does not support incremental updates");
+    }
 
-    updateView();
+    lua_pop(L, 2);
 
     if (expression.mode != BindingMode::OneTime) {
         dataContext->SubscribePropertyChanged(
-            [expression, updateView](const PropertyChangedEventArgs& args) {
-            if (args.propertyName == expression.path || args.propertyName.empty()) {
-                updateView();
+            [expression, isObservableCollection](const PropertyChangedEventArgs& args) {
+            if (args.propertyName == expression.path) {
+                if (isObservableCollection) {
+                    return;
+                }
+                utils::Logger::Warning("[MVVM] DataGrid non-observable collection changed, requires manual refresh");
             }
         });
     }

@@ -107,8 +107,6 @@ function ViewModel:AddItemCommand()
         Value = math.random(100),
         Stock = math.random(5, 80)
     }
-    -- 使用 AutoViewModel 提供的 AddItem 方法（自动触发通知）
-    self:AddItem("Items", newItem)
     self:AddItem("Items", newItem)
     self:UpdateItemCount()
     self:UpdateStatus()

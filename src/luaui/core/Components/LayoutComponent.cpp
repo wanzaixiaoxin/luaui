@@ -1,6 +1,7 @@
 #include "Components/LayoutComponent.h"
 #include "Control.h"
 #include "Components/RenderComponent.h"
+#include "Window.h"
 
 namespace luaui {
 namespace components {
@@ -70,16 +71,46 @@ void LayoutComponent::SetVerticalAlignment(VerticalAlignment align) {
 }
 
 void LayoutComponent::InvalidateMeasure() {
+    if (!m_measureValid) return;  // 已经失效，避免重复冒泡
+    
     m_measureValid = false;
     m_arrangeValid = false;
     m_dirty = LayoutDirty::Measure;
-    // TODO: 冒泡到父控件
+    
+    // 冒泡到父控件
+    if (m_owner) {
+        if (auto parent = m_owner->GetParent()) {
+            if (auto* parentLayout = static_cast<Control*>(parent.get())->AsLayoutable()) {
+                parentLayout->InvalidateMeasure();
+            }
+        } else {
+            // 没有父控件，说明是根控件，通知窗口需要重新布局
+            if (auto* window = m_owner->GetWindow()) {
+                window->InvalidateLayout();
+            }
+        }
+    }
 }
 
 void LayoutComponent::InvalidateArrange() {
+    if (!m_arrangeValid) return;  // 已经失效，避免重复冒泡
+    
     m_arrangeValid = false;
     m_dirty = LayoutDirty::Arrange;
-    // TODO: 冒泡到父控件
+    
+    // 冒泡到父控件
+    if (m_owner) {
+        if (auto parent = m_owner->GetParent()) {
+            if (auto* parentLayout = static_cast<Control*>(parent.get())->AsLayoutable()) {
+                parentLayout->InvalidateArrange();
+            }
+        } else {
+            // 没有父控件，说明是根控件，通知窗口需要重新布局
+            if (auto* window = m_owner->GetWindow()) {
+                window->InvalidateLayout();
+            }
+        }
+    }
 }
 
 rendering::Size LayoutComponent::MeasureOverride(const rendering::Size& availableSize) {

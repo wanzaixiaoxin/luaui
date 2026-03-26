@@ -5,13 +5,17 @@
 #include "Control.h"
 #include <functional>
 #include <vector>
+#include <memory>
 
-// Forward declare tinyxml2
 namespace tinyxml2 {
     class XMLElement;
 }
 
 namespace luaui {
+namespace lua {
+    class ObservableCollectionBinding;
+}
+
 namespace mvvm {
 
 // ============================================================================
@@ -76,6 +80,7 @@ private:
     std::vector<PendingBinding> m_pendingBindings;
     std::vector<PendingBindingInfo> m_pendingBindingInfos;
     std::weak_ptr<luaui::Control> m_rootControl;  // 根控件，用于查找命名控件
+    std::vector<std::shared_ptr<luaui::lua::ObservableCollectionBinding>> m_collectionBindings;
     
     void ApplyBindings();
     bool IsBindingExpression(const std::string& value);

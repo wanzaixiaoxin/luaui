@@ -75,7 +75,7 @@ public:
     
     // 获取所有项的显示文本
     std::vector<std::wstring> GetAllDisplayTexts() const;
-    
+
     // 设置显示字段名（用于复杂对象）
     void SetDisplayMemberPath(const std::string& path) { m_displayMemberPath = path; }
     
@@ -117,23 +117,23 @@ class ObservableCollectionBinding {
 public:
     ObservableCollectionBinding(
         std::shared_ptr<luaui::controls::ListBox> listBox,
-        std::shared_ptr<mvvm::INotifyCollectionChanged> collection
+        std::shared_ptr<LuaObservableCollection> collection
     );
-    
-    ~ObservableCollectionBinding();
-    
-    void Detach();
 
-private:
-    void OnCollectionChanged(const mvvm::NotifyCollectionChangedEventArgs& args);
+    ~ObservableCollectionBinding();
+
+    void Detach();
     void SyncAllItems();
     void InsertItem(int index, const std::wstring& text);
     void RemoveItem(int index);
     void MoveItem(int oldIndex, int newIndex);
     void ReplaceItem(int index, const std::wstring& text);
-    
+
+private:
+    void OnCollectionChanged(const mvvm::NotifyCollectionChangedEventArgs& args);
+
     std::shared_ptr<luaui::controls::ListBox> m_listBox;
-    std::shared_ptr<mvvm::INotifyCollectionChanged> m_collection;
+    std::shared_ptr<LuaObservableCollection> m_collection;
     mvvm::INotifyCollectionChanged::CollectionChangedHandler m_handler;
     bool m_attached = true;
 };

@@ -275,6 +275,9 @@ void ListBox::AddItem(const std::shared_ptr<ListBoxItem>& item) {
     m_items.push_back(item);
     AddChild(item);
     
+    utils::Logger::InfoF("[ListBox] AddItem: index=%d, total items=%zu, children=%zu", 
+        item->m_index, m_items.size(), GetChildCount());
+    
     if (auto* layout = GetLayout()) layout->InvalidateMeasure();
 }
 
@@ -335,11 +338,16 @@ void ListBox::ClearItems() {
         return;
     }
     
+    utils::Logger::InfoF("[ListBox] ClearItems: clearing %zu items, %zu children", 
+        m_items.size(), GetChildCount());
+    
     for (auto& item : m_items) {
         RemoveChild(item);
     }
     m_items.clear();
     m_selectedIndex = -1;
+    
+    utils::Logger::InfoF("[ListBox] ClearItems done: %zu children remaining", GetChildCount());
     
     if (auto* layout = GetLayout()) layout->InvalidateMeasure();
 }
@@ -430,16 +438,23 @@ rendering::Size ListBox::OnArrangeChildren(const rendering::Size& finalSize) {
     }
     
     // 传统模式
+    utils::Logger::InfoF("[ListBox] OnArrangeChildren: %zu items, finalSize=%fx%f", 
+        m_items.size(), finalSize.width, finalSize.height);
     float y = -m_scrollOffset;
+    int arrangedCount = 0;
     for (auto& item : m_items) {
         auto* layout = item->GetLayout();
         if (layout) {
             layout->SetWidth(finalSize.width);
             layout->SetHeight(m_itemHeight);
             layout->Arrange(rendering::Rect(0, y, finalSize.width, m_itemHeight));
+            arrangedCount++;
+        } else {
+            utils::Logger::Warning("[ListBox] Item has no layout");
         }
         y += m_itemHeight;
     }
+    utils::Logger::InfoF("[ListBox] Arranged %d items", arrangedCount);
     
     // 计算最大滚动偏移
     float totalHeight = m_items.size() * m_itemHeight;
