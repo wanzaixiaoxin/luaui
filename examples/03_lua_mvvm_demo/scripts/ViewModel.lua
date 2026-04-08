@@ -18,8 +18,41 @@ ViewModel.Counter = 0
 ViewModel.IsFeatureEnabled = false
 ViewModel.Status = "Ready"
 
+-- ============================================================================
+-- Button 新功能测试属性
+-- ============================================================================
+
+-- 3. 动态禁用测试
+ViewModel.IsBtnDisabled = false
+ViewModel:DefineComputed("ToggleBtnText",
+    {"IsBtnDisabled"},
+    function(self)
+        return self.IsBtnDisabled and "点击启用" or "点击禁用"
+    end
+)
+ViewModel:DefineComputed("DisableStatusText",
+    {"IsBtnDisabled"},
+    function(self)
+        return self.IsBtnDisabled and "当前: 已禁用" or "当前: 已启用"
+    end
+)
+
+-- 5. MVVM 绑定：按钮文本
+ViewModel.BtnLabelIndex = 1
+ViewModel.BtnLabel = "Hello"
+ViewModel.BtnLabelOptions = { "Hello", "World", "LuaUI", "Button", "MVVM" }
+
+-- 7. 点击计数
+ViewModel.BtnClickCount = 0
+ViewModel:DefineComputed("BtnClickCountText",
+    {"BtnClickCount"},
+    function(self)
+        return string.format("已点击 %d 次", self.BtnClickCount)
+    end
+)
+
 -- 计算属性：自动根据 IsFeatureEnabled 计算
-ViewModel:DefineComputed("FeatureStatusText", 
+ViewModel:DefineComputed("FeatureStatusText",
     {"IsFeatureEnabled"},
     function(self)
         return self.IsFeatureEnabled and "Feature is ON" or "Feature is OFF"
@@ -45,11 +78,9 @@ end
 
 function ViewModel:ResetCommand()
     Log.info("[ViewModel] ResetCommand called")
-    -- 批量更新：多个属性变更只触发一次 UI 刷新
     self:BeginBatch()
     self.Counter = 0
     self.IsFeatureEnabled = false
-    -- FeatureStatusText 作为计算属性会自动更新
     self:EndBatch()
     self:UpdateStatus()
     Log.info("Reset completed")
@@ -63,26 +94,45 @@ function ViewModel:ToggleCommand()
 end
 
 -- ============================================================================
+-- Button 新功能测试命令
+-- ============================================================================
+
+-- 3. 动态禁用切换
+function ViewModel:ToggleDisableCommand()
+    self.IsBtnDisabled = not self.IsBtnDisabled
+    Log.infof("[ViewModel] Button disabled: %s", self.IsBtnDisabled and "true" or "false")
+end
+
+-- 5. MVVM 绑定：切换按钮文本
+function ViewModel:ChangeLabelCommand()
+    self.BtnLabelIndex = (self.BtnLabelIndex % #self.BtnLabelOptions) + 1
+    self.BtnLabel = self.BtnLabelOptions[self.BtnLabelIndex]
+    Log.infof("[ViewModel] BtnLabel changed to: %s", self.BtnLabel)
+end
+
+-- 7. 点击计数
+function ViewModel:BtnClickCountCommand()
+    self.BtnClickCount = self.BtnClickCount + 1
+    Log.infof("[ViewModel] Button clicked: %d times", self.BtnClickCount)
+end
+
+-- ============================================================================
 -- Items 相关 - 列表控件演示
 -- ============================================================================
--- 使用 AutoViewModel 提供的数组操作方法：AddItem, RemoveItem, ClearItems
--- 这些方法会自动触发属性变更通知
--- 初始添加一些演示数据
 ViewModel.Items = {
     { Name = "Apple", Category = "Fruit", Value = 10, Stock = 32 },
     { Name = "Banana", Category = "Fruit", Value = 25, Stock = 18 },
     { Name = "Cherry", Category = "Fruit", Value = 50, Stock = 64 }
 }
 ViewModel.ItemCount = "Items: 3"
-ViewModel.SelectedIndex = -1  -- -1 表示无选中项
+ViewModel.SelectedIndex = -1
 
--- 计算属性：显示选中项的详细信息
 ViewModel:DefineComputed("SelectedItemText",
     {"Items", "SelectedIndex"},
     function(self)
         local idx = self.SelectedIndex
         if idx and idx >= 0 and idx < #self.Items then
-            local item = self.Items[idx + 1]  -- Lua 索引从 1 开始
+            local item = self.Items[idx + 1]
             return string.format("Selected: %s (Value: %d)", item.Name, item.Value)
         end
         return "No item selected"
@@ -92,7 +142,6 @@ ViewModel:DefineComputed("SelectedItemText",
 function ViewModel:UpdateItemCount()
     local count = #self.Items
     self.ItemCount = string.format("Items: %d", count)
-    -- 如果选中项超出范围，重置选择
     if self.SelectedIndex >= count then
         self.SelectedIndex = count - 1
     end
@@ -116,9 +165,7 @@ function ViewModel:RemoveItemCommand()
     Log.info("[ViewModel] RemoveItemCommand called")
     local idx = self.SelectedIndex
     if idx and idx >= 0 and idx < #self.Items then
-        -- 使用 AutoViewModel 提供的 RemoveItem 方法（自动触发通知）
-        local removed = self:RemoveItem("Items", idx + 1)  -- Lua 索引从 1 开始
-        -- 调整选中索引
+        local removed = self:RemoveItem("Items", idx + 1)
         if idx >= #self.Items then
             self.SelectedIndex = #self.Items - 1
         end
@@ -133,7 +180,6 @@ end
 function ViewModel:ClearItemsCommand()
     Log.info("[ViewModel] ClearItemsCommand called")
     self.SelectedIndex = -1
-    -- 使用 AutoViewModel 提供的 ClearItems 方法（自动触发通知）
     self:ClearItems("Items")
     self:UpdateItemCount()
     self:UpdateStatus()
@@ -144,9 +190,10 @@ end
 -- 辅助方法
 -- ============================================================================
 function ViewModel:UpdateStatus()
-    self.Status = string.format("Counter: %d | Feature: %s", 
-        self.Counter, 
-        self.IsFeatureEnabled and "ON" or "OFF")
+    self.Status = string.format("Counter: %d | Feature: %s | Clicks: %d",
+        self.Counter,
+        self.IsFeatureEnabled and "ON" or "OFF",
+        self.BtnClickCount)
 end
 
 -- ============================================================================

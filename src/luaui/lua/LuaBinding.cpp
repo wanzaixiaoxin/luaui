@@ -142,6 +142,63 @@ void LuaBinding::RegisterButton(lua_State* L) {
         return 1;
     });
     lua_setfield(L, -2, "getIsEnabled");
+
+    // setForeground (hex color string like "#FF0000")
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
+            lua_touserdata(L, 1)
+        );
+        const char* hex = luaL_checkstring(L, 2);
+        uint32_t colorVal = static_cast<uint32_t>(std::stoul(hex, nullptr, 16));
+        (*ptr)->SetForeground(luaui::rendering::Color::FromHex(colorVal));
+        return 0;
+    });
+    lua_setfield(L, -2, "setForeground");
+
+    // setCornerRadius
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
+            lua_touserdata(L, 1)
+        );
+        float radius = static_cast<float>(luaL_checknumber(L, 2));
+        (*ptr)->SetCornerRadius(luaui::rendering::CornerRadius(radius));
+        return 0;
+    });
+    lua_setfield(L, -2, "setCornerRadius");
+
+    // setBorderBrush (hex color string)
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
+            lua_touserdata(L, 1)
+        );
+        const char* hex = luaL_checkstring(L, 2);
+        uint32_t colorVal = static_cast<uint32_t>(std::stoul(hex, nullptr, 16));
+        (*ptr)->SetBorderBrush(luaui::rendering::Color::FromHex(colorVal));
+        return 0;
+    });
+    lua_setfield(L, -2, "setBorderBrush");
+
+    // setBorderThickness
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
+            lua_touserdata(L, 1)
+        );
+        float thickness = static_cast<float>(luaL_checknumber(L, 2));
+        (*ptr)->SetBorderThickness(thickness);
+        return 0;
+    });
+    lua_setfield(L, -2, "setBorderThickness");
+
+    // setFontSize
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
+            lua_touserdata(L, 1)
+        );
+        float size = static_cast<float>(luaL_checknumber(L, 2));
+        (*ptr)->SetFontSize(size);
+        return 0;
+    });
+    lua_setfield(L, -2, "setFontSize");
     
     lua_setfield(L, -2, "__index");
     lua_pop(L, 1);

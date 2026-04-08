@@ -10,6 +10,7 @@
 #include "CheckBox.h"      // CheckBox and RadioButton
 #include "ListBox.h"       // ListBox and ListBoxItem
 #include "DataGrid.h"      // DataGrid
+#include "layouts/ScrollViewer.h"
 #include <sstream>
 #include <algorithm>
 #include <cctype>
@@ -127,6 +128,7 @@ private:
         RegisterElement("ListBox", []() { return std::make_shared<ListBox>(); });
         RegisterElement("ListBoxItem", []() { return std::make_shared<ListBoxItem>(); });
         RegisterElement("DataGrid", []() { return std::make_shared<DataGrid>(); });
+        RegisterElement("ScrollViewer", []() { return std::make_shared<ScrollViewer>(); });
         RegisterElement("Image", []() { return std::make_shared<Image>(); });
         RegisterElement("Rectangle", []() { return std::make_shared<Rectangle>(); });
         RegisterElement("Ellipse", []() { return std::make_shared<Ellipse>(); });
@@ -199,6 +201,42 @@ private:
                 if (TypeConverter::ToFloat(value, padding)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetPadding(padding, padding, padding, padding);
+                    }
+                }
+            }
+            // 前景色 Foreground (Button)
+            else if (name == "Foreground") {
+                Color color;
+                if (TypeConverter::ToColor(value, color)) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetForeground(color);
+                    }
+                }
+            }
+            // 圆角 CornerRadius (Button)
+            else if (name == "CornerRadius") {
+                float radius;
+                if (TypeConverter::ToFloat(value, radius)) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetCornerRadius(rendering::CornerRadius(radius));
+                    }
+                }
+            }
+            // 边框颜色 BorderBrush (Button)
+            else if (name == "BorderBrush") {
+                Color color;
+                if (TypeConverter::ToColor(value, color)) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetBorderBrush(color);
+                    }
+                }
+            }
+            // 边框粗细 BorderThickness (Button)
+            else if (name == "BorderThickness") {
+                float thickness;
+                if (TypeConverter::ToFloat(value, thickness)) {
+                    if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetBorderThickness(thickness);
                     }
                 }
             }
@@ -314,6 +352,8 @@ private:
                 if (TypeConverter::ToFloat(value, size)) {
                     if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
                         tb->SetFontSize(size);
+                    } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
+                        btn->SetFontSize(size);
                     }
                 }
             }

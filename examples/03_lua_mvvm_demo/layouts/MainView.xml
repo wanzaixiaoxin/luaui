@@ -1,43 +1,120 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- LuaUI MVVM Demo Layout - Using StackPanel as root (Window is created by host) -->
 <!-- Click handler names match Lua function names ending with "Command" -->
+<ScrollViewer>
 <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
-    
+
     <!-- Title -->
     <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
     <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#757575"/>
-    
+
     <!-- Counter Section -->
     <Border Background="#F5F5F5" Padding="16">
         <StackPanel Orientation="Vertical" Spacing="12">
             <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
-            
+
             <StackPanel Orientation="Horizontal" Spacing="16">
                 <TextBlock Text="Count:" VerticalAlignment="Center"/>
                 <TextBlock Text="{Binding Counter}" FontSize="32" FontWeight="Bold" Foreground="#2196F3"/>
             </StackPanel>
-            
+
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="-" Style="Primary" Width="40" Click="DecrementCommand"/>
-                <Button Content="+" Style="Primary" Width="40" Click="IncrementCommand"/>
-                <Button Content="Reset" Style="Danger" Margin="16,0,0,0" Click="ResetCommand"/>
+                <Button Content="-" Width="40" Click="DecrementCommand"/>
+                <Button Content="+" Width="40" Click="IncrementCommand"/>
+                <Button Content="Reset" Margin="16,0,0,0" Click="ResetCommand"/>
             </StackPanel>
         </StackPanel>
     </Border>
-    
+
+    <!-- ================================================================== -->
+    <!-- Button 新功能测试区域 -->
+    <!-- ================================================================== -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Button 新功能测试" FontWeight="SemiBold" FontSize="16"/>
+
+            <!-- 1. 基础外观：圆角 + 边框 + 前景色 -->
+            <TextBlock Text="1. 圆角 / 边框 / 前景色" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="默认按钮" Width="100" Height="34"/>
+                <Button Content="绿色按钮" Width="100" Height="34"
+                        Background="#22C55E" Foreground="#FFFFFF"
+                        CornerRadius="6" BorderBrush="#16A34A" BorderThickness="1"/>
+                <Button Content="红色按钮" Width="100" Height="34"
+                        Background="#EF4444" Foreground="#FFFFFF"
+                        CornerRadius="6" BorderBrush="#DC2626" BorderThickness="1"/>
+                <Button Content="蓝色按钮" Width="100" Height="34"
+                        Background="#3B82F6" Foreground="#FFFFFF"
+                        CornerRadius="17" BorderBrush="#2563EB" BorderThickness="1"/>
+            </StackPanel>
+
+            <!-- 2. 禁用态 -->
+            <TextBlock Text="2. 禁用状态 (IsEnabled=false)" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="正常按钮" Width="100" Height="34" CornerRadius="6"/>
+                <Button Content="禁用按钮" Width="100" Height="34" CornerRadius="6" IsEnabled="false"/>
+                <Button Content="禁用(绿)" Width="100" Height="34"
+                        Background="#22C55E" Foreground="#FFFFFF" CornerRadius="6" IsEnabled="false"/>
+            </StackPanel>
+
+            <!-- 3. 动态禁用：点击后切换 IsEnabled -->
+            <TextBlock Text="3. 动态切换禁用 (点击按钮切换状态)" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="{Binding ToggleBtnText}" Width="160" Height="34"
+                        CornerRadius="6" Click="ToggleDisableCommand"/>
+                <TextBlock Text="{Binding DisableStatusText}" FontSize="13" Foreground="#2196F3"/>
+            </StackPanel>
+
+            <!-- 4. FontSize 测试 -->
+            <TextBlock Text="4. 字体大小" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="小号12" Width="80" Height="28" FontSize="12" CornerRadius="4"/>
+                <Button Content="默认14" Width="80" Height="32" FontSize="14" CornerRadius="4"/>
+                <Button Content="中号16" Width="90" Height="36" FontSize="16" CornerRadius="4"/>
+                <Button Content="大号20" Width="100" Height="40" FontSize="20" CornerRadius="4"/>
+            </StackPanel>
+
+            <!-- 5. MVVM 绑定：按钮文本随 ViewModel 变化 -->
+            <TextBlock Text="5. MVVM 绑定 (按钮文本绑定到 ViewModel)" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="{Binding BtnLabel}" Width="120" Height="34"
+                        CornerRadius="6" Click="ChangeLabelCommand"/>
+                <TextBlock Text="点击按钮切换文本" FontSize="12" Foreground="#999999"/>
+            </StackPanel>
+
+            <!-- 6. 多种圆角对比 -->
+            <TextBlock Text="6. 圆角大小对比" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="R=0" Width="70" Height="34" CornerRadius="0"/>
+                <Button Content="R=4" Width="70" Height="34" CornerRadius="4"/>
+                <Button Content="R=8" Width="70" Height="34" CornerRadius="8"/>
+                <Button Content="R=12" Width="70" Height="34" CornerRadius="12"/>
+                <Button Content="R=17" Width="70" Height="34" CornerRadius="17"/>
+            </StackPanel>
+
+            <!-- 7. 点击计数：验证 Click 事件 -->
+            <TextBlock Text="7. 点击事件 (计数器)" FontSize="13" Foreground="#666666"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="点我计数" Width="100" Height="34"
+                        CornerRadius="6" Click="BtnClickCountCommand"/>
+                <TextBlock Text="{Binding BtnClickCountText}" FontSize="14" Foreground="#E65100"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+
     <!-- Feature Toggle Section -->
     <Border Background="#F5F5F5" Padding="16">
         <StackPanel Orientation="Vertical" Spacing="12">
             <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
-            
+
             <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}"/>
-            
-            <Button Content="Toggle Feature" Style="Primary" Click="ToggleCommand"/>
-            
+
+            <Button Content="Toggle Feature" Click="ToggleCommand"/>
+
             <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
         </StackPanel>
     </Border>
-    
+
     <!-- Items Section -->
     <Border Background="#F5F5F5" Padding="16">
         <StackPanel Orientation="Vertical" Spacing="12">
@@ -52,9 +129,9 @@
             </Border>
 
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Add Item" Style="Accent" Click="AddItemCommand"/>
-                <Button Content="Remove Selected" Style="Warning" Click="RemoveItemCommand"/>
-                <Button Content="Clear All" Style="Primary" Click="ClearItemsCommand"/>
+                <Button Content="Add Item" Click="AddItemCommand"/>
+                <Button Content="Remove Selected" Click="RemoveItemCommand"/>
+                <Button Content="Clear All" Click="ClearItemsCommand"/>
             </StackPanel>
 
             <!-- Selected item details -->
@@ -74,8 +151,9 @@
             </Border>
         </StackPanel>
     </Border>
-    
+
     <!-- Status Bar -->
     <TextBlock Text="{Binding Status}" FontSize="12" FontStyle="Italic" Foreground="#757575" Margin="0,16,0,0"/>
-    
+
 </StackPanel>
+</ScrollViewer>

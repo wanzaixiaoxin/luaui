@@ -511,15 +511,28 @@ void Window::HandleMouseUp(float x, float y, int button) {
 }
 
 void Window::HandleMouseWheel(float x, float y, int delta) {
-    (void)delta;
     auto* control = m_capturedControl ? m_capturedControl : HitTest(m_root.get(), x, y, 0, 0);
-    
+
     if (control) {
-        if (auto* inputComp = control->GetInput()) {
-            // TODO: Add wheel event to input component
-            (void)inputComp;
+        controls::MouseEventArgs args{x, y, delta, false};
+
+        // 从命中的控件开始，向上冒泡直到有人处理
+        Control* current = control;
+        while (current && !args.Handled) {
+            // 先尝试通过 InputComponent（Button, TextBox 等控件）
+            if (auto* inputComp = current->GetInput()) {
+                inputComp->RaiseMouseWheel(args);
+            } else {
+                // 直接调用虚函数（Panel/ScrollViewer 等没有 InputComponent 的控件）
+                current->OnMouseWheel(args);
+            }
+            // 向父控件冒泡
+            auto parent = current->GetParent();
+            current = parent ? static_cast<Control*>(parent.get()) : nullptr;
         }
     }
+
+    InvalidateRender();
 }
 
 void Window::HandleKeyDown(int keyCode) {

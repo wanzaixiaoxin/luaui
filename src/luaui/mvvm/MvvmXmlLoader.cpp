@@ -743,6 +743,8 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
     else if (auto button = std::dynamic_pointer_cast<luaui::controls::Button>(control)) {
         if (propertyName == "Command") {
             BindButtonCommand(button, expression);
+        } else if (propertyName == "Text" || propertyName == "Content") {
+            BindButtonText(button, expression);
         }
     }
 }
@@ -1545,6 +1547,51 @@ void MvvmXmlLoader::BindButtonCommand(std::shared_ptr<luaui::controls::Button> b
     }
     
     utils::Logger::InfoF("[MVVM] Button command '%s' bound successfully", commandName.c_str());
+}
+
+// ============================================================================
+// Button Text 绑定 - OneWay（VM -> View）
+// ============================================================================
+void MvvmXmlLoader::BindButtonText(std::shared_ptr<luaui::controls::Button> button,
+                                   const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    auto converter = expression.converter;
+    auto converterParameter = expression.converterParameter;
+
+    auto updateView = [button, dataContext, boundPropertyName, converter, converterParameter]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+
+        if (converter) {
+            value = converter->Convert(value, converterParameter);
+        }
+
+        try {
+            if (value.type() == typeid(std::string)) {
+                std::string str = std::any_cast<std::string>(value);
+                button->SetText(std::wstring(str.begin(), str.end()));
+            } else if (value.type() == typeid(std::wstring)) {
+                button->SetText(std::any_cast<std::wstring>(value));
+            } else if (value.type() == typeid(double)) {
+                double d = std::any_cast<double>(value);
+                std::wstring ws = std::to_wstring((int)d);
+                button->SetText(ws);
+            } else if (value.type() == typeid(int)) {
+                int i = std::any_cast<int>(value);
+                button->SetText(std::to_wstring(i));
+            }
+        } catch (const std::bad_any_cast&) {}
+    };
+
+    updateView();
+
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
 }
 
 // ============================================================================
