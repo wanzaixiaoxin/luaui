@@ -172,6 +172,20 @@ if(TARGET LuaUI_Core AND TARGET LuaUI_Controls)
     add_test(NAME EventsTest COMMAND test_events)
 endif()
 
+# Test executable for TextBox editing behaviour
+if(TARGET LuaUI_Core AND TARGET LuaUI_Controls)
+    add_executable(test_textbox_editing test_textbox_editing.cpp)
+    target_link_libraries(test_textbox_editing PRIVATE LuaUI_Core LuaUI_Controls LuaUI_Rendering)
+    target_include_directories(test_textbox_editing PRIVATE
+        ${TEST_INCLUDE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/luaui/core
+        ${CMAKE_SOURCE_DIR}/src/luaui/controls
+        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
+        ${CMAKE_SOURCE_DIR}/src/luaui/utils
+    )
+    add_test(NAME TextBoxEditingTest COMMAND test_textbox_editing)
+endif()
+
 # Test executable for XML integration (XML layout loading, MVVM binding, XML+Lua integration)
 if(TARGET LuaUI_Xml AND TARGET LuaUI_MVVM AND TARGET LuaUI_Lua)
     add_executable(test_xml_integration test_xml_integration.cpp)
