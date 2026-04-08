@@ -27,6 +27,73 @@
     </Border>
 
     <!-- ================================================================== -->
+    <!-- TextBox 完整测试区域 -->
+    <!-- ================================================================== -->
+    <Border Background="#F5F5F5" Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="TextBox 完整测试" FontWeight="SemiBold" FontSize="16"/>
+            <TextBlock Text="覆盖 TwoWay 绑定、双输入同步、MaxLength、Password、ReadOnly、程序化更新和长文本光标滚动。" FontSize="12" Foreground="#757575"/>
+
+            <TextBlock Text="1. TwoWay 绑定 + 双 TextBox 同步" FontSize="13" Foreground="#666666"/>
+            <TextBox Name="LiveTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                     Placeholder="Type here to test TwoWay binding, selection, undo/redo and clipboard."/>
+            <TextBox Name="MirrorTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                     Placeholder="Bound to the same LiveText property. Edit either box."/>
+            <TextBlock Text="{Binding LiveTextSummary}" FontSize="12" Foreground="#1976D2"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="写入问候语" Click="LoadGreetingCommand"/>
+                <Button Content="写入长文本" Click="LoadLongTextCommand"/>
+                <Button Content="写入中英混合" Click="LoadMixedTextCommand"/>
+                <Button Content="清空" Click="ClearLiveTextCommand"/>
+            </StackPanel>
+
+            <TextBlock Text="2. MaxLength 限制 (12)" FontSize="13" Foreground="#666666"/>
+            <TextBox Name="LimitedTextBox" Width="320" Height="32" Text="{Binding LimitedText, Mode=TwoWay}"
+                     MaxLength="12" Placeholder="MaxLength = 12. Paste and typing should both clamp."/>
+            <TextBlock Text="{Binding LimitedTextSummary}" FontSize="12" Foreground="#E65100"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="填充短样例" Click="FillLimitedSampleCommand"/>
+                <Button Content="清空限制框" Click="ClearLimitedTextCommand"/>
+            </StackPanel>
+
+            <TextBlock Text="3. Password 模式" FontSize="13" Foreground="#666666"/>
+            <TextBox Name="PasswordTextBox" Width="320" Height="32" Text="{Binding PasswordText, Mode=TwoWay}"
+                     IsPassword="True" MaxLength="24" Placeholder="Password mode is enabled for this field."/>
+            <TextBlock Text="{Binding PasswordSummary}" FontSize="12" Foreground="#8E24AA"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="填充示例密码" Click="FillPasswordSampleCommand"/>
+                <Button Content="清空密码" Click="ClearPasswordCommand"/>
+            </StackPanel>
+
+            <TextBlock Text="4. ReadOnly 文本框" FontSize="13" Foreground="#666666"/>
+            <TextBox Name="ReadOnlyTextBox" Width="520" Height="32" Text="{Binding ReadOnlyText}"
+                     IsReadOnly="True" Placeholder="This field is read-only and should only change from Lua."/>
+            <TextBlock Text="{Binding ReadOnlySummary}" FontSize="12" Foreground="#546E7A"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="加载短文本" Click="LoadReadonlyShortCommand"/>
+                <Button Content="加载长文本" Click="LoadReadonlyLongCommand"/>
+            </StackPanel>
+
+            <TextBlock Text="5. 长文本滚动 / Home End / Ctrl 导航" FontSize="13" Foreground="#666666"/>
+            <TextBox Name="ScrollTextBox" Width="520" Height="32" Text="{Binding ScrollText, Mode=TwoWay}"
+                     Placeholder="Load a long sample, then test Home/End and Ctrl+Arrow."/>
+            <TextBlock Text="{Binding ScrollTextSummary}" FontSize="12" Foreground="#2E7D32"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="写入路径样例" Click="LoadScrollPathCommand"/>
+                <Button Content="写入命令行样例" Click="LoadScrollCommandCommand"/>
+                <Button Content="清空滚动框" Click="ClearScrollTextCommand"/>
+            </StackPanel>
+
+            <TextBlock Text="{Binding TextBoxStatus}" FontSize="12" Foreground="#5D4037"/>
+
+            <TextBlock Text="手测建议:" FontSize="12" FontWeight="SemiBold" Foreground="#616161"/>
+            <TextBlock Text="Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+Z / Ctrl+Y" FontSize="12" Foreground="#757575"/>
+            <TextBlock Text="Shift+Arrow 选区, Ctrl+Arrow 单词跳转, Ctrl+Backspace/Delete 单词删除" FontSize="12" Foreground="#757575"/>
+            <TextBlock Text="在长文本框中测试点击定位、拖拽选区、Home/End 和光标自动滚动。" FontSize="12" Foreground="#757575"/>
+        </StackPanel>
+    </Border>
+
+    <!-- ================================================================== -->
     <!-- Button 新功能测试区域 -->
     <!-- ================================================================== -->
     <Border Background="#F5F5F5" Padding="16">

@@ -28,8 +28,6 @@ void Button::InitializeComponents() {
 void Button::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
-        std::string narrow(text.begin(), text.end());
-        luaui::utils::Logger::DebugF("[Button] SetText: '%s'", narrow.c_str());
         if (auto* render = GetRender()) {
             render->Invalidate();
         }

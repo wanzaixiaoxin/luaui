@@ -257,7 +257,7 @@ private:
             }
             // SourcePath (Image)
             else if (name == "SourcePath") {
-                std::wstring wpath(value.begin(), value.end());
+                std::wstring wpath = Utf8ToWstring(value);
                 if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
                     img->SetSourcePath(wpath);
                 }
@@ -412,6 +412,31 @@ private:
                     RecordDeferredBinding(control, "IsEnabled", value);
                 } else {
                     control->SetIsEnabled(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // Placeholder (TextBox)
+            else if (name == "Placeholder") {
+                if (auto textBox = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                    textBox->SetPlaceholder(Utf8ToWstring(value));
+                }
+            }
+            // IsReadOnly (TextBox)
+            else if (name == "IsReadOnly") {
+                if (auto textBox = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                    textBox->SetIsReadOnly(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // IsPassword (TextBox)
+            else if (name == "IsPassword") {
+                if (auto textBox = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                    textBox->SetIsPassword(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // MaxLength (TextBox)
+            else if (name == "MaxLength") {
+                int maxLen = std::stoi(value);
+                if (auto textBox = std::dynamic_pointer_cast<controls::TextBox>(control)) {
+                    textBox->SetMaxLength(maxLen);
                 }
             }
             // SetStateColors (Button) - 格式: "normal,hover,pressed"

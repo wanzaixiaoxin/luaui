@@ -32,6 +32,15 @@ std::wstring Utf8ToW(const std::string& s) {
     return r;
 }
 
+std::string WToUtf8(const std::wstring& w) {
+    if (w.empty()) return std::string();
+    int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (n <= 0) return std::string();
+    std::string r(n - 1, 0);
+    WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &r[0], n, nullptr, nullptr);
+    return r;
+}
+
 struct DataGridColumnSpec {
     std::string header;
     std::string path;
@@ -875,7 +884,7 @@ void MvvmXmlLoader::BindTextBox(std::shared_ptr<luaui::controls::TextBox> textBo
         
         // 使用 TextBox 的 TextChanged 事件（如果已添加）
         textBox->TextChanged.Add([dataContext, boundPropertyName](luaui::controls::TextBox*, const std::wstring& text) {
-            std::string str(text.begin(), text.end());
+            std::string str = WToUtf8(text);
             dataContext->SetPropertyValue(boundPropertyName, str);
             utils::Logger::DebugF("[MVVM] TextBox changed: %s -> ViewModel.%s", 
                 str.c_str(), boundPropertyName.c_str());
@@ -1092,7 +1101,7 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
                         utils::Logger::InfoF("[MVVM] Got %zu display texts", texts.size());
                         for (const auto& text : texts) {
                             utils::Logger::InfoF("[MVVM] Adding item: %s", 
-                                std::string(text.begin(), text.end()).c_str());
+                                WToUtf8(text).c_str());
                             listBox->AddItem(text);
                         }
                         utils::Logger::InfoF("[MVVM] ListBox now has %zu items", listBox->GetItemCount());

@@ -5,6 +5,7 @@
 #include "Window.h"
 #include "Controls.h"
 #include "Button.h"
+#include "TextBox.h"
 #include "Slider.h"
 #include "CheckBox.h"
 #include "Panel.h"
@@ -445,6 +446,81 @@ void RegisterCheckBoxEvents(lua_State* L) {
 }
 
 // ============================================================================
+// TextBox Event Bindings
+// ============================================================================
+
+static int RegisterTextBoxTextChanged(lua_State* L, luaui::controls::TextBox* textBox, int funcIndex) {
+    int callbackRef = LuaCallbackRegistry::Instance().RegisterCallback(L, funcIndex);
+    if (callbackRef < 0) {
+        return -1;
+    }
+    
+    auto handler = [callbackRef](luaui::controls::TextBox*, const std::wstring& text) {
+        if (text.empty()) {
+            LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {""});
+            return;
+        }
+        int n = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (n <= 0) {
+            LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {""});
+            return;
+        }
+        std::string narrow(n - 1, 0);
+        WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, &narrow[0], n, nullptr, nullptr);
+        LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {narrow});
+    };
+    
+    textBox->TextChanged.Add(handler);
+    return callbackRef;
+}
+
+void RegisterTextBoxEvents(lua_State* L) {
+    luaL_getmetatable(L, "LuaUI.TextBox");
+    if (lua_isnil(L, -1)) {
+        lua_pop(L, 1);
+        return;
+    }
+    
+    lua_getfield(L, -1, "__index");
+    
+    // TextBox:onTextChanged(callback)
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        if (!ptr) {
+            luaL_error(L, "Invalid TextBox");
+            return 0;
+        }
+        
+        luaL_checktype(L, 2, LUA_TFUNCTION);
+        
+        int ref = RegisterTextBoxTextChanged(L, ptr->get(), 2);
+        if (ref < 0) {
+            luaL_error(L, "Failed to register TextChanged handler");
+            return 0;
+        }
+        
+        // Return a connection object
+        auto** conn = static_cast<LuaEventConnection**>(
+            lua_newuserdata(L, sizeof(LuaEventConnection*))
+        );
+        
+        *conn = new LuaEventConnection(ref, [L, ref]() {
+            LuaCallbackRegistry::Instance().UnregisterCallback(L, ref);
+        });
+        
+        luaL_newmetatable(L, "LuaUI.EventConnection");
+        lua_setmetatable(L, -2);
+        
+        return 1;
+    });
+    lua_setfield(L, -2, "onTextChanged");
+    
+    lua_pop(L, 2);
+}
+
+// ============================================================================
 // Commands Binding
 // ============================================================================
 
@@ -545,6 +621,7 @@ void InitializeEventBindings(lua_State* L) {
     
     // Register event bindings for each control type
     RegisterButtonEvents(L);
+    RegisterTextBoxEvents(L);
     RegisterSliderEvents(L);
     RegisterCheckBoxEvents(L);
 }

@@ -5,6 +5,7 @@
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
+#include <windows.h>
 
 namespace luaui {
 namespace controls {
@@ -84,7 +85,12 @@ std::wstring DataGridCell::FormatValue(const std::any& value) {
         }
         if (value.type() == typeid(std::string)) {
             std::string s = std::any_cast<std::string>(value);
-            return std::wstring(s.begin(), s.end());
+            if (s.empty()) return L"";
+            int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+            if (n <= 0) return L"";
+            std::wstring ws(n - 1, 0);
+            MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &ws[0], n);
+            return ws;
         }
         if (value.type() == typeid(int)) {
             return std::to_wstring(std::any_cast<int>(value));

@@ -37,6 +37,43 @@
 - 绑定表达式 `{Binding Property}`
 - 命令绑定 `Command="MethodName"`
 
+## TextBox 测试覆盖
+
+当前示例已经扩展出一整块 `TextBox` 手测区域，覆盖以下能力：
+
+1. `TwoWay` 绑定
+   - `LiveTextBox` 与 `MirrorTextBox` 绑定到同一个 `LiveText`
+   - 任意一个输入后，另一个文本框和摘要文本都应立即同步
+
+2. ViewModel -> View 程序化更新
+   - 通过“写入问候语 / 写入长文本 / 写入中英混合”按钮，验证 Lua 命令可以直接改写 `TextBox`
+
+3. `MaxLength`
+   - `LimitedTextBox` 在 `main.cpp` 中配置为 `12`
+   - 手工输入和粘贴都应被截断到 12 个字符以内
+
+4. `Password`
+   - `PasswordTextBox` 在 `main.cpp` 中配置为密码模式
+   - UI 应显示掩码，Lua 摘要仅显示长度与强度
+
+5. `ReadOnly`
+   - `ReadOnlyTextBox` 在 `main.cpp` 中配置为只读
+   - 用户不能直接修改，但 Lua 按钮仍可替换内容
+
+6. 长文本滚动与编辑导航
+   - `ScrollTextBox` 用于手测长文本点击定位、拖拽选区、`Home/End`、`Ctrl+Arrow`、`Ctrl+Backspace/Delete`
+
+## 手测建议
+
+建议按以下顺序验证：
+
+1. 在 `LiveTextBox` 输入文本，确认 `MirrorTextBox` 同步更新
+2. 使用 `Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+Z / Ctrl+Y`
+3. 在 `LimitedTextBox` 中输入超过 12 个字符，确认被限制
+4. 在 `PasswordTextBox` 中输入并点击“填充示例密码”，确认只显示掩码
+5. 尝试编辑 `ReadOnlyTextBox`，确认无法改写，但可选中复制
+6. 在 `ScrollTextBox` 中加载长文本后测试光标自动滚动和单词级导航
+
 ## 与 02_mvvm_demo 对比
 
 | 特性 | 02_mvvm_demo | 03_lua_mvvm_demo |

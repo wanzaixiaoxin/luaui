@@ -4,9 +4,23 @@
 #include "IRenderContext.h"
 #include "Logger.h"
 #include <algorithm>
+#include <windows.h>
 
 namespace luaui {
 namespace controls {
+
+namespace {
+
+std::string WToUtf8(const std::wstring& w) {
+    if (w.empty()) return std::string();
+    int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (n <= 0) return std::string();
+    std::string r(n - 1, 0);
+    WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &r[0], n, nullptr, nullptr);
+    return r;
+}
+
+} // namespace
 
 Image::Image() {}
 
@@ -68,7 +82,7 @@ bool Image::LoadFromFile(const std::wstring& filePath) {
     m_bitmap.reset();
     
     utils::Logger::InfoF("[Image] Set source path: %s", 
-        std::string(filePath.begin(), filePath.end()).c_str());
+        WToUtf8(filePath).c_str());
     
     return true;
 }
@@ -146,7 +160,7 @@ void Image::OnRender(rendering::IRenderContext* context) {
         } else {
             m_loadFailed = true;
             utils::Logger::WarningF("[Image] Failed to load: %s", 
-                std::string(m_sourcePath.begin(), m_sourcePath.end()).c_str());
+                WToUtf8(m_sourcePath).c_str());
         }
     }
     

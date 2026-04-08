@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <cmath>
+#include <windows.h>
 
 namespace luaui {
 namespace mvvm {
@@ -86,7 +87,12 @@ public:
                 return std::any_cast<std::string>(value);
             } else if (value.type() == typeid(std::wstring)) {
                 std::wstring ws = std::any_cast<std::wstring>(value);
-                return std::string(ws.begin(), ws.end());
+                if (ws.empty()) return std::string();
+                int n = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), -1, nullptr, 0, nullptr, nullptr);
+                if (n <= 0) return std::string();
+                std::string result(n - 1, 0);
+                WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), -1, &result[0], n, nullptr, nullptr);
+                return result;
             }
         } catch (...) {}
         

@@ -29,22 +29,20 @@ namespace lua {
 // ==================== Helper Functions ====================
 
 static std::string WStringToString(const std::wstring& wstr) {
-    std::string result;
-    for (wchar_t wc : wstr) {
-        if (wc < 128) {
-            result += static_cast<char>(wc);
-        } else {
-            result += '?';
-        }
-    }
+    if (wstr.empty()) return std::string();
+    int n = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (n <= 0) return std::string();
+    std::string result(n - 1, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], n, nullptr, nullptr);
     return result;
 }
 
 static std::wstring StringToWString(const std::string& str) {
-    std::wstring result;
-    for (char c : str) {
-        result += static_cast<wchar_t>(static_cast<unsigned char>(c));
-    }
+    if (str.empty()) return std::wstring();
+    int n = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    if (n <= 0) return std::wstring();
+    std::wstring result(n - 1, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], n);
     return result;
 }
 
@@ -61,6 +59,7 @@ void LuaBinding::RegisterAll(lua_State* L) {
 void LuaBinding::RegisterUIElements(lua_State* L) {
     RegisterButton(L);
     RegisterTextBlock(L);
+    RegisterTextBox(L);
     RegisterCheckBox(L);
     RegisterSlider(L);
     RegisterProgressBar(L);
@@ -656,7 +655,200 @@ void LuaBinding::RegisterUIGlobal(lua_State* L) {
 
 // Stub implementations for other register functions
 void LuaBinding::RegisterWindow(lua_State* L) { (void)L; }
-void LuaBinding::RegisterTextBox(lua_State* L) { (void)L; }
+
+// ==================== TextBox ====================
+
+void LuaBinding::RegisterTextBox(lua_State* L) {
+    lua_newtable(L);
+    
+    // TextBox.new()
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto textBox = std::make_shared<luaui::controls::TextBox>();
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_newuserdata(L, sizeof(std::shared_ptr<luaui::controls::TextBox>))
+        );
+        new(ptr) std::shared_ptr<luaui::controls::TextBox>(textBox);
+        luaL_getmetatable(L, "LuaUI.TextBox");
+        lua_setmetatable(L, -2);
+        return 1;
+    });
+    lua_setfield(L, -2, "new");
+    
+    lua_setglobal(L, "TextBox");
+    
+    luaL_newmetatable(L, "LuaUI.TextBox");
+    
+    // __gc
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        ptr->~shared_ptr();
+        return 0;
+    });
+    lua_setfield(L, -2, "__gc");
+    
+    lua_newtable(L);
+    
+    // setText
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        const char* text = luaL_checkstring(L, 2);
+        (*ptr)->SetText(StringToWString(text));
+        return 0;
+    });
+    lua_setfield(L, -2, "setText");
+    
+    // getText
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushstring(L, WStringToString((*ptr)->GetText()).c_str());
+        return 1;
+    });
+    lua_setfield(L, -2, "getText");
+    
+    // setPlaceholder
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        const char* text = luaL_checkstring(L, 2);
+        (*ptr)->SetPlaceholder(StringToWString(text));
+        return 0;
+    });
+    lua_setfield(L, -2, "setPlaceholder");
+    
+    // getPlaceholder
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushstring(L, WStringToString((*ptr)->GetPlaceholder()).c_str());
+        return 1;
+    });
+    lua_setfield(L, -2, "getPlaceholder");
+    
+    // setIsReadOnly
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        bool readOnly = lua_toboolean(L, 2);
+        (*ptr)->SetIsReadOnly(readOnly);
+        return 0;
+    });
+    lua_setfield(L, -2, "setIsReadOnly");
+    
+    // getIsReadOnly
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushboolean(L, (*ptr)->GetIsReadOnly());
+        return 1;
+    });
+    lua_setfield(L, -2, "getIsReadOnly");
+    
+    // setIsPassword
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        bool isPassword = lua_toboolean(L, 2);
+        (*ptr)->SetIsPassword(isPassword);
+        return 0;
+    });
+    lua_setfield(L, -2, "setIsPassword");
+    
+    // getIsPassword
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushboolean(L, (*ptr)->GetIsPassword());
+        return 1;
+    });
+    lua_setfield(L, -2, "getIsPassword");
+    
+    // setMaxLength
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        int maxLength = static_cast<int>(luaL_checkinteger(L, 2));
+        (*ptr)->SetMaxLength(maxLength);
+        return 0;
+    });
+    lua_setfield(L, -2, "setMaxLength");
+    
+    // getMaxLength
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushinteger(L, (*ptr)->GetMaxLength());
+        return 1;
+    });
+    lua_setfield(L, -2, "getMaxLength");
+    
+    // setIsEnabled
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        bool enabled = lua_toboolean(L, 2);
+        (*ptr)->SetIsEnabled(enabled);
+        return 0;
+    });
+    lua_setfield(L, -2, "setIsEnabled");
+    
+    // getIsEnabled
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        lua_pushboolean(L, (*ptr)->GetIsEnabled());
+        return 1;
+    });
+    lua_setfield(L, -2, "getIsEnabled");
+    
+    // selectAll
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        (*ptr)->SelectAll();
+        return 0;
+    });
+    lua_setfield(L, -2, "selectAll");
+    
+    // undo
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        (*ptr)->Undo();
+        return 0;
+    });
+    lua_setfield(L, -2, "undo");
+    
+    // redo
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
+            lua_touserdata(L, 1)
+        );
+        (*ptr)->Redo();
+        return 0;
+    });
+    lua_setfield(L, -2, "redo");
+    
+    lua_setfield(L, -2, "__index");
+    lua_pop(L, 1);
+}
 void LuaBinding::RegisterImage(lua_State* L) { (void)L; }
 void LuaBinding::RegisterListBox(lua_State* L) { (void)L; }
 void LuaBinding::RegisterComboBox(lua_State* L) { (void)L; }
