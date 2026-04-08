@@ -29,13 +29,13 @@ void ScrollViewer::SetVerticalScrollBarVisibility(ScrollBarVisibility visibility
 }
 
 float ScrollViewer::ClampVerticalOffset(float offset) {
-    float maxOffset = std::max(0.0f, m_extentHeight - m_viewportHeight);
-    return std::max(0.0f, std::min(offset, maxOffset));
+    float mx = std::max(0.0f, m_extentHeight - m_viewportHeight);
+    return std::max(0.0f, std::min(offset, mx));
 }
 
 float ScrollViewer::ClampHorizontalOffset(float offset) {
-    float maxOffset = std::max(0.0f, m_extentWidth - m_viewportWidth);
-    return std::max(0.0f, std::min(offset, maxOffset));
+    float mx = std::max(0.0f, m_extentWidth - m_viewportWidth);
+    return std::max(0.0f, std::min(offset, mx));
 }
 
 void ScrollViewer::ScrollToHorizontalOffset(float offset) {
@@ -48,209 +48,282 @@ void ScrollViewer::ScrollToVerticalOffset(float offset) {
     if (GetLayout()) GetLayout()->InvalidateArrange();
 }
 
+// ============================================================================
+// Layout
+// ============================================================================
+
 rendering::Size ScrollViewer::OnMeasureChildren(const rendering::Size& availableSize) {
     m_viewportWidth = availableSize.width;
     m_viewportHeight = availableSize.height;
 
     for (size_t i = 0; i < m_children.size(); ++i) {
-        std::shared_ptr<interfaces::IControl> child = m_children[i];
-        if (!child->GetIsVisible()) continue;
-
-        interfaces::ILayoutable* layoutable = child->AsLayoutable();
+        if (!m_children[i]->GetIsVisible()) continue;
+        auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
             interfaces::LayoutConstraint constraint;
             constraint.available = rendering::Size(99999, 99999);
             layoutable->Measure(constraint);
-
-            rendering::Size desired = layoutable->GetDesiredSize();
+            auto desired = layoutable->GetDesiredSize();
             m_extentWidth = desired.width;
             m_extentHeight = desired.height;
         }
     }
-
     return availableSize;
 }
 
 rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize) {
-    components::RenderComponent* render = GetRender();
+    auto* render = GetRender();
     if (!render) return finalSize;
 
     rendering::Rect contentRect = render->GetRenderRect();
-
     m_viewportWidth = finalSize.width;
     m_viewportHeight = finalSize.height;
 
     for (size_t i = 0; i < m_children.size(); ++i) {
-        std::shared_ptr<interfaces::IControl> child = m_children[i];
-        if (!child->GetIsVisible()) continue;
-
-        interfaces::ILayoutable* layoutable = child->AsLayoutable();
+        if (!m_children[i]->GetIsVisible()) continue;
+        auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
             float x = contentRect.x - m_horizontalOffset;
             float y = contentRect.y - m_verticalOffset;
-
             layoutable->Arrange(rendering::Rect(x, y, m_extentWidth, m_extentHeight));
         }
     }
-
     return finalSize;
 }
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
+void ScrollViewer::GlobalToLocal(float gx, float gy, float& lx, float& ly) {
+    float ox = 0, oy = 0;
+    Control* cur = this;
+    while (cur) {
+        if (auto* r = cur->GetRender()) {
+            ox += r->GetRenderRect().x;
+            oy += r->GetRenderRect().y;
+        }
+        auto p = cur->GetParent();
+        cur = p ? dynamic_cast<Control*>(p.get()) : nullptr;
+    }
+    lx = gx - ox;
+    ly = gy - oy;
+}
+
+bool ScrollViewer::NeedVScroll() const {
+    return m_extentHeight > m_viewportHeight && m_viewportHeight > 0;
+}
+
+void ScrollViewer::CalcThumb(float& y, float& h) {
+    auto* render = GetRender();
+    if (!render) { y = 0; h = 0; return; }
+
+    float vpH = render->GetRenderRect().height;
+    float trackH = vpH - 2 * SB_MARGIN;
+    float ratio = m_viewportHeight / m_extentHeight;
+    h = std::max(THUMB_MIN, trackH * ratio);
+    float maxOff = std::max(1.0f, m_extentHeight - m_viewportHeight);
+    y = SB_MARGIN + (trackH - h) * (m_verticalOffset / maxOff);
+}
+
+bool ScrollViewer::HitTestThumb(float gx, float gy) {
+    if (!NeedVScroll()) return false;
+    float lx, ly;
+    GlobalToLocal(gx, gy, lx, ly);
+
+    auto* render = GetRender();
+    if (!render) return false;
+    float vpW = render->GetRenderRect().width;
+
+    float sbW = m_currentSbWidth;
+    float trackX = vpW - sbW - SB_MARGIN;
+    if (lx < trackX || lx > trackX + sbW) return false;
+
+    float thumbY, thumbH;
+    CalcThumb(thumbY, thumbH);
+    return ly >= thumbY && ly <= thumbY + thumbH;
+}
+
+bool ScrollViewer::HitTestTrack(float gx, float gy) {
+    if (!NeedVScroll()) return false;
+    float lx, ly;
+    GlobalToLocal(gx, gy, lx, ly);
+
+    auto* render = GetRender();
+    if (!render) return false;
+    float vpW = render->GetRenderRect().width;
+    float vpH = render->GetRenderRect().height;
+
+    float sbW = m_currentSbWidth;
+    float trackX = vpW - sbW - SB_MARGIN;
+    if (lx < trackX || lx > trackX + sbW) return false;
+    if (ly < SB_MARGIN || ly > vpH - SB_MARGIN) return false;
+    return true;
+}
+
+void ScrollViewer::ApplyOffset(float offset) {
+    m_verticalOffset = ClampVerticalOffset(offset);
+    if (GetLayout()) GetLayout()->InvalidateArrange();
+    if (auto* r = GetRender()) r->Invalidate();
+}
+
+// ============================================================================
+// Render
+// ============================================================================
+
 void ScrollViewer::OnRenderChildren(rendering::IRenderContext* context) {
     if (!context) return;
-
-    components::RenderComponent* render = GetRender();
+    auto* render = GetRender();
     if (!render) return;
 
     float vpW = render->GetRenderRect().width;
     float vpH = render->GetRenderRect().height;
 
     // clip to viewport
-    rendering::Rect clip(0, 0, vpW, vpH);
-    context->PushClip(clip);
+    context->PushClip(rendering::Rect(0, 0, vpW, vpH));
 
     // render children
     for (size_t i = 0; i < m_children.size(); ++i) {
-        std::shared_ptr<interfaces::IControl> child = m_children[i];
-        if (!child->GetIsVisible()) continue;
-        Control* ctrl = static_cast<Control*>(child.get());
-        interfaces::IRenderable* renderable = ctrl->AsRenderable();
-        if (renderable) {
-            renderable->Render(context);
-        }
+        if (!m_children[i]->GetIsVisible()) continue;
+        auto* ctrl = static_cast<Control*>(m_children[i].get());
+        if (auto* r = ctrl->AsRenderable()) r->Render(context);
     }
 
     context->PopClip();
 
     // draw vertical scrollbar
-    bool needVertical = m_extentHeight > m_viewportHeight && m_viewportHeight > 0;
-    if (needVertical) {
-        float sbWidth = m_sbWidth;
-        float trackX = vpW - sbWidth - 2;
-        float trackY = 2;
-        float trackH = vpH - 4;
+    if (!NeedVScroll()) return;
 
-        rendering::Rect trackRect(trackX, trackY, sbWidth, trackH);
-        rendering::ISolidColorBrushPtr trackBrush(context->CreateSolidColorBrush(m_scrollbarTrackColor));
-        if (trackBrush) {
-            context->FillRoundedRectangle(trackRect, rendering::CornerRadius(sbWidth / 2), trackBrush.get());
-        }
+    // expand width on hover/drag
+    float targetW = (m_sbHovered || m_dragging) ? SB_EXPANDED : SB_COLLAPSED;
+    m_currentSbWidth += (targetW - m_currentSbWidth) * 0.3f;
+    if (std::abs(m_currentSbWidth - targetW) < 0.5f) m_currentSbWidth = targetW;
 
-        float thumbRatio = m_viewportHeight / m_extentHeight;
-        float thumbH = std::max(m_scrollbarMinThumb, trackH * thumbRatio);
-        float maxScroll = std::max(1.0f, m_extentHeight - m_viewportHeight);
-        float thumbY = trackY + (trackH - thumbH) * (m_verticalOffset / maxScroll);
+    float sbW = m_currentSbWidth;
+    float trackX = vpW - sbW - SB_MARGIN;
+    float trackY = SB_MARGIN;
+    float trackH = vpH - 2 * SB_MARGIN;
 
-        rendering::Rect thumbRect(trackX, thumbY, sbWidth, thumbH);
-        rendering::ISolidColorBrushPtr thumbBrush(context->CreateSolidColorBrush(m_scrollbarThumbColor));
-        if (thumbBrush) {
-            context->FillRoundedRectangle(thumbRect, rendering::CornerRadius(sbWidth / 2), thumbBrush.get());
-        }
+    // track background (light gray, mostly transparent)
+    auto trackBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0x0F000000));
+    if (trackBrush) {
+        context->FillRoundedRectangle(
+            rendering::Rect(trackX, trackY, sbW, trackH),
+            rendering::CornerRadius(sbW / 2), trackBrush.get());
+    }
+
+    // thumb
+    float thumbY, thumbH;
+    CalcThumb(thumbY, thumbH);
+
+    // thumb color: dark gray with alpha, brightens on hover/press
+    rendering::Color thumbColor;
+    if (m_dragging) {
+        thumbColor = rendering::Color::FromHex(0x99000000);
+    } else if (m_sbHovered) {
+        thumbColor = rendering::Color::FromHex(0x77000000);
+    } else {
+        thumbColor = rendering::Color::FromHex(0x55000000);
+    }
+
+    auto thumbBrush = context->CreateSolidColorBrush(thumbColor);
+    if (thumbBrush) {
+        context->FillRoundedRectangle(
+            rendering::Rect(trackX, thumbY, sbW, thumbH),
+            rendering::CornerRadius(sbW / 2), thumbBrush.get());
     }
 }
 
-void ScrollViewer::OnMouseWheel(controls::MouseEventArgs& args) {
-    if (m_extentHeight <= m_viewportHeight || m_viewportHeight <= 0) return;
-
-    float step = 48.0f;
-    float maxOffset = std::max(0.0f, m_extentHeight - m_viewportHeight);
-    m_verticalOffset = std::max(0.0f, std::min(m_verticalOffset - step, maxOffset));
-
-    if (GetLayout()) GetLayout()->InvalidateArrange();
-    if (auto* r = GetRender()) r->Invalidate();
-
-    args.Handled = true;
-}
-
-/** 计算 thumb 的几何参数 */
-void ScrollViewer::CalcThumbRect(float& outTrackY, float& outThumbY, float& outThumbH) {
-    auto* render = GetRender();
-    if (!render) return;
-
-    float vpH = render->GetRenderRect().height;
-    float trackH = vpH - 4;
-    float thumbRatio = m_viewportHeight / m_extentHeight;
-    float thumbH = std::max(m_scrollbarMinThumb, trackH * thumbRatio);
-    float maxScroll = std::max(1.0f, m_extentHeight - m_viewportHeight);
-    float thumbY = 2 + (trackH - thumbH) * (m_verticalOffset / maxScroll);
-
-    outTrackY = 2;
-    outThumbY = thumbY;
-    outThumbH = thumbH;
-}
-
-/** 检测全局坐标 (gx, gy) 是否落在垂直滚动条 thumb 上 */
-bool ScrollViewer::HitTestThumb(float gx, float gy) {
-    if (m_extentHeight <= m_viewportHeight || m_viewportHeight <= 0) return false;
-
-    auto* render = GetRender();
-    if (!render) return false;
-
-    float offsetX = 0, offsetY = 0;
-    Control* cur = this;
-    while (cur) {
-        if (auto* r = cur->GetRender()) {
-            offsetX += r->GetRenderRect().x;
-            offsetY += r->GetRenderRect().y;
-        }
-        auto p = cur->GetParent();
-        cur = p ? dynamic_cast<Control*>(p.get()) : nullptr;
-    }
-
-    float localX = gx - offsetX;
-    float localY = gy - offsetY;
-    float vpW = render->GetRenderRect().width;
-
-    float sbWidth = m_sbWidth;
-    float trackX = vpW - sbWidth - 2;
-
-    if (localX < trackX || localX > trackX + sbWidth) return false;
-
-    float trackY, thumbY, thumbH;
-    CalcThumbRect(trackY, thumbY, thumbH);
-
-    return localY >= thumbY && localY <= thumbY + thumbH;
-}
+// ============================================================================
+// Mouse Events
+// ============================================================================
 
 void ScrollViewer::OnMouseDown(controls::MouseEventArgs& args) {
-    if (HitTestThumb(args.x, args.y)) {
+    if (!NeedVScroll()) return;
+
+    float lx, ly;
+    GlobalToLocal(args.x, args.y, lx, ly);
+
+    auto* render = GetRender();
+    if (!render) return;
+    float vpW = render->GetRenderRect().width;
+
+    float sbW = m_currentSbWidth;
+    float trackX = vpW - sbW - SB_MARGIN;
+
+    // check if in track area
+    if (lx < trackX || lx > trackX + sbW) return;
+
+    float thumbY, thumbH;
+    CalcThumb(thumbY, thumbH);
+
+    if (ly >= thumbY && ly <= thumbY + thumbH) {
+        // click on thumb -> start drag
         m_dragging = true;
+        m_sbPressed = true;
         m_dragStartY = args.y;
         m_dragStartOffset = m_verticalOffset;
-        args.Handled = true;
+    } else if (ly >= SB_MARGIN && ly <= render->GetRenderRect().height - SB_MARGIN) {
+        // click on track gap -> page up/down
+        float page = m_viewportHeight * TRACK_CLICK_RATIO;
+        if (ly < thumbY) {
+            ApplyOffset(m_verticalOffset - page);
+        } else {
+            ApplyOffset(m_verticalOffset + page);
+        }
     }
+    args.Handled = true;
 }
 
 void ScrollViewer::OnMouseMove(controls::MouseEventArgs& args) {
-    if (!m_dragging) return;
+    if (!NeedVScroll()) return;
 
-    auto* render = GetRender();
-    if (!render) return;
+    if (m_dragging) {
+        // drag thumb
+        auto* render = GetRender();
+        if (!render) return;
 
-    float vpH = render->GetRenderRect().height;
-    float trackH = vpH - 4;
-    float thumbRatio = m_viewportHeight / m_extentHeight;
-    float thumbH = std::max(m_scrollbarMinThumb, trackH * thumbRatio);
-    float scrollRange = trackH - thumbH;
+        float vpH = render->GetRenderRect().height;
+        float trackH = vpH - 2 * SB_MARGIN;
+        float thumbY, thumbH;
+        CalcThumb(thumbY, thumbH);
+        float scrollRange = trackH - thumbH;
+        if (scrollRange <= 0) return;
 
-    if (scrollRange <= 0) return;
+        float dy = args.y - m_dragStartY;
+        float maxOff = std::max(0.0f, m_extentHeight - m_viewportHeight);
+        float newOff = m_dragStartOffset + dy * (maxOff / scrollRange);
+        ApplyOffset(newOff);
+        args.Handled = true;
+        return;
+    }
 
-    float dy = args.y - m_dragStartY;
-    float maxScroll = std::max(0.0f, m_extentHeight - m_viewportHeight);
-    float newOffset = m_dragStartOffset + dy * (maxScroll / scrollRange);
-    m_verticalOffset = std::max(0.0f, std::min(newOffset, maxScroll));
-
-    if (GetLayout()) GetLayout()->InvalidateArrange();
-    if (auto* r = GetRender()) r->Invalidate();
-
-    args.Handled = true;
+    // detect hover
+    bool wasHovered = m_sbHovered;
+    m_sbHovered = HitTestTrack(args.x, args.y);
+    if (m_sbHovered != wasHovered) {
+        if (auto* r = GetRender()) r->Invalidate();
+    }
 }
 
 void ScrollViewer::OnMouseUp(controls::MouseEventArgs& args) {
     if (m_dragging) {
         m_dragging = false;
+        m_sbPressed = false;
         args.Handled = true;
     }
+}
+
+void ScrollViewer::OnMouseWheel(controls::MouseEventArgs& args) {
+    if (!NeedVScroll()) return;
+
+    // args.button holds WM_MOUSEWHEEL delta (typically +/-120)
+    // delta > 0 -> scroll up -> content moves up -> offset decreases
+    float factor = static_cast<float>(args.button) / 120.0f;
+    float newOff = m_verticalOffset - factor * WHEEL_STEP;
+    ApplyOffset(newOff);
+
+    args.Handled = true;
 }
 
 } // namespace controls

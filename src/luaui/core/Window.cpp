@@ -417,7 +417,6 @@ Control* Window::HitTest(Control* root, float x, float y, float offsetX, float o
 // ============================================================================
 
 void Window::HandleMouseMove(float x, float y) {
-    // 如果有捕获的控件，直接发送给它
     if (m_capturedControl) {
         controls::MouseEventArgs args{x, y, 0, false};
         if (auto* inputComp = m_capturedControl->GetInput()) {
@@ -428,18 +427,15 @@ void Window::HandleMouseMove(float x, float y) {
         InvalidateRender();
         return;
     }
-    
-    // 命中测试
+
     auto* control = HitTest(m_root.get(), x, y);
-    
-    // 处理 MouseLeave
+
     if (m_lastMouseOver && m_lastMouseOver != control) {
         if (auto* inputComp = m_lastMouseOver->GetInput()) {
             inputComp->RaiseMouseLeave();
         }
     }
-    
-    // 处理 MouseEnter/MouseMove
+
     if (control) {
         if (auto* inputComp = control->GetInput()) {
             if (m_lastMouseOver != control) {
@@ -448,8 +444,20 @@ void Window::HandleMouseMove(float x, float y) {
             controls::MouseEventArgs args{x, y, 0, false};
             inputComp->RaiseMouseMove(args);
         }
+
+        // 向父级链传递 MouseMove，让容器控件（如 ScrollViewer）能检测 hover
+        controls::MouseEventArgs parentArgs{x, y, 0, false};
+        auto parent = control->GetParent();
+        Control* cur = parent ? static_cast<Control*>(parent.get()) : nullptr;
+        while (cur) {
+            if (!cur->GetInput()) {
+                cur->OnMouseMove(parentArgs);
+            }
+            auto p = cur->GetParent();
+            cur = p ? static_cast<Control*>(p.get()) : nullptr;
+        }
     }
-    
+
     m_lastMouseOver = control;
     InvalidateRender();
 }

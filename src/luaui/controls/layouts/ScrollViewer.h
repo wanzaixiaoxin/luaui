@@ -8,10 +8,14 @@ namespace controls {
 enum class ScrollBarVisibility { Auto, Visible, Hidden, Disabled };
 
 /**
- * @brief ScrollViewer - 滚动视图面板
+ * @brief ScrollViewer - scrollable viewport panel
  *
- * 当子内容超出视口大小时，支持鼠标滚轮滚动。
- * 自动显示垂直滚动条指示器。
+ * Supports mouse wheel scrolling when content exceeds viewport.
+ * Scrollbar interaction aligns with mainstream browser behavior:
+ * - Expand on hover
+ * - Click track to jump
+ * - Drag thumb for precise scrolling
+ * - Hover / pressed visual feedback
  */
 class ScrollViewer : public Panel {
 public:
@@ -19,20 +23,17 @@ public:
 
     std::string GetTypeName() const override { return "ScrollViewer"; }
 
-    // 滚动条可见性
     ScrollBarVisibility GetHorizontalScrollBarVisibility() const { return m_horizontalScrollBarVisibility; }
     void SetHorizontalScrollBarVisibility(ScrollBarVisibility visibility);
 
     ScrollBarVisibility GetVerticalScrollBarVisibility() const { return m_verticalScrollBarVisibility; }
     void SetVerticalScrollBarVisibility(ScrollBarVisibility visibility);
 
-    // 滚动偏移
     float GetHorizontalOffset() const { return m_horizontalOffset; }
     float GetVerticalOffset() const { return m_verticalOffset; }
     void ScrollToHorizontalOffset(float offset);
     void ScrollToVerticalOffset(float offset);
 
-    // 内容大小
     float GetExtentWidth() const { return m_extentWidth; }
     float GetExtentHeight() const { return m_extentHeight; }
     float GetViewportWidth() const { return m_viewportWidth; }
@@ -44,15 +45,30 @@ protected:
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
 
-    // 鼠标事件
     void OnMouseDown(MouseEventArgs& args) override;
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseUp(MouseEventArgs& args) override;
     void OnMouseWheel(MouseEventArgs& args) override;
 
 private:
-    bool HitTestThumb(float x, float y);
-    void CalcThumbRect(float& outTrackY, float& outThumbY, float& outThumbH);
+    /** Convert global screen coords to local coords */
+    void GlobalToLocal(float gx, float gy, float& lx, float& ly);
+
+    /** Whether vertical scrollbar is needed */
+    bool NeedVScroll() const;
+
+    /** Test if global coords hit the thumb */
+    bool HitTestThumb(float gx, float gy);
+
+    /** Test if global coords hit the track (including thumb) */
+    bool HitTestTrack(float gx, float gy);
+
+    /** Compute thumb y position and height in local coords */
+    void CalcThumb(float& y, float& h);
+
+    /** Apply offset and refresh */
+    void ApplyOffset(float offset);
+
     float ClampVerticalOffset(float offset);
     float ClampHorizontalOffset(float offset);
 
@@ -65,16 +81,21 @@ private:
     float m_viewportWidth = 0;
     float m_viewportHeight = 0;
 
-    // scrollbar appearance
-    float m_scrollbarMinThumb = 30.0f;
-    float m_sbWidth = 8.0f;
-    rendering::Color m_scrollbarTrackColor = rendering::Color::FromHex(0x00000011);
-    rendering::Color m_scrollbarThumbColor = rendering::Color::FromHex(0x00000044);
+    // scrollbar layout constants
+    static constexpr float SB_COLLAPSED = 6.0f;
+    static constexpr float SB_EXPANDED  = 12.0f;
+    static constexpr float SB_MARGIN    = 3.0f;
+    static constexpr float THUMB_MIN    = 30.0f;
+    static constexpr float WHEEL_STEP   = 48.0f;
+    static constexpr float TRACK_CLICK_RATIO = 0.8f;
 
-    // scrollbar drag state
+    // scrollbar state
+    bool m_sbHovered = false;
+    bool m_sbPressed = false;
     bool m_dragging = false;
     float m_dragStartY = 0;
     float m_dragStartOffset = 0;
+    float m_currentSbWidth = SB_COLLAPSED;
 };
 
 } // namespace controls
