@@ -7,6 +7,7 @@
 #include "Logger.h"
 #include "DirtyRegion.h"
 #include "ResourceCache.h"
+#include "IAnimation.h"
 #include <windows.h>
 #include <memory>
 
@@ -79,6 +80,15 @@ public:
     // ========== 调度器 ==========
     Dispatcher* GetDispatcher() const { return m_dispatcher.get(); }
 
+    // ========== 动画系统 ==========
+    rendering::IAnimationTimeline* GetTimeline() const { return m_timeline.get(); }
+
+    /** @brief 启动动画定时器（有活跃动画时自动调用） */
+    void StartAnimTimer();
+
+    /** @brief 停止动画定时器（无活跃动画时自动调用以节省 CPU） */
+    void StopAnimTimer();
+
 protected:
     // ========== 生命周期回调 ==========
     virtual void OnLoaded() {}
@@ -105,6 +115,9 @@ private:
     // ========== 渲染 ==========
     void Render();
     void UpdateLayout();
+    
+    // ========== 动画帧驱动 ==========
+    void OnAnimTimerTick();
     
     // ========== 输入处理 ==========
     void HandleMouseMove(float x, float y);
@@ -146,6 +159,13 @@ private:
     
     // 资源缓存（画刷、文本格式等）
     std::unique_ptr<rendering::ResourceCache> m_resourceCache;
+    
+    // 动画系统
+    static constexpr UINT_PTR ANIM_TIMER_ID = 1;
+    static constexpr UINT ANIM_INTERVAL_MS = 16;  // ~60fps
+    std::unique_ptr<rendering::IAnimationTimeline> m_timeline;
+    bool m_animTimerRunning = false;
+    LARGE_INTEGER m_lastAnimTick = {};
     
     // 输入状态
     Control* m_capturedControl = nullptr;   // 鼠标捕获的控件

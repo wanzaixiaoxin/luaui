@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Types.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -82,18 +83,23 @@ public:
     AnimationValue(float f) : m_type(Type::Float), m_float(f) {}
     AnimationValue(int i) : m_type(Type::Int), m_int(i) {}
     AnimationValue(bool b) : m_type(Type::Bool), m_bool(b) {}
-    
+    AnimationValue(const Color& c) : m_type(Type::Color), m_color(c) {}
+
     float AsFloat() const { return m_float; }
     int AsInt() const { return m_int; }
     bool AsBool() const { return m_bool; }
-    
+    Color AsColor() const { return m_color; }
+
+    bool IsColor() const { return m_type == Type::Color; }
+
     AnimationValue Lerp(const AnimationValue& other, float t) const;
-    
+
 private:
-    enum class Type { Float, Int, Bool } m_type = Type::Float;
+    enum class Type { Float, Int, Bool, Color } m_type = Type::Float;
     float m_float = 0;
     int m_int = 0;
     bool m_bool = false;
+    Color m_color;
 };
 
 // Animation delegate
@@ -194,6 +200,9 @@ public:
     
     // Update all animations
     virtual void Update(float deltaTimeMs) = 0;
+    
+    // Query active state
+    virtual bool HasActiveAnimations() const = 0;
     
     // Time scale (1.0 = normal speed)
     virtual void SetTimeScale(float scale) = 0;

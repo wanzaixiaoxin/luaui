@@ -117,6 +117,9 @@ public:
     // Update all animations
     void Update(float deltaTimeMs) override;
     
+    // Query active state
+    bool HasActiveAnimations() const override;
+    
     // Time scale (1.0 = normal speed)
     void SetTimeScale(float scale) override;
     float GetTimeScale() const override;
@@ -130,6 +133,7 @@ private:
 AnimationValue MakeAnimValue(float f);
 AnimationValue MakeAnimValue(int i);
 AnimationValue MakeAnimValue(bool b);
+AnimationValue MakeAnimValue(const Color& c);
 
 } // namespace rendering
 } // namespace luaui

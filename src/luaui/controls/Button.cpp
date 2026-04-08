@@ -1,6 +1,7 @@
 #include "Button.h"
 #include "IRenderContext.h"
 #include "Logger.h"
+#include "Window.h"
 
 namespace luaui {
 namespace controls {
@@ -8,15 +9,12 @@ namespace controls {
 Button::Button() {}
 
 void Button::InitializeComponents() {
-    // 添加布局组件
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
     layout->SetWidth(80);
     layout->SetHeight(32);
 
-    // 添加渲染组件
     GetComponents().AddComponent<components::RenderComponent>(this);
 
-    // 添加输入组件并配置
     auto* input = GetComponents().AddComponent<components::InputComponent>(this);
     input->SetIsFocusable(true);
 }
@@ -109,7 +107,7 @@ void Button::SetStateColors(const rendering::Color& normal,
     m_normalBackground = normal;
     m_hoverBackground = hover;
     m_pressedBackground = pressed;
-
+    m_animBg = normal;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
@@ -127,6 +125,45 @@ void Button::SetDisabledColors(const rendering::Color& bg,
 }
 
 // ============================================================================
+// 动画辅助
+// ============================================================================
+
+rendering::Color Button::GetTargetBgColor() const {
+    if (!GetIsEnabled()) return m_disabledBackground;
+    if (m_isPressed) return m_pressedBackground;
+    if (m_isHovered) return m_hoverBackground;
+    return m_normalBackground;
+}
+
+void Button::AnimateBgTo(const rendering::Color& target, float durationMs) {
+    auto* wnd = GetWindow();
+    if (!wnd || !wnd->GetTimeline()) {
+        m_animBg = target;
+        return;
+    }
+
+    auto anim = wnd->GetTimeline()->CreateAnimation();
+    anim->SetDuration(durationMs);
+    anim->SetEasing(rendering::Easing::CubicOut);
+    anim->SetFillMode(rendering::FillMode::Forwards);
+
+    rendering::Color start = m_animBg;
+    anim->SetStartValue(rendering::AnimationValue(start));
+    anim->SetEndValue(rendering::AnimationValue(target));
+
+    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
+        m_animBg = val.AsColor();
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    });
+
+    anim->Play();
+    wnd->GetTimeline()->Add(std::move(anim));
+    wnd->StartAnimTimer();
+}
+
+// ============================================================================
 // 渲染
 // ============================================================================
 
@@ -138,25 +175,9 @@ void Button::OnRender(rendering::IRenderContext* context) {
 
     rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
 
-    // 根据状态选择颜色
-    rendering::Color bgColor, fgColor, borderColor;
-    if (!GetIsEnabled()) {
-        bgColor = m_disabledBackground;
-        fgColor = m_disabledForeground;
-        borderColor = m_disabledBorderBrush;
-    } else if (m_isPressed) {
-        bgColor = m_pressedBackground;
-        fgColor = m_foreground;
-        borderColor = m_borderBrush;
-    } else if (m_isHovered) {
-        bgColor = m_hoverBackground;
-        fgColor = m_foreground;
-        borderColor = m_borderBrush;
-    } else {
-        bgColor = m_normalBackground;
-        fgColor = m_foreground;
-        borderColor = m_borderBrush;
-    }
+    rendering::Color bgColor = m_animBg;
+    rendering::Color fgColor = GetIsEnabled() ? m_foreground : m_disabledForeground;
+    rendering::Color borderColor = GetIsEnabled() ? m_borderBrush : m_disabledBorderBrush;
 
     // 1. 背景（圆角矩形）
     auto bgBrush = context->CreateSolidColorBrush(bgColor);
@@ -172,7 +193,7 @@ void Button::OnRender(rendering::IRenderContext* context) {
         }
     }
 
-    // 3. 文本（内容区域 = 控件矩形 - Padding - BorderThickness）
+    // 3. 文本
     if (!m_text.empty()) {
         float bt = m_borderThickness;
         rendering::Rect contentRect(
@@ -215,35 +236,27 @@ void Button::OnMouseDown(MouseEventArgs& args) {
     (void)args;
     if (!GetIsEnabled()) return;
     m_isPressed = true;
-    if (auto* render = GetRender()) {
-        render->Invalidate();
-    }
+    AnimateBgTo(GetTargetBgColor(), 100.0f);
 }
 
 void Button::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     if (m_isPressed) {
         m_isPressed = false;
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
+        AnimateBgTo(GetTargetBgColor(), 150.0f);
     }
 }
 
 void Button::OnMouseEnter() {
     if (!GetIsEnabled()) return;
     m_isHovered = true;
-    if (auto* render = GetRender()) {
-        render->Invalidate();
-    }
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void Button::OnMouseLeave() {
     m_isHovered = false;
     m_isPressed = false;
-    if (auto* render = GetRender()) {
-        render->Invalidate();
-    }
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void Button::OnClick() {
@@ -264,7 +277,6 @@ rendering::Size Button::OnMeasure(const rendering::Size& availableSize) {
             return rendering::Size(w, h);
         }
     }
-    // 默认按钮大小（考虑 padding 和 border）
     float defaultW = 80 + m_padding.left + m_padding.right + 2 * m_borderThickness;
     float defaultH = 32 + m_padding.top + m_padding.bottom + 2 * m_borderThickness;
     return rendering::Size(defaultW, defaultH);

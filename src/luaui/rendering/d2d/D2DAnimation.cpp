@@ -17,6 +17,8 @@ AnimationValue AnimationValue::Lerp(const AnimationValue& other, float t) const 
             return AnimationValue(static_cast<int>(m_int + (other.m_int - m_int) * t));
         case Type::Bool:
             return t < 0.5f ? *this : other;
+        case Type::Color:
+            return AnimationValue(m_color.Lerp(other.m_color, t));
         default:
             return *this;
     }
@@ -26,6 +28,7 @@ AnimationValue AnimationValue::Lerp(const AnimationValue& other, float t) const 
 AnimationValue MakeAnimValue(float f) { return AnimationValue(f); }
 AnimationValue MakeAnimValue(int i) { return AnimationValue(i); }
 AnimationValue MakeAnimValue(bool b) { return AnimationValue(b); }
+AnimationValue MakeAnimValue(const Color& c) { return AnimationValue(c); }
 
 // ==================== Easing Functions ====================
 
@@ -466,6 +469,10 @@ void D2DAnimationTimeline::SetTimeScale(float scale) {
 
 float D2DAnimationTimeline::GetTimeScale() const {
     return m_timeScale;
+}
+
+bool D2DAnimationTimeline::HasActiveAnimations() const {
+    return !m_animations.empty();
 }
 
 // ==================== Factory Function ====================

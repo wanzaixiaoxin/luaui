@@ -1,5 +1,6 @@
 #include "Window.h"
 #include "../rendering/d2d/D2DRenderEngine.h"
+#include "../rendering/d2d/D2DAnimation.h"
 #include "../controls/Control.h"
 #include "../controls/Panel.h"
 #include "Components/InputComponent.h"
@@ -77,6 +78,10 @@ bool Window::Create(HINSTANCE hInstance, const wchar_t* title, int width, int he
     
     // 初始化调度器
     m_dispatcher = std::make_unique<Dispatcher>();
+    
+    // 初始化动画 Timeline
+    m_timeline = rendering::CreateAnimationTimeline();
+    QueryPerformanceCounter(&m_lastAnimTick);
     
     utils::Logger::Info("Window created successfully");
     OnLoaded();
@@ -599,6 +604,49 @@ void Window::HandleChar(wchar_t ch) {
 }
 
 // ============================================================================
+// 动画帧驱动
+// ============================================================================
+
+void Window::StartAnimTimer() {
+    if (m_animTimerRunning || !m_hWnd) return;
+    ::SetTimer(m_hWnd, ANIM_TIMER_ID, ANIM_INTERVAL_MS, nullptr);
+    m_animTimerRunning = true;
+    QueryPerformanceCounter(&m_lastAnimTick);
+}
+
+void Window::StopAnimTimer() {
+    if (!m_animTimerRunning || !m_hWnd) return;
+    ::KillTimer(m_hWnd, ANIM_TIMER_ID);
+    m_animTimerRunning = false;
+}
+
+void Window::OnAnimTimerTick() {
+    if (!m_timeline) return;
+
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+
+    float deltaMs = 0.0f;
+    if (freq.QuadPart > 0 && m_lastAnimTick.QuadPart > 0) {
+        deltaMs = static_cast<float>(
+            (now.QuadPart - m_lastAnimTick.QuadPart) * 1000.0 / freq.QuadPart);
+    }
+    m_lastAnimTick = now;
+
+    m_timeline->Update(deltaMs);
+
+    // 没有活跃动画时自动停止 Timer，节省 CPU
+    if (!m_timeline->HasActiveAnimations()) {
+        StopAnimTimer();
+    }
+
+    InvalidateRender();
+}
+
+// ============================================================================
 // 窗口过程
 // ============================================================================
 
@@ -623,6 +671,15 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
             Render();
             EndPaint(m_hWnd, &ps);
             return 0;
+        }
+        
+        // ========== 动画帧驱动 ==========
+        case WM_TIMER: {
+            if (wP == ANIM_TIMER_ID) {
+                OnAnimTimerTick();
+                return 0;
+            }
+            break;
         }
         
         // ========== 窗口大小变化 ==========
