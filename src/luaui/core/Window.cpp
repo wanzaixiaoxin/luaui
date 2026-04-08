@@ -419,9 +419,11 @@ Control* Window::HitTest(Control* root, float x, float y, float offsetX, float o
 void Window::HandleMouseMove(float x, float y) {
     // 如果有捕获的控件，直接发送给它
     if (m_capturedControl) {
+        controls::MouseEventArgs args{x, y, 0, false};
         if (auto* inputComp = m_capturedControl->GetInput()) {
-            controls::MouseEventArgs args{x, y, 0, false};
             inputComp->RaiseMouseMove(args);
+        } else {
+            m_capturedControl->OnMouseMove(args);
         }
         InvalidateRender();
         return;
@@ -459,18 +461,29 @@ void Window::HandleMouseDown(float x, float y, int button) {
         control ? control->GetTypeName().c_str() : "null", x, y);
     
     if (control) {
-        // 捕获鼠标
         m_capturedControl = control;
         SetCapture(m_hWnd);
-        
-        // 设置焦点
-        if (auto* inputComp = control->GetInput()) {
-            if (inputComp->GetIsFocusable()) {
-                UpdateFocus(control);
+
+        controls::MouseEventArgs args{x, y, button, false};
+
+        Control* current = control;
+        while (current && !args.Handled) {
+            if (auto* inputComp = current->GetInput()) {
+                if (inputComp->GetIsFocusable()) {
+                    UpdateFocus(current);
+                }
+                inputComp->RaiseMouseDown(args);
+            } else {
+                current->OnMouseDown(args);
             }
-            
-            controls::MouseEventArgs args{x, y, button, false};
-            inputComp->RaiseMouseDown(args);
+            if (!args.Handled) {
+                auto parent = current->GetParent();
+                current = parent ? static_cast<Control*>(parent.get()) : nullptr;
+            }
+        }
+
+        if (args.Handled && current && current != m_capturedControl) {
+            m_capturedControl = current;
         }
     }
     
@@ -484,19 +497,24 @@ void Window::HandleMouseUp(float x, float y, int button) {
         x, y, m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
     
     if (m_capturedControl) {
+        controls::MouseEventArgs args{x, y, button, false};
+
         if (auto* inputComp = m_capturedControl->GetInput()) {
-            controls::MouseEventArgs args{x, y, button, false};
             inputComp->RaiseMouseUp(args);
-            
-            // 如果鼠标仍在控件上，触发点击
+        } else {
+            m_capturedControl->OnMouseUp(args);
+        }
+
+        if (!args.Handled) {
             auto* hitControl = HitTest(m_root.get(), x, y, 0, 0);
             if (hitControl == m_capturedControl) {
-                inputComp->RaiseClick();
+                if (auto* inputComp = m_capturedControl->GetInput()) {
+                    inputComp->RaiseClick();
+                }
             }
         }
         m_capturedControl = nullptr;
     } else {
-        // 没有捕获的控件，正常处理
         auto* control = HitTest(m_root.get(), x, y, 0, 0);
         if (control) {
             if (auto* inputComp = control->GetInput()) {
@@ -657,8 +675,10 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
         }
         
         case WM_MOUSEWHEEL: {
-            float x = static_cast<float>(GET_X_LPARAM(lP));
-            float y = static_cast<float>(GET_Y_LPARAM(lP));
+            POINT pt = { GET_X_LPARAM(lP), GET_Y_LPARAM(lP) };
+            ScreenToClient(m_hWnd, &pt);
+            float x = static_cast<float>(pt.x);
+            float y = static_cast<float>(pt.y);
             int delta = GET_WHEEL_DELTA_WPARAM(wP);
             HandleMouseWheel(x, y, delta);
             return 0;

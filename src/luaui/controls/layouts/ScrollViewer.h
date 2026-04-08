@@ -44,10 +44,15 @@ protected:
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
 
-    // 鼠标滚轮
+    // 鼠标事件
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseMove(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
     void OnMouseWheel(MouseEventArgs& args) override;
 
 private:
+    bool HitTestThumb(float x, float y);
+    void CalcThumbRect(float& outTrackY, float& outThumbY, float& outThumbH);
     float ClampVerticalOffset(float offset);
     float ClampHorizontalOffset(float offset);
 
@@ -65,6 +70,11 @@ private:
     float m_sbWidth = 8.0f;
     rendering::Color m_scrollbarTrackColor = rendering::Color::FromHex(0x00000011);
     rendering::Color m_scrollbarThumbColor = rendering::Color::FromHex(0x00000044);
+
+    // scrollbar drag state
+    bool m_dragging = false;
+    float m_dragStartY = 0;
+    float m_dragStartOffset = 0;
 };
 
 } // namespace controls
