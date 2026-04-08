@@ -192,14 +192,13 @@ void Slider::OnRender(rendering::IRenderContext* context) {
     
     rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
-    // 颜色定义
-    rendering::Color trackColor = rendering::Color::FromHex(0xE0E0E0);      // 轨道颜色
-    rendering::Color progressColor = rendering::Color::FromHex(0x2196F3);   // 进度颜色
-    rendering::Color thumbColor = rendering::Color::White();                 // 滑块颜色
-    rendering::Color thumbBorder = rendering::Color::FromHex(0x1976D2);     // 滑块边框
+    rendering::Color trackColor = rendering::Color::FromHex(0xE0E0E0);
+    rendering::Color progressColor = rendering::Color::FromHex(0x2196F3);
+    rendering::Color thumbColor = rendering::Color::White();
+    rendering::Color thumbBorder = rendering::Color::FromHex(0x1976D2);
     
-    float trackHeight = 4.0f;    // 轨道高度
-    float thumbSize = 12.0f;     // 滑块大小
+    float trackHeight = 4.0f;
+    float thumbSize = m_isHovered ? 16.0f : 12.0f;
     
     if (m_isVertical) {
         // 垂直滑块
@@ -272,6 +271,27 @@ void Slider::OnRender(rendering::IRenderContext* context) {
 }
 
 // ============================================================================
+
+/** @brief 鼠标滚轮调整 Slider 值 */
+void Slider::OnMouseWheel(controls::MouseEventArgs& args) {
+    if (!GetIsEnabled()) return;
+    int delta = args.button;
+    double step = (delta > 0 ? 1 : -1) * m_smallChange;
+    SetValue(m_value + step);
+    args.Handled = true;
+}
+
+/** @brief 鼠标悬入时放大 Thumb */
+void Slider::OnMouseEnter() {
+    m_isHovered = true;
+    if (auto* render = GetRender()) render->Invalidate();
+}
+
+/** @brief 鼠标悬出时恢复 Thumb 大小 */
+void Slider::OnMouseLeave() {
+    m_isHovered = false;
+    if (auto* render = GetRender()) render->Invalidate();
+}
 
 } // namespace controls
 } // namespace luaui

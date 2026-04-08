@@ -6,7 +6,7 @@
 
 | 模块 | 已有 | 缺失 |
 |------|------|------|
-| 动画 | `IAnimation` / `D2DAnimation` / `Timeline` / 30 种 Easing 全部实现 | 帧驱动 (`WM_TIMER`)；`Window` 未持有 `Timeline`；`AnimationValue` 无 `Color` 类型；无 `VisualStateManager` |
+| 动画 | `IAnimation` / `D2DAnimation` / `Timeline` / 30 种 Easing 全部实现 | ~~帧驱动 (`WM_TIMER`)~~ ✅ / ~~`Window` 未持有 `Timeline`~~ ✅ / ~~`AnimationValue` 无 `Color` 类型~~ ✅；无 `VisualStateManager` |
 | 主题 | `Theme` / `Style` / `Setter` / `ResourceDictionary` 类存在 | 控件不读取 `Theme`；无 `IStyleable` 实现；无 `DependencyProperty`；无 Dark Mode |
 | 渲染 | 完整的 D2D 渲染管线 + 脏矩形优化 | 被动式渲染（仅 `WM_PAINT` 驱动） |
 | 输入 | 鼠标事件路由 + 焦点管理 + 鼠标捕获 | IME 缺失；无 DragDrop |
@@ -17,68 +17,30 @@
 
 ## 分阶段推进路线
 
-### 阶段一：激活动画引擎（~3 天）
+### ✅ 阶段一：激活动画引擎（已完成 2026-04-08）
 
 **目标**：让已有的 Animation 代码跑起来，Button 率先拥有过渡动画
 
-#### 步骤 1.1 Window 集成 AnimationTimeline
+- [x] **步骤 1.1** Window 集成 AnimationTimeline
+- [x] **步骤 1.2** 帧驱动机制（WM_TIMER + QPC deltaTime + 自动启停）
+- [x] **步骤 1.3** AnimationValue 扩展 Color 类型（r/g/b/a 四通道 Lerp）
+- [x] **步骤 1.4** Button 率先使用动画（Hover 150ms / Pressed 100ms CubicOut）
 
-- `Window.h` 添加 `IAnimationTimelinePtr m_timeline`
-- `Window::Create()` 中创建 Timeline
-- 添加 `StartAnimationTimer()` / `StopAnimationTimer()`
-
-#### 步骤 1.2 帧驱动机制（WM_TIMER）
-
-- `WndProc` 处理 `WM_TIMER`
-- 计算 deltaTime（`QueryPerformanceCounter`）
-- 调用 `m_timeline->Update(deltaMs)`
-- 有活跃动画时 `InvalidateRender()`
-- 无动画时自动停止 Timer 节省 CPU
-
-#### 步骤 1.3 AnimationValue 扩展 Color 类型
-
-- `AnimationValue` 添加 `Type::Color` + Color Lerp
-- 支持 r/g/b/a 四通道独立插值
-
-#### 步骤 1.4 Button 率先使用动画
-
-- Hover 进入/离开 → 背景色 150ms `CubicOut` 渐变
-- Pressed → 背景色 100ms 渐变
-- 退出动画时反向播放
-
-**验收标准**：Button Hover/Pressed 有丝滑的颜色过渡动画。
+改动文件：`IAnimation.h`, `D2DAnimation.h/cpp`, `Window.h/cpp`, `Button.h/cpp`
 
 ---
 
-### 阶段二：P0 交互修复（~2 天）
+### ✅ 阶段二：P0 交互修复（已完成 2026-04-08）
 
 **目标**：修复基本交互逻辑缺陷，不依赖动画引擎
 
-#### 步骤 2.1 Button OnMouseUp 坐标校验
+- [x] **步骤 2.1** Button OnMouseUp 坐标校验（已在 Window::HandleMouseUp 中通过 HitTest 实现）
+- [x] **步骤 2.2** CheckBox/RadioButton 禁用态（灰色边框/勾选色/文字色 + OnClick 拦截）
+- [x] **步骤 2.3** CheckBox/RadioButton 文本宽度（`fontSize*0.6` 替代固定 `*7`）
+- [x] **步骤 2.4** Slider 鼠标滚轮（`OnMouseWheel` + `SmallChange` 步进）
+- [x] **步骤 2.5** Slider Hover 视觉（thumb 12→16 + OnMouseEnter/Leave）
 
-- 计算鼠标是否仍在 Button 矩形内
-- 不在范围内则不触发 `OnClick`
-
-#### 步骤 2.2 CheckBox/RadioButton 禁用态
-
-- `IsEnabled=false` 时灰色外观
-- 不响应 `OnClick`
-- 添加 `m_disabledCheckColor` / `m_disabledTextColor`
-
-#### 步骤 2.3 CheckBox/RadioButton 文本宽度
-
-- 用 `ITextFormat::MeasureText` 替代 `length()*7`
-- `OnMeasure` 中使用实际测量
-
-#### 步骤 2.4 Slider 鼠标滚轮
-
-- 添加 `OnMouseWheel` 处理
-- 滚轮 delta → `SmallChange` 步进
-
-#### 步骤 2.5 Slider Hover 视觉
-
-- `OnRender` 中根据 `m_isHovered` 放大 Thumb
-- Hover 时 thumbSize 12 → 16
+改动文件：`CheckBox.h/cpp`, `Slider.h/cpp`
 
 ---
 
@@ -262,5 +224,6 @@
 
 ---
 
-*文档版本: 1.0*
+*文档版本: 1.2*
 *创建日期: 2026-04-08*
+*最后更新: 2026-04-08 — 阶段一、二完成*

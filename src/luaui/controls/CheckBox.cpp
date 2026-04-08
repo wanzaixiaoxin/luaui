@@ -69,8 +69,7 @@ CheckBox::CheckBox() {}
 
 void CheckBox::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
-    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
     layout->SetWidth(m_boxSize + m_spacing + textWidth + 10);
     layout->SetHeight(m_boxSize);
     
@@ -82,8 +81,7 @@ void CheckBox::InitializeComponents() {
 
 rendering::Size CheckBox::OnMeasure(const rendering::Size& availableSize) {
     (void)availableSize;
-    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
-    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
     return rendering::Size(m_boxSize + m_spacing + textWidth + 10, m_boxSize);
 }
 
@@ -91,8 +89,7 @@ void CheckBox::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
         if (auto* layout = GetLayout()) {
-            // 根据文本长度动态更新宽度
-            float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+            float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
             layout->SetWidth(m_boxSize + m_spacing + textWidth + 10);
             layout->InvalidateMeasure();
         }
@@ -130,6 +127,7 @@ void CheckBox::Toggle() {
 }
 
 void CheckBox::OnClick() {
+    if (!GetIsEnabled()) return;
     Toggle();
 }
 
@@ -172,7 +170,9 @@ void CheckBox::OnRender(rendering::IRenderContext* context) {
     
     // 选择边框颜色
     rendering::Color borderColor = m_normalBorder;
-    if (m_isPressed) {
+    if (!GetIsEnabled()) {
+        borderColor = m_disabledBorder;
+    } else if (m_isPressed) {
         borderColor = m_pressedBorder;
     } else if (m_isHovered) {
         borderColor = m_hoverBorder;
@@ -194,8 +194,9 @@ void CheckBox::OnRender(rendering::IRenderContext* context) {
     }
     
     // 绘制勾选标记
+    rendering::Color checkClr = GetIsEnabled() ? m_checkColor : m_disabledCheckColor;
     if (m_isChecked && !m_isIndeterminate) {
-        auto checkBrush = context->CreateSolidColorBrush(m_checkColor);
+        auto checkBrush = context->CreateSolidColorBrush(checkClr);
         if (checkBrush) {
             // 绘制简单的勾选形状（两条线）
             float padding = m_boxSize * 0.2f;
@@ -210,8 +211,7 @@ void CheckBox::OnRender(rendering::IRenderContext* context) {
             context->DrawLine(rendering::Point(x2, y2), rendering::Point(x3, y3), checkBrush.get(), 2.0f);
         }
     } else if (m_isIndeterminate) {
-        // 绘制不确定状态（横线）
-        auto checkBrush = context->CreateSolidColorBrush(m_checkColor);
+        auto checkBrush = context->CreateSolidColorBrush(checkClr);
         if (checkBrush) {
             float padding = m_boxSize * 0.25f;
             float y = boxRect.y + m_boxSize * 0.5f;
@@ -224,7 +224,8 @@ void CheckBox::OnRender(rendering::IRenderContext* context) {
     
     // 绘制文本
     if (!m_text.empty()) {
-        auto textBrush = context->CreateSolidColorBrush(rendering::Color::Black());
+        rendering::Color txtClr = GetIsEnabled() ? rendering::Color::Black() : m_disabledTextColor;
+        auto textBrush = context->CreateSolidColorBrush(txtClr);
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
         if (textBrush && textFormat) {
             rendering::Point textPos(m_boxSize + m_spacing, (m_boxSize - m_fontSize) / 2);
@@ -244,8 +245,7 @@ void CheckBox::UpdateVisualState() {
 // ============================================================================
 void RadioButton::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);
-    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
-    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
     layout->SetWidth(m_circleSize + m_spacing + textWidth + 10);
     layout->SetHeight(m_circleSize);
     
@@ -260,8 +260,7 @@ void RadioButton::InitializeComponents() {
 
 rendering::Size RadioButton::OnMeasure(const rendering::Size& availableSize) {
     (void)availableSize;
-    // 根据文本长度动态计算宽度：每个字符约7像素 + 基础宽度
-    float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+    float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
     return rendering::Size(m_circleSize + m_spacing + textWidth + 10, m_circleSize);
 }
 
@@ -269,8 +268,7 @@ void RadioButton::SetText(const std::wstring& text) {
     if (m_text != text) {
         m_text = text;
         if (auto* layout = GetLayout()) {
-            // 根据文本长度动态更新宽度
-            float textWidth = m_text.empty() ? 0 : m_text.length() * 7.0f;
+            float textWidth = m_text.empty() ? 0 : m_text.length() * m_fontSize * 0.6f;
             layout->SetWidth(m_circleSize + m_spacing + textWidth + 10);
             layout->InvalidateMeasure();
         }
@@ -344,8 +342,8 @@ void RadioButton::OnMouseUp(MouseEventArgs& args) {
 }
 
 void RadioButton::OnClick() {
+    if (!GetIsEnabled()) return;
     utils::Logger::Debug("[RadioButton] OnClick called");
-    // RadioButton 点击后总是变为选中
     SetIsChecked(true);
 }
 
@@ -357,7 +355,9 @@ void RadioButton::OnRender(rendering::IRenderContext* context) {
     
     // 选择边框颜色
     rendering::Color borderColor = m_normalBorder;
-    if (m_isPressed) {
+    if (!GetIsEnabled()) {
+        borderColor = m_disabledBorder;
+    } else if (m_isPressed) {
         borderColor = m_pressedBorder;
     } else if (m_isHovered) {
         borderColor = m_hoverBorder;
@@ -382,7 +382,8 @@ void RadioButton::OnRender(rendering::IRenderContext* context) {
     
     // 绘制选中标记（内部圆点）
     if (m_isChecked) {
-        auto checkBrush = context->CreateSolidColorBrush(m_checkColor);
+        rendering::Color dotClr = GetIsEnabled() ? m_checkColor : m_disabledCheckColor;
+        auto checkBrush = context->CreateSolidColorBrush(dotClr);
         if (checkBrush) {
             float dotRadius = m_dotSize / 2;
             context->FillEllipse(center, dotRadius, dotRadius, checkBrush.get());
@@ -391,7 +392,8 @@ void RadioButton::OnRender(rendering::IRenderContext* context) {
     
     // 绘制文本
     if (!m_text.empty()) {
-        auto textBrush = context->CreateSolidColorBrush(rendering::Color::Black());
+        rendering::Color txtClr = GetIsEnabled() ? rendering::Color::Black() : m_disabledTextColor;
+        auto textBrush = context->CreateSolidColorBrush(txtClr);
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
         if (textBrush && textFormat) {
             rendering::Point textPos(m_circleSize + m_spacing, (m_circleSize - m_fontSize) / 2);

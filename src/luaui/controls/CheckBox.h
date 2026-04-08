@@ -64,6 +64,10 @@ private:
     rendering::Color m_pressedBorder = rendering::Color::FromHex(0x005A9E);
     rendering::Color m_checkColor = rendering::Color::FromHex(0x0078D4);
     rendering::Color m_boxBackground = rendering::Color::White();
+
+    rendering::Color m_disabledBorder = rendering::Color::FromHex(0xC0C0C0);
+    rendering::Color m_disabledCheckColor = rendering::Color::FromHex(0xC0C0C0);
+    rendering::Color m_disabledTextColor = rendering::Color::FromHex(0xBDBDBD);
 };
 
 /**
@@ -123,6 +127,10 @@ private:
     rendering::Color m_pressedBorder = rendering::Color::FromHex(0x005A9E);
     rendering::Color m_checkColor = rendering::Color::FromHex(0x0078D4);
     rendering::Color m_circleBackground = rendering::Color::White();
+
+    rendering::Color m_disabledBorder = rendering::Color::FromHex(0xC0C0C0);
+    rendering::Color m_disabledCheckColor = rendering::Color::FromHex(0xC0C0C0);
+    rendering::Color m_disabledTextColor = rendering::Color::FromHex(0xBDBDBD);
 };
 
 } // namespace controls

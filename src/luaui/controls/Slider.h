@@ -54,6 +54,9 @@ protected:
     void OnMouseDown(MouseEventArgs& args) override;
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseUp(MouseEventArgs& args) override;
+    void OnMouseWheel(MouseEventArgs& args) override;
+    void OnMouseEnter() override;
+    void OnMouseLeave() override;
 
 private:
     void ClampValue();
