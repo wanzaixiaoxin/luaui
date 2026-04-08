@@ -23,6 +23,15 @@ namespace luaui {
 namespace mvvm {
 namespace {
 
+std::wstring Utf8ToW(const std::string& s) {
+    if (s.empty()) return std::wstring();
+    int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+    if (n <= 0) return std::wstring();
+    std::wstring r(n - 1, 0);
+    MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &r[0], n);
+    return r;
+}
+
 struct DataGridColumnSpec {
     std::string header;
     std::string path;
@@ -783,7 +792,7 @@ void MvvmXmlLoader::BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> te
             if (value.type() == typeid(std::string)) {
                 std::string str = std::any_cast<std::string>(value);
                 utils::Logger::DebugF("[MVVM] Setting TextBlock text to: %s", str.c_str());
-                textBlock->SetText(std::wstring(str.begin(), str.end()));
+                textBlock->SetText(Utf8ToW(str));
             } else if (value.type() == typeid(std::wstring)) {
                 std::wstring str = std::any_cast<std::wstring>(value);
                 utils::Logger::DebugF("[MVVM] Setting TextBlock text to (wstring)");
@@ -840,7 +849,7 @@ void MvvmXmlLoader::BindTextBox(std::shared_ptr<luaui::controls::TextBox> textBo
         std::any initialValue = dataContext->GetPropertyValue(boundPropertyName);
         if (initialValue.type() == typeid(std::string)) {
             std::string str = std::any_cast<std::string>(initialValue);
-            textBox->SetText(std::wstring(str.begin(), str.end()));
+            textBox->SetText(Utf8ToW(str));
         } else if (initialValue.type() == typeid(std::wstring)) {
             textBox->SetText(std::any_cast<std::wstring>(initialValue));
         }
@@ -852,7 +861,7 @@ void MvvmXmlLoader::BindTextBox(std::shared_ptr<luaui::controls::TextBox> textBo
                 std::any value = dataContext->GetPropertyValue(boundPropertyName);
                 if (value.type() == typeid(std::string)) {
                     std::string str = std::any_cast<std::string>(value);
-                    textBox->SetText(std::wstring(str.begin(), str.end()));
+                    textBox->SetText(Utf8ToW(str));
                 } else if (value.type() == typeid(std::wstring)) {
                     textBox->SetText(std::any_cast<std::wstring>(value));
                 }
@@ -1570,7 +1579,7 @@ void MvvmXmlLoader::BindButtonText(std::shared_ptr<luaui::controls::Button> butt
         try {
             if (value.type() == typeid(std::string)) {
                 std::string str = std::any_cast<std::string>(value);
-                button->SetText(std::wstring(str.begin(), str.end()));
+                button->SetText(Utf8ToW(str));
             } else if (value.type() == typeid(std::wstring)) {
                 button->SetText(std::any_cast<std::wstring>(value));
             } else if (value.type() == typeid(double)) {

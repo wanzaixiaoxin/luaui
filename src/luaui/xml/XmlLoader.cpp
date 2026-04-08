@@ -406,6 +406,14 @@ private:
                     }
                 }
             }
+            // IsEnabled (all controls)
+            else if (name == "IsEnabled") {
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "IsEnabled", value);
+                } else {
+                    control->SetIsEnabled(value == "True" || value == "true" || value == "1");
+                }
+            }
             // SetStateColors (Button) - 格式: "normal,hover,pressed"
             else if (name == "SetStateColors") {
                 std::stringstream ss(value);
@@ -441,15 +449,14 @@ private:
                     }
                 }
             }
-            // ========== 声明式事件绑定 ==========
-            // Click 事件 - XML 中写: Click="OnSaveClick"
+            // Click event: Click="SomeCommand" or Click="{Binding SomeCommand}"
             else if (name == "Click") {
                 auto it = m_clickHandlers.find(value);
                 if (it != m_clickHandlers.end()) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         luaui::utils::Logger::InfoF("[XML] Binding Click event for button '%s' to handler '%s'", 
                             control->GetName().c_str(), value.c_str());
-                        std::string handlerName = value;  // 复制值用于lambda捕获
+                        std::string handlerName = value;
                         btn->Click.Add([handler = it->second, handlerName](luaui::Control*) { 
                             luaui::utils::Logger::DebugF("[XML] Button clicked, invoking handler '%s'", handlerName.c_str());
                             handler(); 
@@ -457,6 +464,9 @@ private:
                     } else {
                         luaui::utils::Logger::WarningF("[XML] Click attribute on non-button control: '%s'", control->GetTypeName().c_str());
                     }
+                } else if (std::dynamic_pointer_cast<controls::Button>(control)) {
+                    // no registered C++ handler -> defer to MvvmXmlLoader (Lua command binding)
+                    RecordDeferredBinding(control, "Command", value);
                 } else {
                     luaui::utils::Logger::WarningF("[XML] Click handler '%s' not found (registered handlers: %zu)", 
                         value.c_str(), m_clickHandlers.size());
