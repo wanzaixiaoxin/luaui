@@ -89,9 +89,10 @@ bool Window::Create(HINSTANCE hInstance, const wchar_t* title, int width, int he
     
     utils::Logger::Info("Window created successfully");
 
-    // 注册主题回调：主题切换时同步更新标题栏
+    // 注册主题回调：主题切换时同步更新标题栏 + 全屏重绘
     m_themeCallbackId = controls::Theme::GetCurrent().AddCallback([this]() {
         UpdateTitleBarTheme();
+        InvalidateRender();
     });
 
     // 初始设置标题栏主题
@@ -676,15 +677,41 @@ void Window::UpdateTitleBarTheme() {
     bool isDark = (bg.r + bg.g + bg.b) / 3.0f < 0.5f;
 
     // DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Windows 10 1809+)
-    // 值为 TRUE 时标题栏使用深色模式
-    BOOL value = isDark ? TRUE : FALSE;
-    DwmSetWindowAttribute(m_hWnd, 20, &value, sizeof(value));
+    // 值为 TRUE 时标题栏使用深色模式（标题文字变白等）
+    BOOL darkValue = isDark ? TRUE : FALSE;
+    DwmSetWindowAttribute(m_hWnd, 20, &darkValue, sizeof(darkValue));
 
-    // 强制刷新非客户区（标题栏），否则属性变更不会立即生效
+    // DWMWA_CAPTION_COLOR = 35 (Windows 11 22H2+ / Build 22598+)
+    // 允许自定义标题栏背景色，与工作区颜色匹配
+    // COLORREF 格式：0x00BBGGRR（与 Color 的 RGBA 顺序不同）
+    COLORREF captionColor = RGB(
+        static_cast<BYTE>(bg.r * 255.0f),
+        static_cast<BYTE>(bg.g * 255.0f),
+        static_cast<BYTE>(bg.b * 255.0f)
+    );
+    // 尝试设置自定义标题栏颜色，旧版 Windows 会忽略此属性
+    DwmSetWindowAttribute(m_hWnd, 35, &captionColor, sizeof(captionColor));
+
+    // DWMWA_TEXT_COLOR = 36 (Windows 11 22H2+)
+    // 自定义标题栏文字颜色
+    COLORREF textColor = isDark
+        ? RGB(0xFF, 0xFF, 0xFF)  // 白色文字
+        : RGB(0x00, 0x00, 0x00); // 黑色文字
+    DwmSetWindowAttribute(m_hWnd, 36, &textColor, sizeof(textColor));
+
+    // DWM 对上述属性变更不会自动触发标题栏重绘。
+    // 通过发送 WM_NCACTIVATE 模拟激活/失活，强制 DWM 重新渲染标题栏。
+    HWND active = ::GetActiveWindow();
+    bool isActive = (active == m_hWnd);
+    if (isActive) {
+        ::SendMessage(m_hWnd, WM_NCACTIVATE, FALSE, 0);
+        ::SendMessage(m_hWnd, WM_NCACTIVATE, TRUE, 0);
+    } else {
+        ::SendMessage(m_hWnd, WM_NCACTIVATE, TRUE, -1);
+    }
+
     SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
                  SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-    RedrawWindow(m_hWnd, nullptr, nullptr,
-                 RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 // ============================================================================

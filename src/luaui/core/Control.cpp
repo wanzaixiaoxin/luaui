@@ -17,6 +17,21 @@ Control::Control()
     // 因为虚函数在构造函数中调用不会调用到派生类版本
 }
 
+void Control::ApplyTheme() {
+    // 子类重写以读取 Theme 资源
+}
+
+void Control::InitializeComponents() {
+    // 子类可以重写此方法添加更多组件
+}
+
+Control::~Control() {
+    if (m_themeCbId != 0) {
+        controls::Theme::GetCurrent().RemoveCallback(m_themeCbId);
+    }
+    m_components.ShutdownAll();
+}
+
 void Control::EnsureInitialized() {
     if (!m_initialized) {
         m_initialized = true;
@@ -28,21 +43,6 @@ void Control::EnsureInitialized() {
             if (auto* r = GetRender()) r->Invalidate();
         });
     }
-}
-
-Control::~Control() {
-    if (m_themeCbId != 0) {
-        controls::Theme::GetCurrent().RemoveCallback(m_themeCbId);
-    }
-    m_components.ShutdownAll();
-}
-
-void Control::InitializeComponents() {
-    // 子类可以重写此方法添加更多组件
-}
-
-void Control::ApplyTheme() {
-    // 子类重写以读取 Theme 资源
 }
 
 void Control::SetIsVisible(bool visible) {
