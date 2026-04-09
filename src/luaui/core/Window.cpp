@@ -5,6 +5,8 @@
 #include "../controls/Panel.h"
 #include "Components/InputComponent.h"
 #include "../utils/Logger.h"
+#include "../style/Theme.h"
+#include "../style/ThemeKeys.h"
 #include <objbase.h>
 #include <windowsx.h>
 
@@ -267,10 +269,13 @@ void Window::OnRender() {
         }
     }
     
+    // 获取主题背景色用于清屏
+    auto windowBgColor = controls::Theme::GetCurrent().GetColor(theme::kBackgroundPrimary);
+
     if (fullScreenRender) {
         // 全屏渲染（传统方式）
-        context->Clear(rendering::Color::White());
-        
+        context->Clear(windowBgColor);
+
         if (m_root) {
             if (auto* renderable = m_root->AsRenderable()) {
                 renderable->Render(context);
@@ -281,10 +286,10 @@ void Window::OnRender() {
         for (const auto& dirtyRect : dirtyRects) {
             // 设置裁剪区域
             context->PushClip(dirtyRect);
-            
-            // 清空该区域（使用白色画刷）
+
+            // 清空该区域（使用主题背景色）
             if (auto* cache = GetResourceCache()) {
-                context->FillRectangle(dirtyRect, cache->GetSolidColorBrush(rendering::Color::White()));
+                context->FillRectangle(dirtyRect, cache->GetSolidColorBrush(windowBgColor));
             }
             
             // 渲染与脏矩形相交的控件

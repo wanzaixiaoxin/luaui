@@ -43,6 +43,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     
     // 渲染覆盖
     virtual void OnRender(rendering::IRenderContext* context);
@@ -56,7 +57,10 @@ private:
     rendering::Color m_foreground = rendering::Color::Black();
     rendering::FontWeight m_fontWeight = rendering::FontWeight::Regular;
     rendering::FontStyle m_fontStyle = rendering::FontStyle::Normal;
-    
+
+    // 自定义前景色标记（如果设置，则主题不会覆盖）
+    bool m_hasCustomForeground = false;
+
     bool m_textDirty = true;
     rendering::Size m_textSize;
     

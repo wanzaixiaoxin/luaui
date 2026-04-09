@@ -162,6 +162,7 @@ public:
     
     // 工具绑定
     static void RegisterLogger(lua_State* L);
+    static void RegisterTheme(lua_State* L);
     static void RegisterStorage(lua_State* L);
     static void RegisterTask(lua_State* L);
     

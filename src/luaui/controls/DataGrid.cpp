@@ -1,4 +1,5 @@
 #include "DataGrid.h"
+#include "Control.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
@@ -6,41 +7,14 @@
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
 #include "../utils/StringUtils.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 
 namespace luaui {
 namespace controls {
 
-namespace {
-
-rendering::Rect GetGlobalRenderRect(Control* control) {
-    rendering::Rect globalRect;
-    if (!control) {
-        return globalRect;
-    }
-
-    if (auto* render = control->GetRender()) {
-        globalRect = render->GetRenderRect();
-    }
-
-    auto parent = control->GetParent();
-    while (parent) {
-        auto* parentControl = dynamic_cast<Control*>(parent.get());
-        if (!parentControl) {
-            break;
-        }
-
-        if (auto* parentRender = parentControl->GetRender()) {
-            globalRect.x += parentRender->GetRenderRect().x;
-            globalRect.y += parentRender->GetRenderRect().y;
-        }
-
-        parent = parentControl->GetParent();
-    }
-
-    return globalRect;
-}
-
-} // namespace
+// 前向声明辅助函数
+static rendering::Rect GetGlobalRenderRect(::luaui::Control* control);
 
 // ============================================================================
 // DataGridColumn
@@ -58,6 +32,21 @@ void DataGridCell::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
     GetComponents().AddComponent<components::RenderComponent>(this);
     GetComponents().AddComponent<components::InputComponent>(this);
+}
+
+void DataGridCell::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    
+    m_normalBg = rendering::Color::Transparent();
+    m_hoverBg = t.GetColor(kBackgroundSecondary);
+    m_selectedBg = t.GetColor(kAccentColor);
+    m_textColor = t.GetColor(kTextPrimary);
+    m_selectedTextColor = rendering::Color::White();
+    
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
 }
 
 void DataGridCell::SetValue(const std::any& value) {
@@ -347,6 +336,28 @@ void DataGrid::InitializeComponents() {
     }
 }
 
+void DataGrid::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+
+    // 列头背景使用次级背景色
+    m_headerBg = t.GetColor(kBackgroundSecondary);
+    // 列头边框使用边框颜色
+    m_headerBorder = t.GetColor(kBorderNormal);
+    // 列头文字颜色使用主文字色
+    m_headerTextColor = t.GetColor(kTextPrimary);
+    // 网格线颜色
+    m_gridLineColor = t.GetColor(kBorderNormal);
+    // 边框颜色
+    m_borderColor = t.GetColor(kBorderNormal);
+    // 交替行背景色使用次级背景色
+    m_alternatingRowBgColor = t.GetColor(kBackgroundSecondary);
+
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
 void DataGrid::AddColumn(const std::shared_ptr<DataGridColumn>& column) {
     if (!column) return;
     
@@ -527,7 +538,7 @@ void DataGrid::CalculateColumnWidths(float totalWidth) {
 }
 
 int DataGrid::HitTestColumnHeader(float x) {
-    rendering::Rect rect = GetGlobalRenderRect(this);
+    rendering::Rect rect = GetGlobalRenderRect(static_cast<::luaui::Control*>(this));
     
     float currentX = rect.x - m_scrollOffsetX;
     for (size_t i = 0; i < m_columns.size(); ++i) {
@@ -541,7 +552,7 @@ int DataGrid::HitTestColumnHeader(float x) {
 }
 
 int DataGrid::HitTestRow(float y) {
-    rendering::Rect rect = GetGlobalRenderRect(this);
+    rendering::Rect rect = GetGlobalRenderRect(static_cast<::luaui::Control*>(this));
     
     float rowStartY = rect.y + m_headerHeight - m_scrollOffsetY;
     
@@ -652,7 +663,7 @@ void DataGrid::OnRenderChildren(rendering::IRenderContext* context) {
         
         // 绘制交替行背景
         if (m_alternatingRowBackground && i % 2 == 1) {
-            auto altBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0xF5F5F5));
+            auto altBrush = context->CreateSolidColorBrush(m_alternatingRowBgColor);
             if (altBrush) {
                 context->FillRectangle(
                     rendering::Rect(1, rowY, rect.width - 2, m_rowHeight),
@@ -720,7 +731,7 @@ void DataGrid::RenderHeader(rendering::IRenderContext* context) {
     
     // 绘制列标题
     auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", 14.0f);
-    auto textBrush = context->CreateSolidColorBrush(rendering::Color::Black());
+    auto textBrush = context->CreateSolidColorBrush(m_headerTextColor);
     
     if (textFormat && textBrush) {
         context->PushClip(headerRect);
@@ -756,7 +767,7 @@ void DataGrid::OnMouseMove(MouseEventArgs& args) {
 }
 
 void DataGrid::OnMouseDown(MouseEventArgs& args) {
-    rendering::Rect rect = GetGlobalRenderRect(this);
+    rendering::Rect rect = GetGlobalRenderRect(static_cast<::luaui::Control*>(this));
     
     // 检查是否点击列头
     if (args.x >= rect.x && args.x <= rect.x + rect.width &&
@@ -797,6 +808,38 @@ int DataGrid::GetCellIndex(DataGridCell* cell) const {
         }
     }
     return -1;
+}
+
+// ============================================================================
+// 辅助函数实现
+// ============================================================================
+
+static rendering::Rect GetGlobalRenderRect(::luaui::Control* control) {
+    rendering::Rect globalRect;
+    if (!control) {
+        return globalRect;
+    }
+
+    if (auto* render = control->GetRender()) {
+        globalRect = render->GetRenderRect();
+    }
+
+    auto parent = control->GetParent();
+    while (parent) {
+        auto* parentControl = dynamic_cast<::luaui::Control*>(parent.get());
+        if (!parentControl) {
+            break;
+        }
+
+        if (auto* parentRender = parentControl->GetRender()) {
+            globalRect.x += parentRender->GetRenderRect().x;
+            globalRect.y += parentRender->GetRenderRect().y;
+        }
+
+        parent = parentControl->GetParent();
+    }
+
+    return globalRect;
 }
 
 } // namespace controls

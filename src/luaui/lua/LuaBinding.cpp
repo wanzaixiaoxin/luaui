@@ -12,6 +12,7 @@
 #include "layouts/Grid.h"
 #include "Logger.h"
 #include "../utils/StringUtils.h"
+#include "../style/Theme.h"
 
 extern "C" {
 #include <lua.h>
@@ -44,6 +45,7 @@ void LuaBinding::RegisterAll(lua_State* L) {
     RegisterUIElements(L);
     RegisterLogger(L);
     RegisterUIGlobal(L);
+    RegisterTheme(L);
 }
 
 void LuaBinding::RegisterUIElements(lua_State* L) {
@@ -858,6 +860,33 @@ void LuaBinding::RegisterResources(lua_State* L) { (void)L; }
 void LuaBinding::RegisterDialogs(lua_State* L) { (void)L; }
 void LuaBinding::RegisterStorage(lua_State* L) { (void)L; }
 void LuaBinding::RegisterTask(lua_State* L) { (void)L; }
+
+// ==================== Theme ====================
+void LuaBinding::RegisterTheme(lua_State* L) {
+    if (!L) return;
+    
+    lua_newtable(L);
+    
+    // Theme.SetCurrent(themeName) - 切换主题
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        const char* themeName = luaL_checkstring(L, 1);
+        if (!themeName) return 0;
+        
+        auto& theme = luaui::controls::Theme::GetCurrent();
+        using namespace luaui::controls;
+        
+        if (strcmp(themeName, "Dark") == 0) {
+            theme.ApplyResources(CreateDarkTheme());
+        } else {
+            theme.ApplyResources(CreateLightTheme());
+        }
+        
+        return 0;
+    });
+    lua_setfield(L, -2, "SetCurrent");
+    
+    lua_setglobal(L, "Theme");
+}
 
 // ==================== Window Exposure ====================
 // Exposes a Window instance to Lua for setting root control

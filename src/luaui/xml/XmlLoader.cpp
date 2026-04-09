@@ -183,12 +183,14 @@ private:
                     }
                 }
             }
-            // 前景色 Foreground (Button)
+            // 前景色 Foreground (Button, TextBlock)
             else if (name == "Foreground") {
                 Color color;
                 if (TypeConverter::ToColor(value, color)) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetForeground(color);
+                    } else if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                        tb->SetForeground(color);
                     }
                 }
             }
@@ -223,12 +225,9 @@ private:
             else if (name == "Background") {
                 Color color;
                 if (TypeConverter::ToColor(value, color)) {
-                    // For Button, use SetStateColors to set all states
+                    // For Button, use SetCustomBackground to preserve custom color
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                        // Auto-generate hover (lighter) and pressed (darker) colors
-                        auto hover = Color(color.r * 1.15f, color.g * 1.15f, color.b * 1.15f, color.a);
-                        auto pressed = Color(color.r * 0.85f, color.g * 0.85f, color.b * 0.85f, color.a);
-                        btn->SetStateColors(color, hover, pressed);
+                        btn->SetCustomBackground(color);
                     } else if (auto* render = control->GetRender()) {
                         render->SetBackground(color);
                     }
@@ -333,6 +332,30 @@ private:
                         tb->SetFontSize(size);
                     } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetFontSize(size);
+                    }
+                }
+            }
+            // FontWeight (TextBlock)
+            else if (name == "FontWeight") {
+                if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                    if (value == "Bold") {
+                        tb->SetFontWeight(rendering::FontWeight::Bold);
+                    } else if (value == "SemiBold") {
+                        tb->SetFontWeight(rendering::FontWeight::SemiBold);
+                    } else if (value == "Light") {
+                        tb->SetFontWeight(rendering::FontWeight::Light);
+                    } else {
+                        tb->SetFontWeight(rendering::FontWeight::Regular);
+                    }
+                }
+            }
+            // FontStyle (TextBlock)
+            else if (name == "FontStyle") {
+                if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
+                    if (value == "Italic") {
+                        tb->SetFontStyle(rendering::FontStyle::Italic);
+                    } else {
+                        tb->SetFontStyle(rendering::FontStyle::Normal);
                     }
                 }
             }

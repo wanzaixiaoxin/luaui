@@ -124,6 +124,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     
@@ -307,6 +308,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
@@ -342,8 +344,10 @@ private:
     // 颜色
     rendering::Color m_headerBg = rendering::Color::FromHex(0xF5F5F5);
     rendering::Color m_headerBorder = rendering::Color::FromHex(0xCCCCCC);
+    rendering::Color m_headerTextColor = rendering::Color::Black();
     rendering::Color m_gridLineColor = rendering::Color::FromHex(0xE0E0E0);
     rendering::Color m_borderColor = rendering::Color::FromHex(0xCCCCCC);
+    rendering::Color m_alternatingRowBgColor = rendering::Color::FromHex(0xF5F5F5);
     
     // 列宽拖动（简化：暂不支持）
     int m_resizingColumn = -1;

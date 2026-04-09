@@ -68,6 +68,9 @@ public:
                            const rendering::Color& fg,
                            const rendering::Color& border);
 
+    // 设置自定义背景色（阻止主题覆盖）
+    void SetCustomBackground(const rendering::Color& color);
+
 protected:
     void InitializeComponents() override;
     void ApplyTheme() override;
@@ -119,6 +122,10 @@ private:
     rendering::Color m_disabledBackground = rendering::Color::FromHex(0xF5F5F5);
     rendering::Color m_disabledForeground = rendering::Color::FromHex(0xBDBDBD);
     rendering::Color m_disabledBorderBrush = rendering::Color::FromHex(0xE0E0E0);
+
+    // 自定义颜色标志（如果设置，则主题不会覆盖）
+    bool m_hasCustomBackground = false;
+    bool m_hasCustomForeground = false;
 };
 
 } // namespace controls

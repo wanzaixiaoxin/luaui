@@ -152,6 +152,24 @@ ViewModel:DefineComputed("FeatureStatusText",
 )
 
 -- ============================================================================
+-- 主题切换
+-- ============================================================================
+ViewModel.CurrentTheme = "Light"
+
+function ViewModel:ToggleThemeCommand()
+    Log.info("[ViewModel] ToggleThemeCommand called")
+    local newTheme = (self.CurrentTheme == "Light") and "Dark" or "Light"
+    self.CurrentTheme = newTheme
+    
+    -- 调用 C++ 主题切换函数
+    if Theme and Theme.SetCurrent then
+        Theme.SetCurrent(newTheme)
+    end
+    
+    Log.infof("Theme switched to: %s", newTheme)
+end
+
+-- ============================================================================
 -- 命令（以 Command 结尾自动绑定到 XML Click="XXXCommand"）
 -- ============================================================================
 function ViewModel:IncrementCommand()

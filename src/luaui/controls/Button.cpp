@@ -23,15 +23,25 @@ void Button::InitializeComponents() {
 void Button::ApplyTheme() {
     auto& t = Theme::GetCurrent();
     using namespace theme;
-    m_normalBackground   = t.GetColor(kButtonNormalBg);
-    m_hoverBackground    = t.GetColor(kButtonHoverBg);
-    m_pressedBackground  = t.GetColor(kButtonPressedBg);
-    m_disabledBackground = t.GetColor(kButtonDisabledBg);
+    
+    // 如果有自定义背景色，则不应用主题背景色
+    if (!m_hasCustomBackground) {
+        m_normalBackground   = t.GetColor(kButtonNormalBg);
+        m_hoverBackground    = t.GetColor(kButtonHoverBg);
+        m_pressedBackground  = t.GetColor(kButtonPressedBg);
+        m_disabledBackground = t.GetColor(kButtonDisabledBg);
+        m_animBg             = m_normalBackground;
+    }
+    
+    // 如果有自定义前景色，则不应用主题前景色
+    if (!m_hasCustomForeground) {
+        m_foreground = t.GetColor(kButtonForeground);
+    }
+    
+    // 始终应用其他主题色
     m_disabledForeground = t.GetColor(kButtonDisabledFg);
     m_disabledBorderBrush= t.GetColor(kButtonDisabledBorder);
-    m_foreground         = t.GetColor(kButtonForeground);
     m_borderBrush        = t.GetColor(kButtonBorder);
-    m_animBg             = m_normalBackground;
 }
 
 // ============================================================================
@@ -51,6 +61,7 @@ void Button::SetForeground(const rendering::Color& color) {
     if (m_foreground.r != color.r || m_foreground.g != color.g ||
         m_foreground.b != color.b || m_foreground.a != color.a) {
         m_foreground = color;
+        m_hasCustomForeground = true;
         if (auto* render = GetRender()) {
             render->Invalidate();
         }
@@ -134,6 +145,18 @@ void Button::SetDisabledColors(const rendering::Color& bg,
     m_disabledBackground = bg;
     m_disabledForeground = fg;
     m_disabledBorderBrush = border;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void Button::SetCustomBackground(const rendering::Color& color) {
+    m_hasCustomBackground = true;
+    m_normalBackground = color;
+    // Auto-generate hover (lighter) and pressed (darker) colors
+    m_hoverBackground = rendering::Color(color.r * 1.15f, color.g * 1.15f, color.b * 1.15f, color.a);
+    m_pressedBackground = rendering::Color(color.r * 0.85f, color.g * 0.85f, color.b * 0.85f, color.a);
+    m_animBg = color;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }

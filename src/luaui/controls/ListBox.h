@@ -39,6 +39,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnClick() override;
@@ -124,8 +125,8 @@ private:
     void CleanupVirtualization();
     
     // 创建列表项容器（用于虚拟化）
-    std::shared_ptr<Control> CreateItemContainer();
-    void BindItemToContainer(std::shared_ptr<Control> container, int index);
+    std::shared_ptr<::luaui::Control> CreateItemContainer();
+    void BindItemToContainer(std::shared_ptr<::luaui::Control> container, int index);
     
     // 传统模式下的更新
     void UpdateItemStates();

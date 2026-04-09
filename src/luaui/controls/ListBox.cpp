@@ -5,6 +5,8 @@
 #include "../core/Components/LayoutComponent.h"
 #include "../core/Components/RenderComponent.h"
 #include "../core/Components/InputComponent.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 #include <algorithm>
 
 namespace luaui {
@@ -28,6 +30,21 @@ void ListBoxItem::InitializeComponents() {
     
     // 添加输入组件
     GetComponents().AddComponent<components::InputComponent>(this);
+}
+
+void ListBoxItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    
+    // ListBoxItem 使用主题颜色
+    m_normalBg = t.GetColor(kBackgroundPrimary);
+    m_hoverBg = t.GetColor(kBackgroundSecondary);
+    m_selectedBg = t.GetColor(kAccentColor);
+    m_textColor = t.GetColor(kTextPrimary);
+    // 选中项的文字颜色使用白色或黑色，取决于强调色的亮度
+    m_selectedTextColor = rendering::Color::White();
+    
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void ListBoxItem::SetContent(const std::wstring& content) {
@@ -155,7 +172,7 @@ void ListBox::InitializeVirtualization() {
     
     // 设置容器工厂
     auto self = this;
-    m_virtualizingPanel->SetContainerFactory([self]() -> std::shared_ptr<Control> {
+    m_virtualizingPanel->SetContainerFactory([self]() -> std::shared_ptr<::luaui::Control> {
         return self->CreateItemContainer();
     });
     
@@ -186,13 +203,13 @@ void ListBox::CleanupVirtualization() {
     m_isVirtualizationInitialized = false;
 }
 
-std::shared_ptr<Control> ListBox::CreateItemContainer() {
+std::shared_ptr<::luaui::Control> ListBox::CreateItemContainer() {
     auto item = std::make_shared<ListBoxItem>();
     item->SetItemHeight(m_itemHeight);
     return item;
 }
 
-void ListBox::BindItemToContainer(std::shared_ptr<Control> container, int index) {
+void ListBox::BindItemToContainer(std::shared_ptr<::luaui::Control> container, int index) {
     auto item = std::dynamic_pointer_cast<ListBoxItem>(container);
     if (!item) return;
     

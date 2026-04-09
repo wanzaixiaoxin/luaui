@@ -1,6 +1,8 @@
 #include "Border.h"
 #include "IRenderContext.h"
 #include "Interfaces/IControl.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 
 namespace luaui {
 namespace controls {
@@ -16,6 +18,33 @@ void Border::InitializeComponents() {
     // Border 默认有透明背景
     if (auto* render = GetRender()) {
         render->SetBackground(rendering::Color::Transparent());
+    }
+}
+
+void Border::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+
+    auto currentBg = GetBackground();
+    auto themeBg = t.GetColor(kBackgroundSecondary);
+
+    // 如果背景是透明的，使用主题背景色并标记为主题管理
+    if (currentBg.a == 0.0f) {
+        SetBackground(themeBg);
+        m_isThemeManagedBackground = true;
+    }
+    // 如果已经标记为主题管理，则始终更新为当前主题的背景色
+    else if (m_isThemeManagedBackground) {
+        SetBackground(themeBg);
+    }
+    // 首次 ApplyTheme 时，如果背景接近 Light 主题的 Secondary (#F5F5F5) 或 Primary (#FFFFFF)，
+    // 或接近 E0E0E0，则接管为主题管理
+    else if ((currentBg.r > 0.94f && currentBg.g > 0.94f && currentBg.b > 0.94f) ||
+             (currentBg.r > 0.87f && currentBg.r < 0.89f &&
+              currentBg.g > 0.87f && currentBg.g < 0.89f &&
+              currentBg.b > 0.87f && currentBg.b < 0.89f)) {
+        SetBackground(themeBg);
+        m_isThemeManagedBackground = true;
     }
 }
 
@@ -64,12 +93,15 @@ void Border::SetBorderColor(const rendering::Color& color) {
 }
 
 rendering::Color Border::GetBackground() const {
-    // const 方法中不能使用 GetRender()，需要直接访问
-    // 暂时返回默认值
-    return rendering::Color::Transparent();
+    return m_background;
 }
 
 void Border::SetBackground(const rendering::Color& color) {
+    m_background = color;
+    // 注意：这里不修改 m_isThemeManagedBackground，
+    // 因为 ApplyTheme 调用 SetBackground 时需要保持标记
+    // 用户通过 XML 设置背景色时会先调用 SetBackground，
+    // 然后在 ApplyTheme 中根据条件决定是否接管
     if (auto* render = GetRender()) {
         render->SetBackground(color);
     }

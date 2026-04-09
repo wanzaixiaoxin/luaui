@@ -20,10 +20,25 @@ ResourceDictionary CreateLightTheme() {
     using namespace theme;
     ResourceDictionary t;
 
+    // 全局颜色
+    t.AddColor(kTextPrimary, Color::FromHex(0x000000));
+    t.AddColor(kTextSecondary, Color::FromHex(0x666666));
+    t.AddColor(kTextDisabled, Color::FromHex(0x999999));
+    t.AddColor(kBackgroundPrimary, Color::FromHex(0xFFFFFF));
+    t.AddColor(kBackgroundSecondary, Color::FromHex(0xF5F5F5));
+    t.AddColor(kBorderNormal, Color::FromHex(0xCCCCCC));
+    t.AddColor(kBorderFocused, Color::FromHex(0x0078D7));
+    t.AddColor(kFocusVisual, Color::FromHex(0x0078D7));
+    t.AddColor(kAccentColor, Color::FromHex(0x0078D7));
+
     // 按钮颜色
     t.AddColor(kButtonNormalBg, Color::FromHex(0xE0E0E0));
     t.AddColor(kButtonHoverBg, Color::FromHex(0xC0C0C0));
     t.AddColor(kButtonPressedBg, Color::FromHex(0xA0A0A0));
+    t.AddColor(kButtonDisabledBg, Color::FromHex(0xF5F5F5));
+    t.AddColor(kButtonDisabledFg, Color::FromHex(0xBDBDBD));
+    t.AddColor(kButtonDisabledBorder, Color::FromHex(0xE0E0E0));
+    t.AddColor(kButtonBorder, Color::FromHex(0x808080));
     t.AddColor(kButtonNormalBorder, Color::FromHex(0x808080));
     t.AddColor(kButtonHoverBorder, Color::FromHex(0x606060));
     t.AddColor(kButtonPressedBorder, Color::FromHex(0x404040));
@@ -62,10 +77,25 @@ ResourceDictionary CreateDarkTheme() {
     using namespace theme;
     ResourceDictionary t;
 
+    // 全局颜色
+    t.AddColor(kTextPrimary, Color::FromHex(0xFFFFFF));
+    t.AddColor(kTextSecondary, Color::FromHex(0xCCCCCC));
+    t.AddColor(kTextDisabled, Color::FromHex(0x666666));
+    t.AddColor(kBackgroundPrimary, Color::FromHex(0x1E1E1E));
+    t.AddColor(kBackgroundSecondary, Color::FromHex(0x2D2D2D));
+    t.AddColor(kBorderNormal, Color::FromHex(0x555555));
+    t.AddColor(kBorderFocused, Color::FromHex(0x0078D7));
+    t.AddColor(kFocusVisual, Color::FromHex(0x0078D7));
+    t.AddColor(kAccentColor, Color::FromHex(0x0078D7));
+
     // 按钮颜色
     t.AddColor(kButtonNormalBg, Color::FromHex(0x2D2D2D));
     t.AddColor(kButtonHoverBg, Color::FromHex(0x404040));
     t.AddColor(kButtonPressedBg, Color::FromHex(0x505050));
+    t.AddColor(kButtonDisabledBg, Color::FromHex(0x1E1E1E));
+    t.AddColor(kButtonDisabledFg, Color::FromHex(0x666666));
+    t.AddColor(kButtonDisabledBorder, Color::FromHex(0x3D3D3D));
+    t.AddColor(kButtonBorder, Color::FromHex(0x555555));
     t.AddColor(kButtonNormalBorder, Color::FromHex(0x555555));
     t.AddColor(kButtonHoverBorder, Color::FromHex(0x0078D7));
     t.AddColor(kButtonPressedBorder, Color::FromHex(0x0078D7));

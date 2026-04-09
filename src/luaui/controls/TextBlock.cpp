@@ -4,6 +4,8 @@
 #include "ITextLayout.h"
 #include "ResourceCache.h"
 #include "Window.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 
 namespace luaui {
 namespace controls {
@@ -15,6 +17,18 @@ void TextBlock::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
     // 添加渲染组件
     GetComponents().AddComponent<components::RenderComponent>(this);
+}
+
+void TextBlock::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    // 仅在没有自定义前景色时应用主题色
+    if (!m_hasCustomForeground) {
+        m_foreground = t.GetColor(kTextPrimary);
+    }
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
 }
 
 void TextBlock::SetText(const std::wstring& text) {
@@ -47,9 +61,10 @@ void TextBlock::SetFontSize(float size) {
 
 void TextBlock::SetForeground(const rendering::Color& color) {
     // 比较颜色分量
-    if (m_foreground.r != color.r || m_foreground.g != color.g || 
+    if (m_foreground.r != color.r || m_foreground.g != color.g ||
         m_foreground.b != color.b || m_foreground.a != color.a) {
         m_foreground = color;
+        m_hasCustomForeground = true;
         if (auto* render = GetRender()) {
             render->Invalidate();
         }

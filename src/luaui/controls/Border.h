@@ -38,6 +38,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     
     // 渲染覆盖
     virtual void OnRender(rendering::IRenderContext* context);
@@ -49,6 +50,10 @@ protected:
 private:
     float m_borderThickness = 1.0f;
     rendering::Color m_borderColor = rendering::Color::FromHex(0x808080);
+    rendering::Color m_background = rendering::Color::Transparent();
+    
+    // 标记背景是否由主题管理（非用户自定义）
+    bool m_isThemeManagedBackground = false;
     
     std::shared_ptr<interfaces::IControl> m_content;
 };
