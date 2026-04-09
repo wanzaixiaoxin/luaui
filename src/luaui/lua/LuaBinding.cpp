@@ -13,6 +13,7 @@
 #include "Logger.h"
 #include "../utils/StringUtils.h"
 #include "../style/Theme.h"
+#include "../style/ThemeLoader.h"
 
 extern "C" {
 #include <lua.h>
@@ -867,23 +868,44 @@ void LuaBinding::RegisterTheme(lua_State* L) {
     
     lua_newtable(L);
     
-    // Theme.SetCurrent(themeName) - 切换主题
+    // Theme.SetCurrent(themeName) - 按名称切换主题 ("Light"/"Dark" 或自定义名称)
     lua_pushcfunction(L, [](lua_State* L) -> int {
         const char* themeName = luaL_checkstring(L, 1);
         if (!themeName) return 0;
         
         auto& theme = luaui::controls::Theme::GetCurrent();
-        using namespace luaui::controls;
-        
-        if (strcmp(themeName, "Dark") == 0) {
-            theme.ApplyResources(CreateDarkTheme());
-        } else {
-            theme.ApplyResources(CreateLightTheme());
-        }
+        theme.ApplyThemeByName(themeName);
         
         return 0;
     });
     lua_setfield(L, -2, "SetCurrent");
+    
+    // Theme.LoadFromFile(filePath) - 从 XML 文件加载并应用主题
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        const char* filePath = luaL_checkstring(L, 1);
+        if (!filePath) return 0;
+        
+        auto& theme = luaui::controls::Theme::GetCurrent();
+        theme.ApplyThemeFromFile(filePath);
+        
+        return 0;
+    });
+    lua_setfield(L, -2, "LoadFromFile");
+    
+    // Theme.GetCurrentName() - 获取当前主题名称
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        auto& theme = luaui::controls::Theme::GetCurrent();
+        lua_pushstring(L, theme.GetCurrentThemeName().c_str());
+        return 1;
+    });
+    lua_setfield(L, -2, "GetCurrentName");
+    
+    // Theme.GetThemesDir() - 获取默认主题目录
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        lua_pushstring(L, luaui::controls::ThemeLoader::GetDefaultThemesDir().c_str());
+        return 1;
+    });
+    lua_setfield(L, -2, "GetThemesDir");
     
     lua_setglobal(L, "Theme");
 }

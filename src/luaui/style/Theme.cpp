@@ -1,5 +1,6 @@
 #include "Theme.h"
 #include "ThemeKeys.h"
+#include "ThemeLoader.h"
 
 namespace luaui {
 namespace controls {
@@ -9,123 +10,36 @@ Theme& Theme::GetCurrent() {
     static bool initialized = false;
     if (!initialized) {
         initialized = true;
-        instance.ApplyResources(CreateLightTheme());
+        instance.ApplyThemeByName("Light");
     }
     return instance;
 }
 
-/** @brief 创建 Light 主题资源 */
-ResourceDictionary CreateLightTheme() {
-    using namespace rendering;
-    using namespace theme;
-    ResourceDictionary t;
-
-    // 全局颜色
-    t.AddColor(kTextPrimary, Color::FromHex(0x000000));
-    t.AddColor(kTextSecondary, Color::FromHex(0x666666));
-    t.AddColor(kTextDisabled, Color::FromHex(0x999999));
-    t.AddColor(kBackgroundPrimary, Color::FromHex(0xFFFFFF));
-    t.AddColor(kBackgroundSecondary, Color::FromHex(0xF5F5F5));
-    t.AddColor(kBorderNormal, Color::FromHex(0xCCCCCC));
-    t.AddColor(kBorderFocused, Color::FromHex(0x0078D7));
-    t.AddColor(kFocusVisual, Color::FromHex(0x0078D7));
-    t.AddColor(kAccentColor, Color::FromHex(0x0078D7));
-
-    // 按钮颜色
-    t.AddColor(kButtonNormalBg, Color::FromHex(0xE0E0E0));
-    t.AddColor(kButtonHoverBg, Color::FromHex(0xC0C0C0));
-    t.AddColor(kButtonPressedBg, Color::FromHex(0xA0A0A0));
-    t.AddColor(kButtonDisabledBg, Color::FromHex(0xF5F5F5));
-    t.AddColor(kButtonDisabledFg, Color::FromHex(0xBDBDBD));
-    t.AddColor(kButtonDisabledBorder, Color::FromHex(0xE0E0E0));
-    t.AddColor(kButtonBorder, Color::FromHex(0x808080));
-    t.AddColor(kButtonNormalBorder, Color::FromHex(0x808080));
-    t.AddColor(kButtonHoverBorder, Color::FromHex(0x606060));
-    t.AddColor(kButtonPressedBorder, Color::FromHex(0x404040));
-    t.AddColor(kButtonForeground, Color::FromHex(0x000000));
-
-    // 滑块颜色
-    t.AddColor(kSliderTrack, Color::FromHex(0xE0E0E0));
-    t.AddColor(kSliderProgress, Color::FromHex(0x0078D7));
-    t.AddColor(kSliderThumb, Color::FromHex(0x0078D7));
-
-    // 复选框颜色
-    t.AddColor(kCheckNormalBorder, Color::FromHex(0x808080));
-    t.AddColor(kCheckHoverBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kCheckMark, Color::FromHex(0x0078D7));
-
-    // TextBox 颜色
-    t.AddColor(kTextBoxBackground, Color::FromHex(0xFFFFFF));
-    t.AddColor(kTextBoxBorder, Color::FromHex(0x808080));
-    t.AddColor(kTextBoxFocusedBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kTextBoxSelection, Color::FromHex(0x0078D7));
-    t.AddColor(kTextBoxInactiveSel, Color::FromHex(0xD8D8D8));
-    t.AddColor(kTextBoxPlaceholder, Color::FromHex(0x8A8A8A));
-    t.AddColor(kTextBoxReadOnlyBg, Color::FromHex(0xF5F5F5));
-
-    // ProgressBar 颜色
-    t.AddColor(kProgressBackground, Color::FromHex(0xE0E0E0));
-    t.AddColor(kProgressForeground, Color::FromHex(0x0078D7));
-    t.AddColor(kProgressBorder, Color::FromHex(0xCCCCCC));
-
-    return t;
+void Theme::ApplyThemeByName(const std::string& name) {
+    m_currentThemeName = name;
+    ResourceDictionary dict = ThemeLoader::LoadBuiltinTheme(name);
+    ReplaceResources(dict);
 }
 
-/** @brief 创建 Dark 主题资源 */
-ResourceDictionary CreateDarkTheme() {
-    using namespace rendering;
-    using namespace theme;
-    ResourceDictionary t;
+void Theme::ApplyThemeFromFile(const std::string& filePath) {
+    ResourceDictionary dict = ThemeLoader::LoadFromFile(filePath);
+    if (dict.GetColor(theme::kBackgroundPrimary).a <= 0 && dict.GetColor(theme::kTextPrimary).a <= 0) {
+        return;
+    }
 
-    // 全局颜色
-    t.AddColor(kTextPrimary, Color::FromHex(0xFFFFFF));
-    t.AddColor(kTextSecondary, Color::FromHex(0xCCCCCC));
-    t.AddColor(kTextDisabled, Color::FromHex(0x666666));
-    t.AddColor(kBackgroundPrimary, Color::FromHex(0x1E1E1E));
-    t.AddColor(kBackgroundSecondary, Color::FromHex(0x2D2D2D));
-    t.AddColor(kBorderNormal, Color::FromHex(0x555555));
-    t.AddColor(kBorderFocused, Color::FromHex(0x0078D7));
-    t.AddColor(kFocusVisual, Color::FromHex(0x0078D7));
-    t.AddColor(kAccentColor, Color::FromHex(0x0078D7));
+    // 从文件路径提取主题名（去掉目录和扩展名）
+    std::string baseName = filePath;
+    size_t slashPos = baseName.find_last_of("\\/");
+    if (slashPos != std::string::npos) {
+        baseName = baseName.substr(slashPos + 1);
+    }
+    size_t dotPos = baseName.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        baseName = baseName.substr(0, dotPos);
+    }
 
-    // 按钮颜色
-    t.AddColor(kButtonNormalBg, Color::FromHex(0x2D2D2D));
-    t.AddColor(kButtonHoverBg, Color::FromHex(0x404040));
-    t.AddColor(kButtonPressedBg, Color::FromHex(0x505050));
-    t.AddColor(kButtonDisabledBg, Color::FromHex(0x1E1E1E));
-    t.AddColor(kButtonDisabledFg, Color::FromHex(0x666666));
-    t.AddColor(kButtonDisabledBorder, Color::FromHex(0x3D3D3D));
-    t.AddColor(kButtonBorder, Color::FromHex(0x555555));
-    t.AddColor(kButtonNormalBorder, Color::FromHex(0x555555));
-    t.AddColor(kButtonHoverBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kButtonPressedBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kButtonForeground, Color::FromHex(0xFFFFFF));
-
-    // 滑块颜色
-    t.AddColor(kSliderTrack, Color::FromHex(0x3D3D3D));
-    t.AddColor(kSliderProgress, Color::FromHex(0x0078D7));
-    t.AddColor(kSliderThumb, Color::FromHex(0x0078D7));
-
-    // 复选框颜色
-    t.AddColor(kCheckNormalBorder, Color::FromHex(0x555555));
-    t.AddColor(kCheckHoverBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kCheckMark, Color::FromHex(0x0078D7));
-
-    // TextBox 颜色
-    t.AddColor(kTextBoxBackground, Color::FromHex(0x2D2D2D));
-    t.AddColor(kTextBoxBorder, Color::FromHex(0x555555));
-    t.AddColor(kTextBoxFocusedBorder, Color::FromHex(0x0078D7));
-    t.AddColor(kTextBoxSelection, Color::FromHex(0x0078D7));
-    t.AddColor(kTextBoxInactiveSel, Color::FromHex(0x3D3D3D));
-    t.AddColor(kTextBoxPlaceholder, Color::FromHex(0x8A8A8A));
-    t.AddColor(kTextBoxReadOnlyBg, Color::FromHex(0x252525));
-
-    // ProgressBar 颜色
-    t.AddColor(kProgressBackground, Color::FromHex(0x3D3D3D));
-    t.AddColor(kProgressForeground, Color::FromHex(0x0078D7));
-    t.AddColor(kProgressBorder, Color::FromHex(0x555555));
-
-    return t;
+    m_currentThemeName = baseName;
+    ReplaceResources(dict);
 }
 
 } // namespace controls

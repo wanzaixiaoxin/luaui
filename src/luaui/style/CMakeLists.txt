@@ -8,6 +8,7 @@ set(STYLE_SOURCES
     Trigger.cpp
     Style.cpp
     Theme.cpp
+    ThemeLoader.cpp
 )
 
 set(STYLE_HEADERS
@@ -17,6 +18,7 @@ set(STYLE_HEADERS
     Trigger.h
     Style.h
     Theme.h
+    ThemeLoader.h
 )
 
 add_library(LuaUI_Style STATIC ${STYLE_SOURCES} ${STYLE_HEADERS})
@@ -27,12 +29,14 @@ target_include_directories(LuaUI_Style
         ${CMAKE_SOURCE_DIR}/src/luaui/core
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering
         ${CMAKE_SOURCE_DIR}/src/luaui/utils
+        ${CMAKE_SOURCE_DIR}/third_party/tinyxml2
 )
 
 target_link_libraries(LuaUI_Style
     PUBLIC
         LuaUI_Rendering
         LuaUI_Utils
+        tinyxml2
 )
 
 set_target_properties(LuaUI_Style PROPERTIES

@@ -41,13 +41,30 @@ public:
         m_cbs.erase(id);
     }
 
-    /** @brief 切换主题资源并通知所有控件 */
+    /** @brief 合并主题资源并通知所有控件（Merge：other 覆盖 this 中同名键） */
     void ApplyResources(const ResourceDictionary& newRes) {
         m_res.Merge(newRes);
         for (auto& [id, cb] : m_cbs) {
             if (cb) cb();
         }
     }
+
+    /** @brief 替换主题资源并通知所有控件（Replace：完全替换为 newRes） */
+    void ReplaceResources(const ResourceDictionary& newRes) {
+        m_res = newRes;
+        for (auto& [id, cb] : m_cbs) {
+            if (cb) cb();
+        }
+    }
+
+    /** @brief 按名称应用内置主题 ("Light"/"Dark")，优先从 XML 文件加载 */
+    void ApplyThemeByName(const std::string& name);
+
+    /** @brief 从 XML 文件加载并应用主题 */
+    void ApplyThemeFromFile(const std::string& filePath);
+
+    /** @brief 获取当前主题名称 */
+    const std::string& GetCurrentThemeName() const { return m_currentThemeName; }
 
     /** @brief 全局当前主题 */
     static Theme& GetCurrent();
@@ -56,13 +73,8 @@ private:
     ResourceDictionary m_res;
     std::unordered_map<size_t, ThemeCallback> m_cbs;
     size_t m_nextCbId = 1;
+    std::string m_currentThemeName = "Light";
 };
-
-/** @brief 创建 Light 主题资源 */
-ResourceDictionary CreateLightTheme();
-
-/** @brief 创建 Dark 主题资源 */
-ResourceDictionary CreateDarkTheme();
 
 } // namespace controls
 } // namespace luaui

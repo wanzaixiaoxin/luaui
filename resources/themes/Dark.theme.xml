@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LuaUI Dark Theme
+  
+  颜色格式: #RRGGBB 或 #AARRGGBB
+  浮点数格式: 数字 (如 12.0)
+  Thickness 格式: "left,top,right,bottom" 或 "all"
+  CornerRadius 格式: "topLeft,topRight,bottomRight,bottomLeft" 或 "all"
+-->
+<Theme Name="Dark" IsDark="true">
+
+  <!-- ============================================================ -->
+  <!-- 全局通用                                                       -->
+  <!-- ============================================================ -->
+  <Color Key="AccentColor"         Value="#0078D7" />
+  <Color Key="BackgroundPrimary"   Value="#1E1E1E" />
+  <Color Key="BackgroundSecondary" Value="#2D2D2D" />
+  <Color Key="TextPrimary"         Value="#FFFFFF" />
+  <Color Key="TextSecondary"       Value="#CCCCCC" />
+  <Color Key="TextDisabled"        Value="#666666" />
+  <Color Key="BorderNormal"        Value="#555555" />
+  <Color Key="BorderFocused"       Value="#0078D7" />
+  <Color Key="FocusVisual"         Value="#0078D7" />
+
+  <!-- ============================================================ -->
+  <!-- Button                                                        -->
+  <!-- ============================================================ -->
+  <Color Key="ButtonNormalBg"       Value="#2D2D2D" />
+  <Color Key="ButtonHoverBg"        Value="#404040" />
+  <Color Key="ButtonPressedBg"      Value="#505050" />
+  <Color Key="ButtonDisabledBg"     Value="#1E1E1E" />
+  <Color Key="ButtonDisabledFg"     Value="#666666" />
+  <Color Key="ButtonDisabledBorder" Value="#3D3D3D" />
+  <Color Key="ButtonBorder"         Value="#555555" />
+  <Color Key="ButtonForeground"     Value="#FFFFFF" />
+  <Color Key="ButtonNormalBorder"   Value="#555555" />
+  <Color Key="ButtonHoverBorder"    Value="#0078D7" />
+  <Color Key="ButtonPressedBorder"  Value="#0078D7" />
+
+  <!-- ============================================================ -->
+  <!-- CheckBox / RadioButton                                        -->
+  <!-- ============================================================ -->
+  <Color Key="CheckNormalBorder"   Value="#555555" />
+  <Color Key="CheckHoverBorder"    Value="#0078D7" />
+  <Color Key="CheckPressedBorder"  Value="#005A9E" />
+  <Color Key="CheckMark"           Value="#0078D7" />
+  <Color Key="CheckBackground"     Value="#2D2D2D" />
+  <Color Key="CheckDisabledBorder" Value="#3D3D3D" />
+  <Color Key="CheckDisabledMark"   Value="#555555" />
+  <Color Key="CheckDisabledText"   Value="#666666" />
+
+  <!-- ============================================================ -->
+  <!-- Slider                                                        -->
+  <!-- ============================================================ -->
+  <Color Key="SliderTrack"       Value="#3D3D3D" />
+  <Color Key="SliderProgress"    Value="#0078D7" />
+  <Color Key="SliderThumbBg"     Value="#2D2D2D" />
+  <Color Key="SliderThumbBorder" Value="#0078D7" />
+  <Color Key="SliderThumb"       Value="#0078D7" />
+
+  <!-- ============================================================ -->
+  <!-- TextBox                                                       -->
+  <!-- ============================================================ -->
+  <Color Key="TextBoxBackground"    Value="#2D2D2D" />
+  <Color Key="TextBoxBorder"        Value="#555555" />
+  <Color Key="TextBoxFocusedBorder" Value="#0078D7" />
+  <Color Key="TextBoxSelection"     Value="#0078D7" />
+  <Color Key="TextBoxInactiveSelection" Value="#3D3D3D" />
+  <Color Key="TextBoxPlaceholder"   Value="#8A8A8A" />
+  <Color Key="TextBoxReadOnlyBg"    Value="#252525" />
+
+  <!-- ============================================================ -->
+  <!-- ProgressBar                                                   -->
+  <!-- ============================================================ -->
+  <Color Key="ProgressBackground" Value="#3D3D3D" />
+  <Color Key="ProgressForeground" Value="#0078D7" />
+  <Color Key="ProgressBorder"     Value="#555555" />
+
+  <!-- ============================================================ -->
+  <!-- TabControl                                                    -->
+  <!-- ============================================================ -->
+  <Color Key="TabStripBg"    Value="#252525" />
+  <Color Key="TabSelectedBg" Value="#1E1E1E" />
+  <Color Key="TabHoverBg"    Value="#383838" />
+  <Color Key="TabBorder"     Value="#555555" />
+
+  <!-- ============================================================ -->
+  <!-- ScrollBar / ScrollViewer                                      -->
+  <!-- ============================================================ -->
+  <Color Key="ScrollBarTrack"      Value="#1E1E1E" />
+  <Color Key="ScrollBarThumb"      Value="#555555" />
+  <Color Key="ScrollBarThumbHover" Value="#6E6E6E" />
+
+</Theme>
