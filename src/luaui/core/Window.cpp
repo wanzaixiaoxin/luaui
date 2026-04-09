@@ -9,6 +9,8 @@
 #include "../style/ThemeKeys.h"
 #include <objbase.h>
 #include <windowsx.h>
+#include <dwmapi.h>
+#pragma comment(lib, "dwmapi.lib")
 
 using namespace luaui::utils;
 
@@ -86,6 +88,15 @@ bool Window::Create(HINSTANCE hInstance, const wchar_t* title, int width, int he
     QueryPerformanceCounter(&m_lastAnimTick);
     
     utils::Logger::Info("Window created successfully");
+
+    // 注册主题回调：主题切换时同步更新标题栏
+    m_themeCallbackId = controls::Theme::GetCurrent().AddCallback([this]() {
+        UpdateTitleBarTheme();
+    });
+
+    // 初始设置标题栏主题
+    UpdateTitleBarTheme();
+
     OnLoaded();
     return true;
 }
@@ -649,6 +660,31 @@ void Window::OnAnimTimerTick() {
     }
 
     InvalidateRender();
+}
+
+// ============================================================================
+// 标题栏主题
+// ============================================================================
+
+void Window::UpdateTitleBarTheme() {
+    if (!m_hWnd) return;
+
+    auto& t = controls::Theme::GetCurrent();
+    auto bg = t.GetColor(theme::kBackgroundPrimary);
+
+    // 判断当前主题是否为深色：背景亮度低于 0.5 认为是深色
+    bool isDark = (bg.r + bg.g + bg.b) / 3.0f < 0.5f;
+
+    // DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Windows 10 1809+)
+    // 值为 TRUE 时标题栏使用深色模式
+    BOOL value = isDark ? TRUE : FALSE;
+    DwmSetWindowAttribute(m_hWnd, 20, &value, sizeof(value));
+
+    // 强制刷新非客户区（标题栏），否则属性变更不会立即生效
+    SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+                 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    RedrawWindow(m_hWnd, nullptr, nullptr,
+                 RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 // ============================================================================

@@ -4,16 +4,20 @@
 <ScrollViewer>
 <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
 
-    <!-- Title -->
-    <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Foreground="#1976D2"/>
-    <TextBlock Text="{Binding Description}" FontSize="13" Foreground="#757575"/>
+    <!-- Title + Theme Switcher -->
+    <Border Padding="16">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold"/>
+            <TextBlock Text="{Binding Description}" FontSize="13"/>
 
-    <!-- Theme Switcher -->
-    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-        <TextBlock Text="Theme:" VerticalAlignment="Center" FontSize="13"/>
-        <TextBlock Text="{Binding CurrentTheme}" FontSize="13" FontWeight="Bold" Foreground="#1976D2"/>
-        <Button Content="切换主题" Width="80" Click="ToggleThemeCommand"/>
-    </StackPanel>
+            <!-- Theme Switcher -->
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <TextBlock Text="Theme:" VerticalAlignment="Center" FontSize="13"/>
+                <TextBlock Text="{Binding CurrentTheme}" FontSize="13" FontWeight="Bold"/>
+                <Button Content="切换主题" Width="80" Click="ToggleThemeCommand"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
 
     <!-- Counter Section -->
     <Border Background="#F5F5F5" Padding="16">

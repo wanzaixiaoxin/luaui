@@ -10,6 +10,7 @@
 #include "IAnimation.h"
 #include <windows.h>
 #include <memory>
+#include <functional>
 
 namespace luaui {
 
@@ -118,7 +119,10 @@ private:
     
     // ========== 动画帧驱动 ==========
     void OnAnimTimerTick();
-    
+
+    // ========== 标题栏主题 ==========
+    void UpdateTitleBarTheme();
+
     // ========== 输入处理 ==========
     void HandleMouseMove(float x, float y);
     void HandleMouseDown(float x, float y, int button);
@@ -171,7 +175,10 @@ private:
     Control* m_capturedControl = nullptr;   // 鼠标捕获的控件
     Control* m_focusedControl = nullptr;    // 焦点控件
     Control* m_lastMouseOver = nullptr;     // 最后鼠标悬停的控件
-    
+
+    // 主题回调
+    size_t m_themeCallbackId = 0;
+
     static const wchar_t* s_className;
     static bool s_classRegistered;
     
