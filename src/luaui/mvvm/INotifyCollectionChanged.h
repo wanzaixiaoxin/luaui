@@ -48,7 +48,9 @@ struct NotifyCollectionChangedEventArgs {
     NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction act,
                                       std::any item, int index, bool isRemove)
         : action(act), oldItem(item), oldStartingIndex(index),
-          newStartingIndex(-1) {}
+          newStartingIndex(-1) {
+        (void)isRemove;  // 仅用于区分构造函数重载
+    }
     
     // 构造函数 - 移动
     NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction act,

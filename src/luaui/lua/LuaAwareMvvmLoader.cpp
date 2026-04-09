@@ -1,10 +1,10 @@
 #include "LuaAwareMvvmLoader.h"
 #include "Logger.h"
 #include "mvvm/MvvmXmlLoader.h"
+#include "../utils/StringUtils.h"
 #include <cstring>
 #include <unordered_set>
 #include <functional>
-#include <sstream>
 
 namespace luaui {
 namespace lua {
@@ -46,21 +46,6 @@ void LuaPropertyNotifier::NotifyPropertyChanged(const std::string& propertyName)
     for (const auto& handler : m_handlers) {
         handler(args);
     }
-}
-
-// ============================================================================
-// 辅助函数：分割字符串
-// ============================================================================
-static std::vector<std::string> SplitPath(const std::string& path, char delimiter = '.') {
-    std::vector<std::string> parts;
-    std::stringstream ss(path);
-    std::string part;
-    while (std::getline(ss, part, delimiter)) {
-        if (!part.empty()) {
-            parts.push_back(part);
-        }
-    }
-    return parts;
 }
 
 // ============================================================================
@@ -131,7 +116,7 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     if (!m_L) return {};
     
     // 分割路径
-    auto pathParts = SplitPath(name);
+    auto pathParts = luaui::utils::StringUtils::SplitPath(name);
     if (pathParts.empty()) return {};
     
     PushViewModel();
@@ -365,7 +350,7 @@ void LuaPropertyNotifier::SetPropertyValue(const std::string& name, const std::a
     if (!m_L) return;
     
     // 分割路径
-    auto pathParts = SplitPath(name);
+    auto pathParts = luaui::utils::StringUtils::SplitPath(name);
     if (pathParts.empty()) return;
     
     PushViewModel();

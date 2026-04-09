@@ -34,8 +34,6 @@ TEST(Delegate_AddHandler) {
 }
 
 TEST(Delegate_Invoke) {
-    int sum = 0;
-    
     Delegate<int, int> delegate;
     
     int localSum = 0;
@@ -51,8 +49,6 @@ TEST(Delegate_Invoke) {
 }
 
 TEST(Delegate_MultipleHandlers) {
-    int value = 0;
-    
     Delegate<int> delegate;
     
     int localValue = 0;
@@ -65,8 +61,6 @@ TEST(Delegate_MultipleHandlers) {
 }
 
 TEST(Delegate_Remove) {
-    int value = 0;
-    
     Delegate<int> delegate;
     
     int localValue = 0;
@@ -81,6 +75,7 @@ TEST(Delegate_Remove) {
     localValue = 0;
     delegate.Invoke(5);
     ASSERT_EQ(localValue, 5);  // Only first handler
+    (void)id1;  // Unused
 }
 
 TEST(Delegate_Clear) {
@@ -153,7 +148,7 @@ TEST(Delegate_MemberFunction) {
     TestEventHandler handler;
     
     Delegate<int> delegate;
-    auto id = delegate.Add(&handler, &TestEventHandler::Handle);
+    delegate.Add(&handler, &TestEventHandler::Handle);
     
     delegate.Invoke(42);
     
@@ -265,7 +260,7 @@ TEST(CheckBox_CheckedEvent) {
     bool eventFired = false;
     bool checkedState = false;
     
-    checkbox->CheckedChanged.Add([&](CheckBox* cb, bool checked) {
+    checkbox->CheckedChanged.Add([&](CheckBox* /*cb*/, bool checked) {
         eventFired = true;
         checkedState = checked;
     });

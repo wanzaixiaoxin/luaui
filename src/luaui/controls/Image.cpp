@@ -3,22 +3,15 @@
 #include "Components/RenderComponent.h"
 #include "IRenderContext.h"
 #include "Logger.h"
+#include "../utils/StringUtils.h"
 #include <algorithm>
-#include <windows.h>
 
 namespace luaui {
 namespace controls {
 
 namespace {
 
-std::string WToUtf8(const std::wstring& w) {
-    if (w.empty()) return std::string();
-    int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (n <= 0) return std::string();
-    std::string r(n - 1, 0);
-    WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &r[0], n, nullptr, nullptr);
-    return r;
-}
+// StringUtils 已直接可用
 
 } // namespace
 

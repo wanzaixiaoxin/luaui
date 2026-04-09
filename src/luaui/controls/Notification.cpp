@@ -284,8 +284,8 @@ void ToastNotification::OnRender(rendering::IRenderContext* context) {
     // 绘制标题
     float contentX = rect.x + m_padding + m_iconSize + m_padding;
     float contentY = rect.y + m_padding;
-    float contentWidth = rect.width - contentX - m_padding - 
-                         (m_showCloseButton ? m_closeButtonSize + m_padding : 0);
+    (void)(rect.width - contentX - m_padding - 
+           (m_showCloseButton ? m_closeButtonSize + m_padding : 0));  // contentWidth, unused for now
     
     if (!m_title.empty()) {
         auto titleBrush = context->CreateSolidColorBrush(

@@ -7,10 +7,12 @@ set(MODULE_NAME LuaUI_Utils)
 # Source files
 set(SOURCES
     Logger.cpp
+    StringUtils.cpp
 )
 
 set(HEADERS
     Logger.h
+    StringUtils.h
 )
 
 add_library(${MODULE_NAME} STATIC ${SOURCES} ${HEADERS})

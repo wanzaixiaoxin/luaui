@@ -1,7 +1,6 @@
 #include "LuaObservableCollection.h"
 #include "../controls/ListBox.h"
-#include <codecvt>
-#include <locale>
+#include "../utils/StringUtils.h"
 
 namespace luaui {
 namespace lua {
@@ -115,8 +114,7 @@ int LuaCollectionChangedListener::LuaCallback(lua_State* L) {
     std::wstring text;
     if (lua_isstring(L, 3)) {
         const char* str = lua_tostring(L, 3);
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        text = converter.from_bytes(str);
+        text = Utf8ToW(str);
     }
     
     mvvm::NotifyCollectionChangedAction action;
@@ -207,9 +205,9 @@ void LuaObservableCollection::OnCollectionChanged(const mvvm::NotifyCollectionCh
     }
 }
 
-void LuaObservableCollection::HandleLuaChange(const std::string& action, 
-                                               int index, 
-                                               const std::wstring& text) {
+void LuaObservableCollection::HandleLuaChange(const std::string& /*action*/, 
+                                               int /*index*/, 
+                                               const std::wstring& /*text*/) {
     // 将 Lua 的变更转换为标准通知
     // 实际转换在 listener 的回调中完成
 }
@@ -242,8 +240,7 @@ std::wstring LuaObservableCollection::GetDisplayTextFromItem(int itemIndex) cons
     
     if (lua_isstring(m_L, idx)) {
         const char* str = lua_tostring(m_L, idx);
-        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-        return converter.from_bytes(str);
+        return Utf8ToW(str);
     }
     
     if (lua_istable(m_L, idx)) {
@@ -251,8 +248,7 @@ std::wstring LuaObservableCollection::GetDisplayTextFromItem(int itemIndex) cons
         lua_getfield(m_L, idx, "Name");
         if (lua_isstring(m_L, -1)) {
             const char* str = lua_tostring(m_L, -1);
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-            std::wstring result = converter.from_bytes(str);
+            std::wstring result = Utf8ToW(str);
             lua_pop(m_L, 1);
             return result;
         }
@@ -262,8 +258,7 @@ std::wstring LuaObservableCollection::GetDisplayTextFromItem(int itemIndex) cons
         lua_getfield(m_L, idx, "Content");
         if (lua_isstring(m_L, -1)) {
             const char* str = lua_tostring(m_L, -1);
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-            std::wstring result = converter.from_bytes(str);
+            std::wstring result = Utf8ToW(str);
             lua_pop(m_L, 1);
             return result;
         }
@@ -275,8 +270,7 @@ std::wstring LuaObservableCollection::GetDisplayTextFromItem(int itemIndex) cons
     lua_pushvalue(m_L, idx);
     lua_pcall(m_L, 1, 1, 0);
     const char* str = lua_tostring(m_L, -1);
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring result = converter.from_bytes(str ? str : "[Item]");
+    std::wstring result = Utf8ToW(str ? str : "[Item]");
     lua_pop(m_L, 1);
     
     return result;
@@ -393,6 +387,8 @@ void ObservableCollectionBinding::InsertItem(int index, const std::wstring& text
     // 目前只能先 Add 然后可能重新排序
     m_listBox->AddItem(text);
     utils::Logger::DebugF("[ObservableCollectionBinding] Insert item at %d", index);
+    (void)index;  // Unused for now
+    (void)text;   // Unused for now
 }
 
 void ObservableCollectionBinding::RemoveItem(int index) {
@@ -409,6 +405,7 @@ void ObservableCollectionBinding::MoveItem(int oldIndex, int newIndex) {
 void ObservableCollectionBinding::ReplaceItem(int index, const std::wstring& text) {
     // 需要 ListBox 支持 ReplaceItem
     utils::Logger::DebugF("[ObservableCollectionBinding] Replace item at %d", index);
+    (void)text;  // Unused for now
 }
 
 } // namespace lua

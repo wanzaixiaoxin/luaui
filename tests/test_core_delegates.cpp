@@ -48,6 +48,7 @@ TEST(Delegate_RemoveHandler) {
     d.Remove(id1);
     d.Invoke();
     ASSERT_EQ(count, 21);  // Only second handler called again
+    (void)id2;  // Unused
 }
 
 TEST(Delegate_Clear) {
@@ -78,11 +79,11 @@ TEST(Delegate_Count) {
     
     d.Remove(id);
     ASSERT_EQ(d.Count(), 1u);
+    (void)dummy;  // Unused
 }
 
 TEST(Delegate_InvalidRemove) {
     Delegate<> d;
-    int dummy = 0;
     d.Remove(0);
     d.Remove(999);
     ASSERT_TRUE(true);

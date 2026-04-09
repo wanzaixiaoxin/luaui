@@ -37,3 +37,8 @@ set_target_properties(LuaUI_MVVM PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
 )
+
+# 禁用特定警告
+if(MSVC)
+    target_compile_options(LuaUI_MVVM PRIVATE /wd4244)
+endif()

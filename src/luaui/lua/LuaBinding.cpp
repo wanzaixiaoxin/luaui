@@ -11,6 +11,7 @@
 #include "Panel.h"
 #include "layouts/Grid.h"
 #include "Logger.h"
+#include "../utils/StringUtils.h"
 
 extern "C" {
 #include <lua.h>
@@ -21,7 +22,6 @@ extern "C" {
 #include <string>
 #include <memory>
 #include <iostream>
-#include <windows.h>
 
 namespace luaui {
 namespace lua {
@@ -29,21 +29,11 @@ namespace lua {
 // ==================== Helper Functions ====================
 
 static std::string WStringToString(const std::wstring& wstr) {
-    if (wstr.empty()) return std::string();
-    int n = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (n <= 0) return std::string();
-    std::string result(n - 1, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], n, nullptr, nullptr);
-    return result;
+    return WToUtf8(wstr);
 }
 
 static std::wstring StringToWString(const std::string& str) {
-    if (str.empty()) return std::wstring();
-    int n = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
-    if (n <= 0) return std::wstring();
-    std::wstring result(n - 1, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], n);
-    return result;
+    return Utf8ToW(str);
 }
 
 // ==================== LuaBinding ====================

@@ -1,17 +1,9 @@
 #include "BindingEngine.h"
 #include "Control.h"
 #include "Logger.h"
+#include "../utils/StringUtils.h"
 #include <regex>
-#include <sstream>
 #include <algorithm>
-
-// 辅助函数：清理字符串
-static std::string Trim(const std::string& str) {
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) return "";
-    size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, last - first + 1);
-}
 
 namespace luaui {
 namespace mvvm {
@@ -177,7 +169,7 @@ BindingExpression BindingEngine::ParseExpression(const std::string& expression) 
     
     // 第一个token是路径
     if (std::getline(iss, token, ',')) {
-        token = Trim(token);
+        token = luaui::utils::StringUtils::Trim(token);
         // 可能是 "Path=XXX" 或直接的 "XXX"
         if (token.substr(0, 5) == "Path=") {
             result.path = token.substr(5);
@@ -188,13 +180,13 @@ BindingExpression BindingEngine::ParseExpression(const std::string& expression) 
     
     // 解析其他参数
     while (std::getline(iss, token, ',')) {
-        token = Trim(token);
+        token = luaui::utils::StringUtils::Trim(token);
         
         auto pos = token.find('=');
         if (pos == std::string::npos) continue;
         
-        std::string key = Trim(token.substr(0, pos));
-        std::string value = Trim(token.substr(pos + 1));
+        std::string key = luaui::utils::StringUtils::Trim(token.substr(0, pos));
+        std::string value = luaui::utils::StringUtils::Trim(token.substr(pos + 1));
         
         if (key == "Mode") {
             if (value == "OneWay") result.mode = BindingMode::OneWay;

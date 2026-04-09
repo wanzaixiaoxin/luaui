@@ -1,6 +1,7 @@
 #include "XmlLayout.h"
 #include "tinyxml2.h"
 #include "Logger.h"
+#include "../utils/StringUtils.h"
 #include "layouts/Grid.h"
 #include "TextBlock.h"
 #include "TextBox.h"
@@ -11,36 +12,14 @@
 #include "ListBox.h"       // ListBox and ListBoxItem
 #include "DataGrid.h"      // DataGrid
 #include "layouts/ScrollViewer.h"
-#include <sstream>
 #include <algorithm>
 #include <cctype>
-#include <Windows.h>
 
 namespace luaui {
 namespace xml {
 
 using namespace controls;
 using namespace rendering;
-
-// 辅助函数：将 UTF-8 字符串转换为 wstring (UTF-16)
-std::wstring Utf8ToWstring(const std::string& str) {
-    if (str.empty()) return std::wstring();
-    
-    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
-    if (sizeNeeded <= 0) return std::wstring();
-    
-    std::wstring result(sizeNeeded - 1, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &result[0], sizeNeeded);
-    return result;
-}
-
-// 辅助函数：清理字符串
-std::string Trim(const std::string& str) {
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) return "";
-    size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, last - first + 1);
-}
 
 // ============================================================================
 // XmlLoader 实现 - 支持 MVVM 数据绑定
@@ -257,7 +236,7 @@ private:
             }
             // SourcePath (Image)
             else if (name == "SourcePath") {
-                std::wstring wpath = Utf8ToWstring(value);
+                std::wstring wpath = Utf8ToW(value);
                 if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
                     img->SetSourcePath(wpath);
                 }
@@ -315,7 +294,7 @@ private:
                         btn->SetText(wtext);
                     }
                 } else {
-                    std::wstring wtext = Utf8ToWstring(value);
+                    std::wstring wtext = Utf8ToW(value);
                     if (auto tb = std::dynamic_pointer_cast<controls::TextBlock>(control)) {
                         tb->SetText(wtext);
                     } else if (auto tx = std::dynamic_pointer_cast<controls::TextBox>(control)) {
@@ -339,7 +318,7 @@ private:
                         btn->SetText(L"");
                     }
                 } else {
-                    std::wstring wtext = Utf8ToWstring(value);
+                    std::wstring wtext = Utf8ToW(value);
                     luaui::utils::Logger::DebugF("[XML] Button Content attribute: '%s' -> wstring length=%zu", value.c_str(), wtext.length());
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetText(wtext);
@@ -417,7 +396,7 @@ private:
             // Placeholder (TextBox)
             else if (name == "Placeholder") {
                 if (auto textBox = std::dynamic_pointer_cast<controls::TextBox>(control)) {
-                    textBox->SetPlaceholder(Utf8ToWstring(value));
+                    textBox->SetPlaceholder(Utf8ToW(value));
                 }
             }
             // IsReadOnly (TextBox)
@@ -446,7 +425,7 @@ private:
                 std::vector<Color> colors;
                 while (std::getline(ss, colorStr, ',')) {
                     Color c;
-                    if (TypeConverter::ToColor(Trim(colorStr), c)) {
+                    if (TypeConverter::ToColor(luaui::utils::StringUtils::Trim(colorStr), c)) {
                         colors.push_back(c);
                     }
                 }

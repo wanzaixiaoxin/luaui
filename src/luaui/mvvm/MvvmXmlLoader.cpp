@@ -1,6 +1,7 @@
 #include "MvvmXmlLoader.h"
 #include "Logger.h"
 #include "Converters.h"
+#include "../utils/StringUtils.h"
 
 // 首先包含 Core Control 基类定义
 #include "../core/Control.h"
@@ -17,72 +18,15 @@
 #include <tinyxml2.h>
 #include <sstream>
 #include <algorithm>
-#include <Windows.h>
 
 namespace luaui {
 namespace mvvm {
 namespace {
 
-std::wstring Utf8ToW(const std::string& s) {
-    if (s.empty()) return std::wstring();
-    int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
-    if (n <= 0) return std::wstring();
-    std::wstring r(n - 1, 0);
-    MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &r[0], n);
-    return r;
-}
-
-std::string WToUtf8(const std::wstring& w) {
-    if (w.empty()) return std::string();
-    int n = WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    if (n <= 0) return std::string();
-    std::string r(n - 1, 0);
-    WideCharToMultiByte(CP_UTF8, 0, w.c_str(), -1, &r[0], n, nullptr, nullptr);
-    return r;
-}
-
 struct DataGridColumnSpec {
     std::string header;
     std::string path;
 };
-
-std::string TrimString(const std::string& value) {
-    size_t first = value.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) {
-        return "";
-    }
-
-    size_t last = value.find_last_not_of(" \t\n\r");
-    return value.substr(first, last - first + 1);
-}
-
-std::vector<std::string> SplitString(const std::string& value, char delimiter) {
-    std::vector<std::string> parts;
-    std::stringstream ss(value);
-    std::string part;
-    while (std::getline(ss, part, delimiter)) {
-        part = TrimString(part);
-        if (!part.empty()) {
-            parts.push_back(part);
-        }
-    }
-    return parts;
-}
-
-std::wstring Utf8ToWString(const std::string& value) {
-    if (value.empty()) {
-        return L"";
-    }
-
-    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, nullptr, 0);
-    if (sizeNeeded <= 0) {
-        return L"";
-    }
-
-    std::wstring result(sizeNeeded - 1, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, result.data(), sizeNeeded);
-    return result;
-}
 
 bool PushLuaViewModel(lua_State* L) {
     if (!L) {
@@ -112,7 +56,7 @@ bool PushLuaPathFromTable(lua_State* L, int tableIndex, const std::string& path)
     int absTableIndex = lua_absindex(L, tableIndex);
     lua_pushvalue(L, absTableIndex);
 
-    for (const auto& part : SplitString(path, '.')) {
+    for (const auto& part : luaui::utils::StringUtils::Split(path, '.')) {
         if (!lua_istable(L, -1)) {
             lua_pop(L, 1);
             return false;
@@ -174,17 +118,17 @@ std::wstring LuaValueToDisplayText(lua_State* L, int valueIndex) {
     if (lua_isnumber(L, absValueIndex)) {
         std::ostringstream stream;
         stream << lua_tonumber(L, absValueIndex);
-        return Utf8ToWString(stream.str());
+        return Utf8ToW(stream.str());
     }
 
     if (lua_isstring(L, absValueIndex)) {
-        return Utf8ToWString(lua_tostring(L, absValueIndex));
+        return Utf8ToW(lua_tostring(L, absValueIndex));
     }
 
     if (lua_istable(L, absValueIndex)) {
         lua_getfield(L, absValueIndex, "Name");
         if (lua_isstring(L, -1)) {
-            std::wstring value = Utf8ToWString(lua_tostring(L, -1));
+            std::wstring value = Utf8ToW(lua_tostring(L, -1));
             lua_pop(L, 1);
             return value;
         }
@@ -194,7 +138,7 @@ std::wstring LuaValueToDisplayText(lua_State* L, int valueIndex) {
     lua_getglobal(L, "tostring");
     lua_pushvalue(L, absValueIndex);
     if (lua_pcall(L, 1, 1, 0) == LUA_OK) {
-        std::wstring value = lua_isstring(L, -1) ? Utf8ToWString(lua_tostring(L, -1)) : L"";
+        std::wstring value = lua_isstring(L, -1) ? Utf8ToW(lua_tostring(L, -1)) : L"";
         lua_pop(L, 1);
         return value;
     }
@@ -209,15 +153,15 @@ std::vector<DataGridColumnSpec> ParseDataGridColumnSpecs(const std::string& para
         return specs;
     }
 
-    for (const auto& token : SplitString(parameter, '|')) {
+    for (const auto& token : luaui::utils::StringUtils::Split(parameter, '|')) {
         DataGridColumnSpec spec;
         size_t separator = token.find(':');
         if (separator == std::string::npos) {
             spec.header = token;
             spec.path = token;
         } else {
-            spec.header = TrimString(token.substr(0, separator));
-            spec.path = TrimString(token.substr(separator + 1));
+            spec.header = luaui::utils::StringUtils::Trim(token.substr(0, separator));
+            spec.path = luaui::utils::StringUtils::Trim(token.substr(separator + 1));
         }
 
         if (!spec.path.empty()) {
@@ -1179,8 +1123,8 @@ void MvvmXmlLoader::BindDataGrid(std::shared_ptr<luaui::controls::DataGrid> data
     auto columnSpecs = BuildDataGridColumnSpecsFromLuaCollection(L, -1, expression.converterParameter);
     dataGrid->ClearColumns();
     for (const auto& spec : columnSpecs) {
-        auto column = std::make_shared<luaui::controls::DataGridColumn>(Utf8ToWString(spec.header));
-        column->SetBindingPath(Utf8ToWString(spec.path));
+        auto column = std::make_shared<luaui::controls::DataGridColumn>(Utf8ToW(spec.header));
+        column->SetBindingPath(Utf8ToW(spec.path));
         dataGrid->AddColumn(column);
     }
 

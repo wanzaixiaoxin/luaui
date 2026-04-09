@@ -244,7 +244,7 @@ void VirtualizingPanel::PositionContainer(std::shared_ptr<Control> container, in
     if (!container) return;
     
     float itemHeight = GetItemHeight() > 0 ? GetItemHeight() : MeasureItemHeight();
-    float y = index * itemHeight - m_scrollOffset;
+    (void)(index * itemHeight - m_scrollOffset);  // y position, unused for now
     
     auto* layout = container->GetLayout();
     if (layout) {

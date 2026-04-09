@@ -37,6 +37,8 @@ if(MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_definitions(UNICODE _UNICODE)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # 忽略运行时库冲突警告
+    add_link_options(/ignore:4098)
 endif()
 
 # ============================================

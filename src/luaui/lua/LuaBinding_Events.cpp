@@ -10,6 +10,7 @@
 #include "CheckBox.h"
 #include "Panel.h"
 #include "Logger.h"
+#include "../utils/StringUtils.h"
 
 extern "C" {
 #include <lua.h>
@@ -142,6 +143,7 @@ public:
         }
         
         // TODO: Push control userdata if available, otherwise nil
+        (void)control;  // Unused for now
         lua_pushnil(L);  // Placeholder for control
         lua_pushstring(L, eventName.c_str());
         
@@ -399,18 +401,18 @@ void RegisterSliderEvents(lua_State* L) {
     lua_pop(L, 2);
 }
 
-// Register CheckBox events
-static int RegisterCheckBoxChanged(lua_State* L, luaui::controls::CheckBox* checkbox, int funcIndex) {
-    int callbackRef = LuaCallbackRegistry::Instance().RegisterCallback(L, funcIndex);
-    if (callbackRef < 0) {
-        return -1;
-    }
-    
-    // Note: CheckBox doesn't have a direct event in current implementation
-    // This would need to be added to the CheckBox class
-    
-    return callbackRef;
-}
+// Register CheckBox events - 保留供将来使用
+// static int RegisterCheckBoxChanged(lua_State* L, luaui::controls::CheckBox* checkbox, int funcIndex) {
+//     int callbackRef = LuaCallbackRegistry::Instance().RegisterCallback(L, funcIndex);
+//     if (callbackRef < 0) {
+//         return -1;
+//     }
+//     
+//     // Note: CheckBox doesn't have a direct event in current implementation
+//     // This would need to be added to the CheckBox class
+//     
+//     return callbackRef;
+// }
 
 void RegisterCheckBoxEvents(lua_State* L) {
     luaL_getmetatable(L, "LuaUI.CheckBox");
@@ -456,17 +458,7 @@ static int RegisterTextBoxTextChanged(lua_State* L, luaui::controls::TextBox* te
     }
     
     auto handler = [callbackRef](luaui::controls::TextBox*, const std::wstring& text) {
-        if (text.empty()) {
-            LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {""});
-            return;
-        }
-        int n = WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, nullptr, 0, nullptr, nullptr);
-        if (n <= 0) {
-            LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {""});
-            return;
-        }
-        std::string narrow(n - 1, 0);
-        WideCharToMultiByte(CP_UTF8, 0, text.c_str(), -1, &narrow[0], n, nullptr, nullptr);
+        std::string narrow = WToUtf8(text);
         LuaCallbackRegistry::Instance().ExecuteCallback(callbackRef, {narrow});
     };
     

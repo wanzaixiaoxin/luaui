@@ -10,7 +10,8 @@ namespace TypeConverter {
 
 bool ToBool(const std::string& str, bool& out) {
     std::string lower = str;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     
     if (lower == "true" || lower == "1" || lower == "yes") {
         out = true;
@@ -44,7 +45,8 @@ bool ToInt(const std::string& str, int& out) {
 bool ToColor(const std::string& str, rendering::Color& out) {
     // 支持格式：#RRGGBB, #AARRGGBB, Red, Green, Blue, White, Black, Transparent
     std::string lower = str;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     
     if (lower == "red") {
         out = rendering::Color::Red();
