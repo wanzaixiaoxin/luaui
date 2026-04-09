@@ -76,6 +76,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
 
     void OnRender(rendering::IRenderContext* context) override;
     void OnMouseDown(MouseEventArgs& args) override;

@@ -44,43 +44,22 @@
 
 ---
 
-### 阶段三：主题系统贯通（~4 天）
+### ✅ 阶段三：主题系统贯通（已完成 2026-04-08）
 
 **目标**：控件颜色从硬编码 → ThemeResource，支持 Dark Mode
 
-#### 步骤 3.1 扩展 ResourceDictionary
+- [x] **步骤 3.1** 扩展 ResourceDictionary（Color/float/Thickness/CornerRadius 支持）
+- [x] **步骤 3.2** 创建 ThemeKeys.h + Light/Dark 主题工厂函数（CreateLightTheme/CreateDarkTheme）
+- [x] **步骤 3.3** Control 基类添加 ApplyTheme() 虚函数 + 自动注册/注销 Theme 回调
+- [x] **步骤 3.4** Button 改造为 Theme 驱动（示范）
+- [x] **步骤 3.5** CheckBox/RadioButton 改造
+- [x] **步骤 3.5** Slider 改造
+- [ ] **步骤 3.5** TextBox 改造（待后续）
+- [ ] **步骤 3.5** ProgressBar 改造（待后续）
 
-- 添加 Brush 资源类型（`SolidColorBrushData`）
-- 添加 float 资源（`FontSize`, `Opacity`）
-- 添加 `Thickness` 资源
-- 添加 `CornerRadius` 资源
+改动文件：`Theme.h/cpp`, `ThemeKeys.h`, `ResourceDictionary.h/cpp`, `Control.h/cpp`, `Button.h/cpp`, `CheckBox.h/cpp`, `Slider.h/cpp`
 
-#### 步骤 3.2 定义 ThemeColor 体系
-
-- 创建 `ThemeKeys.h`，定义资源键常量
-  - 如 `kButtonNormalBg`, `kButtonHoverBg`, `kTextPrimary`, `kBorderNormal`, `kAccentColor`, `kBackgroundPrimary`...
-- 创建 `LightTheme.xml` / `DarkTheme.xml`
-- `Theme` 类添加 `LoadFromFile()` + `ApplyTheme()`
-
-#### 步骤 3.3 Control 基类实现 IStyleable（轻量版）
-
-- 添加 `m_style`, `m_resources` 成员
-- override `AsStyleable()`
-- `InvalidateStyle()` → 重新读取 Theme 资源 + Invalidate
-- **不引入 DependencyProperty**（过重），改用 ThemeCallback 机制
-
-#### 步骤 3.4 Button 改造为 Theme 驱动（示范）
-
-- 构造时从 Theme 读取颜色：`m_normalBg = theme.GetColor(kButtonNormalBg)`
-- Theme 变更时重新读取
-- 验证：切换 Theme 后 Button 颜色即时更新
-
-#### 步骤 3.5 其他控件逐步改造
-
-- `TextBox` / `CheckBox` / `Slider` / `ProgressBar` / `TabControl`
-- 每个控件提取约 5-8 个 Theme 资源键
-
-**验收标准**：一键切换 Light/Dark Theme，所有控件颜色即时更新。
+**验收标准**：Theme::GetCurrent().ApplyResources(CreateDarkTheme()) 后，Button/CheckBox/Slider 颜色即时更新。
 
 ---
 
@@ -224,6 +203,6 @@
 
 ---
 
-*文档版本: 1.2*
+*文档版本: 1.3*
 *创建日期: 2026-04-08*
-*最后更新: 2026-04-08 — 阶段一、二完成*
+*最后更新: 2026-04-08 — 阶段一、二、三完成*

@@ -4,6 +4,7 @@
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
 #include "Window.h"
+#include "Theme.h"
 #include <unordered_map>
 #include <vector>
 
@@ -77,6 +78,19 @@ void CheckBox::InitializeComponents() {
     
     auto* input = GetComponents().AddComponent<components::InputComponent>(this);
     input->SetIsFocusable(true);
+}
+
+void CheckBox::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_normalBorder      = t.GetColor(kCheckNormalBorder);
+    m_hoverBorder       = t.GetColor(kCheckHoverBorder);
+    m_pressedBorder     = t.GetColor(kCheckPressedBorder);
+    m_checkColor        = t.GetColor(kCheckMark);
+    m_boxBackground     = t.GetColor(kCheckBackground);
+    m_disabledBorder    = t.GetColor(kCheckDisabledBorder);
+    m_disabledCheckColor= t.GetColor(kCheckDisabledMark);
+    m_disabledTextColor = t.GetColor(kCheckDisabledText);
 }
 
 rendering::Size CheckBox::OnMeasure(const rendering::Size& availableSize) {
@@ -224,7 +238,7 @@ void CheckBox::OnRender(rendering::IRenderContext* context) {
     
     // 绘制文本
     if (!m_text.empty()) {
-        rendering::Color txtClr = GetIsEnabled() ? rendering::Color::Black() : m_disabledTextColor;
+        rendering::Color txtClr = GetIsEnabled() ? Theme::GetCurrent().GetColor(theme::kTextPrimary) : m_disabledTextColor;
         auto textBrush = context->CreateSolidColorBrush(txtClr);
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
         if (textBrush && textFormat) {
@@ -256,6 +270,19 @@ void RadioButton::InitializeComponents() {
     
     // 注册到分组
     RegisterInGroup();
+}
+
+void RadioButton::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_normalBorder       = t.GetColor(kCheckNormalBorder);
+    m_hoverBorder        = t.GetColor(kCheckHoverBorder);
+    m_pressedBorder      = t.GetColor(kCheckPressedBorder);
+    m_checkColor         = t.GetColor(kCheckMark);
+    m_circleBackground   = t.GetColor(kCheckBackground);
+    m_disabledBorder     = t.GetColor(kCheckDisabledBorder);
+    m_disabledCheckColor = t.GetColor(kCheckDisabledMark);
+    m_disabledTextColor  = t.GetColor(kCheckDisabledText);
 }
 
 rendering::Size RadioButton::OnMeasure(const rendering::Size& availableSize) {
@@ -392,7 +419,7 @@ void RadioButton::OnRender(rendering::IRenderContext* context) {
     
     // 绘制文本
     if (!m_text.empty()) {
-        rendering::Color txtClr = GetIsEnabled() ? rendering::Color::Black() : m_disabledTextColor;
+        rendering::Color txtClr = GetIsEnabled() ? Theme::GetCurrent().GetColor(theme::kTextPrimary) : m_disabledTextColor;
         auto textBrush = context->CreateSolidColorBrush(txtClr);
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
         if (textBrush && textFormat) {

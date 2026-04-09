@@ -4,6 +4,7 @@
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
 #include "Logger.h"
+#include "Theme.h"
 #include <algorithm>
 #include <cmath>
 
@@ -29,6 +30,15 @@ void Slider::InitializeComponents() {
         layout->SetWidth(200);
         layout->SetHeight(16);
     }
+}
+
+void Slider::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_trackColor    = t.GetColor(kSliderTrack);
+    m_progressColor = t.GetColor(kSliderProgress);
+    m_thumbBg       = t.GetColor(kSliderThumbBg);
+    m_thumbBorder   = t.GetColor(kSliderThumbBorder);
 }
 
 rendering::Size Slider::OnMeasure(const rendering::Size& availableSize) {
@@ -192,11 +202,6 @@ void Slider::OnRender(rendering::IRenderContext* context) {
     
     rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
     
-    rendering::Color trackColor = rendering::Color::FromHex(0xE0E0E0);
-    rendering::Color progressColor = rendering::Color::FromHex(0x2196F3);
-    rendering::Color thumbColor = rendering::Color::White();
-    rendering::Color thumbBorder = rendering::Color::FromHex(0x1976D2);
-    
     float trackHeight = 4.0f;
     float thumbSize = m_isHovered ? 16.0f : 12.0f;
     
@@ -207,7 +212,7 @@ void Slider::OnRender(rendering::IRenderContext* context) {
         float trackLength = localRect.height - thumbSize;
         
         // 绘制轨道
-        auto trackBrush = context->CreateSolidColorBrush(trackColor);
+        auto trackBrush = context->CreateSolidColorBrush(m_trackColor);
         if (trackBrush) {
             rendering::Rect trackRect(trackX - trackHeight/2, trackY, trackHeight, trackLength);
             context->FillRectangle(trackRect, trackBrush.get());
@@ -219,7 +224,7 @@ void Slider::OnRender(rendering::IRenderContext* context) {
         float progressY = trackY + trackLength * (1.0f - static_cast<float>(ratio));
         
         // 绘制进度条（从底部到当前位置）
-        auto progressBrush = context->CreateSolidColorBrush(progressColor);
+        auto progressBrush = context->CreateSolidColorBrush(m_progressColor);
         if (progressBrush) {
             rendering::Rect progressRect(trackX - trackHeight/2, progressY, trackHeight, 
                                          trackY + trackLength - progressY);
@@ -227,8 +232,8 @@ void Slider::OnRender(rendering::IRenderContext* context) {
         }
         
         // 绘制滑块
-        auto thumbBgBrush = context->CreateSolidColorBrush(thumbColor);
-        auto thumbBorderBrush = context->CreateSolidColorBrush(thumbBorder);
+        auto thumbBgBrush = context->CreateSolidColorBrush(m_thumbBg);
+        auto thumbBorderBrush = context->CreateSolidColorBrush(m_thumbBorder);
         if (thumbBgBrush && thumbBorderBrush) {
             rendering::Point thumbCenter(trackX, progressY);
             context->FillEllipse(thumbCenter, thumbSize/2, thumbSize/2, thumbBgBrush.get());
@@ -241,7 +246,7 @@ void Slider::OnRender(rendering::IRenderContext* context) {
         float trackLength = localRect.width - thumbSize;
         
         // 绘制轨道
-        auto trackBrush = context->CreateSolidColorBrush(trackColor);
+        auto trackBrush = context->CreateSolidColorBrush(m_trackColor);
         if (trackBrush) {
             rendering::Rect trackRect(trackX, trackY - trackHeight/2, trackLength, trackHeight);
             context->FillRectangle(trackRect, trackBrush.get());
@@ -253,15 +258,15 @@ void Slider::OnRender(rendering::IRenderContext* context) {
         float progressX = trackX + trackLength * static_cast<float>(ratio);
         
         // 绘制进度条
-        auto progressBrush = context->CreateSolidColorBrush(progressColor);
+        auto progressBrush = context->CreateSolidColorBrush(m_progressColor);
         if (progressBrush) {
             rendering::Rect progressRect(trackX, trackY - trackHeight/2, progressX - trackX, trackHeight);
             context->FillRectangle(progressRect, progressBrush.get());
         }
         
         // 绘制滑块
-        auto thumbBgBrush = context->CreateSolidColorBrush(thumbColor);
-        auto thumbBorderBrush = context->CreateSolidColorBrush(thumbBorder);
+        auto thumbBgBrush = context->CreateSolidColorBrush(m_thumbBg);
+        auto thumbBorderBrush = context->CreateSolidColorBrush(m_thumbBorder);
         if (thumbBgBrush && thumbBorderBrush) {
             rendering::Point thumbCenter(progressX, trackY);
             context->FillEllipse(thumbCenter, thumbSize/2, thumbSize/2, thumbBgBrush.get());

@@ -5,6 +5,7 @@
 #include "../core/Components/RenderComponent.h"
 #include "../core/Components/InputComponent.h"
 #include "../rendering/Types.h"
+#include "../style/ThemeKeys.h"
 #include <string>
 
 namespace luaui {
@@ -47,6 +48,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
     
@@ -73,6 +75,11 @@ private:
     bool m_isSnapToTick = false;
     bool m_isVertical = false;
     bool m_isHovered = false;
+
+    rendering::Color m_trackColor = rendering::Color::FromHex(0xE0E0E0);
+    rendering::Color m_progressColor = rendering::Color::FromHex(0x2196F3);
+    rendering::Color m_thumbBg = rendering::Color::White();
+    rendering::Color m_thumbBorder = rendering::Color::FromHex(0x1976D2);
 };
 
 } // namespace controls

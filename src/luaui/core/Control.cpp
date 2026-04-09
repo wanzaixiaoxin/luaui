@@ -3,6 +3,7 @@
 #include "Components/RenderComponent.h"
 #include "Components/InputComponent.h"
 #include "Dispatcher.h"
+#include "Theme.h"
 
 namespace luaui {
 
@@ -18,19 +19,30 @@ Control::Control()
 
 void Control::EnsureInitialized() {
     if (!m_initialized) {
-        // 先设置标志，防止递归调用（InitializeComponents 中可能访问组件）
         m_initialized = true;
         InitializeComponents();
+        ApplyTheme();
+        auto& theme = controls::Theme::GetCurrent();
+        m_themeCbId = theme.AddCallback([this]() {
+            ApplyTheme();
+            if (auto* r = GetRender()) r->Invalidate();
+        });
     }
 }
 
 Control::~Control() {
+    if (m_themeCbId != 0) {
+        controls::Theme::GetCurrent().RemoveCallback(m_themeCbId);
+    }
     m_components.ShutdownAll();
 }
 
 void Control::InitializeComponents() {
     // 子类可以重写此方法添加更多组件
-    // 默认不添加任何组件，由子类按需添加
+}
+
+void Control::ApplyTheme() {
+    // 子类重写以读取 Theme 资源
 }
 
 void Control::SetIsVisible(bool visible) {

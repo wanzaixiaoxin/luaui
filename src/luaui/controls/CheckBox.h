@@ -5,6 +5,7 @@
 #include "../core/Components/RenderComponent.h"
 #include "../core/Components/InputComponent.h"
 #include "../rendering/Types.h"
+#include "../style/ThemeKeys.h"
 #include <string>
 #include <memory>
 
@@ -35,6 +36,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
     
@@ -95,6 +97,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     

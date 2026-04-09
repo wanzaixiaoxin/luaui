@@ -3,6 +3,8 @@
 #include "ITextFormat.h"
 #include "ResourceCache.h"
 #include "Window.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 #include <algorithm>
 #include <cstring>
 #include <cwctype>
@@ -55,6 +57,22 @@ rendering::ISolidColorBrush* AcquireBrush(const TextBox* textBox,
 } // namespace
 
 TextBox::TextBox() = default;
+
+void TextBox::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_background = t.GetColor(kTextBoxBackground);
+    m_readOnlyBackground = t.GetColor(kTextBoxReadOnlyBg);
+    m_borderColor = t.GetColor(kTextBoxBorder);
+    m_focusedBorderColor = t.GetColor(kTextBoxFocusedBorder);
+    m_selectionColor = t.GetColor(kTextBoxSelection);
+    m_inactiveSelectionColor = t.GetColor(kTextBoxInactiveSel);
+    m_foreground = t.GetColor(kTextPrimary);
+    m_placeholderColor = t.GetColor(kTextBoxPlaceholder);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void TextBox::InitializeComponents() {
     auto* layout = GetComponents().AddComponent<components::LayoutComponent>(this);

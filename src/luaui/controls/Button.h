@@ -6,6 +6,7 @@
 #include "../core/Components/InputComponent.h"
 #include "../rendering/Types.h"
 #include "../rendering/IAnimation.h"
+#include "../style/ThemeKeys.h"
 #include <string>
 
 namespace luaui {
@@ -69,6 +70,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     
     // 渲染覆盖
     virtual void OnRender(rendering::IRenderContext* context);

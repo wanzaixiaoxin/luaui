@@ -65,6 +65,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
 
@@ -124,6 +125,7 @@ public:
 
 protected:
     void InitializeComponents() override;
+    void ApplyTheme() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
 

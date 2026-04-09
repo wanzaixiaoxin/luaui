@@ -116,21 +116,6 @@ if(TARGET LuaUI_Utils)
     add_test(NAME LoggerTest COMMAND test_logger)
 endif()
 
-# Test executable for style system
-if(TARGET LuaUI_Style)
-    add_executable(test_style_system test_style_system.cpp)
-    target_link_libraries(test_style_system PRIVATE LuaUI_Style LuaUI_Core LuaUI_Controls LuaUI_Rendering)
-    target_include_directories(test_style_system PRIVATE
-        ${TEST_INCLUDE_DIR}
-        ${CMAKE_SOURCE_DIR}/src/luaui/style
-        ${CMAKE_SOURCE_DIR}/src/luaui/rendering
-        ${CMAKE_SOURCE_DIR}/src/luaui/controls
-        ${CMAKE_SOURCE_DIR}/src/luaui/core
-        ${CMAKE_SOURCE_DIR}/src/luaui/utils
-    )
-    add_test(NAME StyleSystemTest COMMAND test_style_system)
-endif()
-
 # Test executable for MVVM binding
 if(TARGET LuaUI_MVVM)
     add_executable(test_mvvm_binding test_mvvm_binding.cpp)

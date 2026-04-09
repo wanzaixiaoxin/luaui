@@ -13,6 +13,7 @@ set(STYLE_SOURCES
 set(STYLE_HEADERS
     ResourceDictionary.h
     Setter.h
+    ThemeKeys.h
     Trigger.h
     Style.h
     Theme.h
@@ -30,7 +31,6 @@ target_include_directories(LuaUI_Style
 
 target_link_libraries(LuaUI_Style
     PUBLIC
-        LuaUI_Core
         LuaUI_Rendering
         LuaUI_Utils
 )

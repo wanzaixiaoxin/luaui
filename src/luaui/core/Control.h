@@ -105,6 +105,10 @@ public:
     interfaces::IInputHandler* AsInputHandler() override;
     interfaces::IFocusable* AsFocusable() override;
 
+    // ========== 主题支持 ==========
+    /** @brief 子类重写：从 Theme 读取颜色等资源 */
+    virtual void ApplyTheme();
+
     // ========== 事件（统一使用 Delegate） ==========
     Delegate<Control*> Click;
     Delegate<Control*> MouseEnter;
@@ -147,6 +151,7 @@ protected:
     
     // 初始化标志（用于延迟初始化）
     bool m_initialized = false;
+    size_t m_themeCbId = 0;
     
     static std::atomic<ControlID> s_idCounter;
 };

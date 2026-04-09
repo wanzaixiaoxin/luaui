@@ -3,6 +3,8 @@
 #include "Components/RenderComponent.h"
 #include "Interfaces/IRenderable.h"
 #include "IRenderContext.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 #include <algorithm>
 #include <cmath>
 
@@ -13,6 +15,18 @@ namespace controls {
 // ProgressBar
 // ============================================================================
 ProgressBar::ProgressBar() {}
+
+void ProgressBar::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_backgroundColor = t.GetColor(kProgressBackground);
+    m_foregroundColor = t.GetColor(kProgressForeground);
+    m_borderColor = t.GetColor(kProgressBorder);
+    m_textColor = t.GetColor(kTextPrimary);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void ProgressBar::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -242,6 +256,16 @@ void ProgressBar::OnRender(rendering::IRenderContext* context) {
 // ProgressRing
 // ============================================================================
 ProgressRing::ProgressRing() {}
+
+void ProgressRing::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_backgroundColor = t.GetColor(kProgressBackground);
+    m_foregroundColor = t.GetColor(kProgressForeground);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void ProgressRing::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);

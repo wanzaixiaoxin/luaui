@@ -30,11 +30,13 @@ target_include_directories(LuaUI_Core
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src/luaui/rendering
         ${CMAKE_SOURCE_DIR}/src/luaui/utils
+        ${CMAKE_SOURCE_DIR}/src/luaui/style
 )
 
 target_link_libraries(LuaUI_Core
     PUBLIC
         LuaUI_Rendering
+        LuaUI_Style
         d2d1
         dwrite
         windowscodecs

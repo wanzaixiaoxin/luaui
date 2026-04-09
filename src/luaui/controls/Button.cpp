@@ -2,6 +2,7 @@
 #include "IRenderContext.h"
 #include "Logger.h"
 #include "Window.h"
+#include "Theme.h"
 
 namespace luaui {
 namespace controls {
@@ -17,6 +18,20 @@ void Button::InitializeComponents() {
 
     auto* input = GetComponents().AddComponent<components::InputComponent>(this);
     input->SetIsFocusable(true);
+}
+
+void Button::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_normalBackground   = t.GetColor(kButtonNormalBg);
+    m_hoverBackground    = t.GetColor(kButtonHoverBg);
+    m_pressedBackground  = t.GetColor(kButtonPressedBg);
+    m_disabledBackground = t.GetColor(kButtonDisabledBg);
+    m_disabledForeground = t.GetColor(kButtonDisabledFg);
+    m_disabledBorderBrush= t.GetColor(kButtonDisabledBorder);
+    m_foreground         = t.GetColor(kButtonForeground);
+    m_borderBrush        = t.GetColor(kButtonBorder);
+    m_animBg             = m_normalBackground;
 }
 
 // ============================================================================
@@ -216,7 +231,7 @@ void Button::OnRender(rendering::IRenderContext* context) {
     if (auto* input = GetInput()) {
         if (input->GetIsFocused()) {
             rendering::Rect focusRect(2, 2, localRect.width - 4, localRect.height - 4);
-            auto focusBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0x0078D4));
+            auto focusBrush = context->CreateSolidColorBrush(Theme::GetCurrent().GetColor(theme::kFocusVisual));
             if (focusBrush) {
                 rendering::StrokeStyle dashStyle;
                 dashStyle.dashes = {2.0f, 2.0f};
