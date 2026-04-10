@@ -3,6 +3,8 @@
 #include "Components/RenderComponent.h"
 #include "Interfaces/IRenderable.h"
 #include "IRenderContext.h"
+#include "Theme.h"
+#include "ThemeKeys.h"
 
 namespace luaui {
 namespace controls {
@@ -81,6 +83,18 @@ void StatusBarItem::UpdateVisualState() {
     }
 }
 
+void StatusBarItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_textColor = t.GetColor(kStatusBarItemText);
+    if (m_showBorder) {
+        m_borderColor = t.GetColor(kBorderNormal);
+    }
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
 rendering::Size StatusBarItem::OnMeasure(const rendering::Size& availableSize) {
     switch (m_itemType) {
         case ItemType::Spring:
@@ -137,6 +151,17 @@ void StatusBarItem::OnRender(rendering::IRenderContext* context) {
 // StatusBar
 // ============================================================================
 StatusBar::StatusBar() {}
+
+void StatusBar::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_bgColor = t.GetColor(kStatusBarBg);
+    m_borderColor = t.GetColor(kStatusBarBorder);
+    m_gripColor = t.GetColor(kStatusBarGrip);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void StatusBar::InitializeComponents() {
     Panel::InitializeComponents();

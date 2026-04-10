@@ -83,6 +83,11 @@
   <Color Key="TabSelectedBg" Value="#1E1E1E" />
   <Color Key="TabHoverBg"    Value="#383838" />
   <Color Key="TabBorder"     Value="#555555" />
+  <Color Key="TabContentBg"  Value="#1E1E1E" />
+  <Color Key="TabItemText"   Value="#FFFFFF" />
+  <Color Key="TabItemSelectedText" Value="#FFFFFF" />
+  <Color Key="TabItemCloseBtn"     Value="#999999" />
+  <Color Key="TabItemCloseBtnHover" Value="#E81123" />
 
   <!-- ============================================================ -->
   <!-- ScrollBar / ScrollViewer                                      -->
@@ -90,5 +95,68 @@
   <Color Key="ScrollBarTrack"      Value="#1E1E1E" />
   <Color Key="ScrollBarThumb"      Value="#555555" />
   <Color Key="ScrollBarThumbHover" Value="#6E6E6E" />
+
+  <!-- ============================================================ -->
+  <!-- Menu / MenuBar / MenuItem                                     -->
+  <!-- ============================================================ -->
+  <Color Key="MenuBarBg"          Value="#2D2D2D" />
+  <Color Key="MenuBarHoverBg"     Value="#383838" />
+  <Color Key="MenuBarOpenBg"      Value="#404040" />
+  <Color Key="MenuBarText"        Value="#FFFFFF" />
+  <Color Key="MenuBg"             Value="#2D2D2D" />
+  <Color Key="MenuBorder"         Value="#555555" />
+  <Color Key="MenuItemHoverBg"    Value="#383838" />
+  <Color Key="MenuItemText"       Value="#FFFFFF" />
+  <Color Key="MenuItemDisabledText" Value="#666666" />
+  <Color Key="MenuItemSeparator"  Value="#3D3D3D" />
+  <Color Key="MenuItemCheckMark"  Value="#0078D7" />
+  <Color Key="MenuItemArrow"      Value="#CCCCCC" />
+
+  <!-- ============================================================ -->
+  <!-- Toolbar / ToolbarItem                                         -->
+  <!-- ============================================================ -->
+  <Color Key="ToolbarBg"              Value="#2D2D2D" />
+  <Color Key="ToolbarBorder"          Value="#555555" />
+  <Color Key="ToolbarItemHoverBg"     Value="#383838" />
+  <Color Key="ToolbarItemPressedBg"   Value="#404040" />
+  <Color Key="ToolbarItemCheckedBg"   Value="#404040" />
+  <Color Key="ToolbarItemText"        Value="#FFFFFF" />
+  <Color Key="ToolbarItemDisabledText" Value="#666666" />
+  <Color Key="ToolbarSeparatorLine"   Value="#3D3D3D" />
+
+  <!-- ============================================================ -->
+  <!-- StatusBar                                                     -->
+  <!-- ============================================================ -->
+  <Color Key="StatusBarBg"       Value="#252525" />
+  <Color Key="StatusBarBorder"   Value="#555555" />
+  <Color Key="StatusBarGrip"     Value="#666666" />
+  <Color Key="StatusBarItemText" Value="#CCCCCC" />
+
+  <!-- ============================================================ -->
+  <!-- TreeView                                                      -->
+  <!-- ============================================================ -->
+  <Color Key="TreeViewItemHoverBg"     Value="#383838" />
+  <Color Key="TreeViewItemSelectedBg"  Value="#0078D7" />
+  <Color Key="TreeViewItemText"        Value="#FFFFFF" />
+  <Color Key="TreeViewItemSelectedText" Value="#FFFFFF" />
+  <Color Key="TreeViewExpandBtn"       Value="#CCCCCC" />
+
+  <!-- ============================================================ -->
+  <!-- SideBar                                                       -->
+  <!-- ============================================================ -->
+  <Color Key="SideBarBg"              Value="#252525" />
+  <Color Key="SideBarBorder"          Value="#3D3D3D" />
+  <Color Key="SideBarHeaderBg"        Value="#2D2D2D" />
+  <Color Key="SideBarHeaderText"      Value="#FFFFFF" />
+  <Color Key="SideBarCollapseBtn"     Value="#CCCCCC" />
+  <Color Key="SideBarCollapseBtnHover" Value="#FFFFFF" />
+
+  <!-- ============================================================ -->
+  <!-- Splitter                                                      -->
+  <!-- ============================================================ -->
+  <Color Key="SplitterBg"      Value="#3D3D3D" />
+  <Color Key="SplitterHoverBg" Value="#404040" />
+  <Color Key="SplitterActiveBg" Value="#0078D7" />
+  <Color Key="SplitterGrip"    Value="#666666" />
 
 </Theme>

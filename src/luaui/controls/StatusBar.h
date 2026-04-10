@@ -76,6 +76,7 @@ protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void ApplyTheme() override;
 
 private:
     void UpdateVisualState();
@@ -150,7 +151,8 @@ protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseDown(MouseEventArgs& args) override;
     void OnMouseMove(MouseEventArgs& args) override;
 

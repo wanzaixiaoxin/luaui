@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "../rendering/Types.h"
+#include "../style/ThemeKeys.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -76,7 +77,8 @@ protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
-    
+    void ApplyTheme() override;
+
     // 输入处理
     void OnClick() override;
     void OnMouseEnter() override;
@@ -85,9 +87,11 @@ protected:
 
 private:
     friend class TreeView;
-    
+
     void UpdateVisualState();
     void DrawExpandButton(rendering::IRenderContext* context, const rendering::Rect& rect);
+    rendering::Color GetTargetBgColor() const;
+    void AnimateBgTo(const rendering::Color& target, float durationMs);
     
     std::wstring m_header;
     int m_level = 0;
@@ -113,6 +117,7 @@ private:
     rendering::Color m_textColor = rendering::Color::Black();
     rendering::Color m_selectedTextColor = rendering::Color::White();
     rendering::Color m_expandButtonColor = rendering::Color::FromHex(0x666666);
+    rendering::Color m_animBg = rendering::Color::Transparent();
 };
 
 /**

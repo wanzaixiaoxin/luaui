@@ -54,12 +54,12 @@
 - [x] **步骤 3.4** Button 改造为 Theme 驱动（示范）
 - [x] **步骤 3.5** CheckBox/RadioButton 改造
 - [x] **步骤 3.5** Slider 改造
-- [ ] **步骤 3.5** TextBox 改造（待后续）
-- [ ] **步骤 3.5** ProgressBar 改造（待后续）
+- [x] **步骤 3.5** TextBox 改造
+- [x] **步骤 3.5** ProgressBar 改造
 
-改动文件：`Theme.h/cpp`, `ThemeKeys.h`, `ResourceDictionary.h/cpp`, `Control.h/cpp`, `Button.h/cpp`, `CheckBox.h/cpp`, `Slider.h/cpp`
+改动文件：`Theme.h/cpp`, `ThemeKeys.h`, `ResourceDictionary.h/cpp`, `Control.h/cpp`, `Button.h/cpp`, `CheckBox.h/cpp`, `Slider.h/cpp`, `TextBox.h/cpp`, `ProgressBar.h/cpp`
 
-**验收标准**：Theme::GetCurrent().ApplyResources(CreateDarkTheme()) 后，Button/CheckBox/Slider 颜色即时更新。
+**验收标准**：Theme::GetCurrent().ApplyResources(CreateDarkTheme()) 后，Button/CheckBox/Slider/TextBox/ProgressBar 颜色即时更新。
 
 ---
 
@@ -205,4 +205,4 @@
 
 *文档版本: 1.3*
 *创建日期: 2026-04-08*
-*最后更新: 2026-04-08 — 阶段一、二、三完成*
+*最后更新: 2026-04-09 — 阶段三全部完成（含 TextBox/ProgressBar）*

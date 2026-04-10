@@ -4,6 +4,8 @@
 #include "Interfaces/IRenderable.h"
 #include "IRenderContext.h"
 #include "layouts/DockPanel.h"
+#include "Theme.h"
+#include "Window.h"
 
 namespace luaui {
 namespace controls {
@@ -58,13 +60,13 @@ void ToolbarItem::SetIsPressed(bool pressed) {
 
 void ToolbarItem::OnMouseEnter() {
     m_isHovered = true;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void ToolbarItem::OnMouseLeave() {
     m_isHovered = false;
     m_isPressed = false;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void ToolbarItem::OnMouseDown(MouseEventArgs& args) {
@@ -74,14 +76,14 @@ void ToolbarItem::OnMouseDown(MouseEventArgs& args) {
     } else {
         m_isPressed = true;
     }
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 100.0f);
 }
 
 void ToolbarItem::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     if (!m_isCheckable) {
         m_isPressed = false;
-        UpdateVisualState();
+        AnimateBgTo(GetTargetBgColor(), 150.0f);
     }
 }
 
@@ -93,6 +95,57 @@ void ToolbarItem::UpdateVisualState() {
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
+}
+
+void ToolbarItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_hoverBg = t.GetColor(kToolbarItemHoverBg);
+    m_pressedBg = t.GetColor(kToolbarItemPressedBg);
+    m_checkedBg = t.GetColor(kToolbarItemCheckedBg);
+    m_textColor = t.GetColor(kToolbarItemText);
+    m_disabledColor = t.GetColor(kToolbarItemDisabledText);
+    m_animBg = m_normalBg;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+rendering::Color ToolbarItem::GetTargetBgColor() const {
+    if (!GetIsEnabled()) return m_normalBg;
+    if (m_isPressed) return m_pressedBg;
+    if (m_isChecked) return m_checkedBg;
+    if (m_isHovered) return m_hoverBg;
+    return m_normalBg;
+}
+
+void ToolbarItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
+    auto* wnd = GetWindow();
+    if (!wnd || !wnd->GetTimeline()) {
+        m_animBg = target;
+        if (auto* render = GetRender()) render->Invalidate();
+        return;
+    }
+
+    auto anim = wnd->GetTimeline()->CreateAnimation();
+    anim->SetDuration(durationMs);
+    anim->SetEasing(rendering::Easing::CubicOut);
+    anim->SetFillMode(rendering::FillMode::Forwards);
+
+    rendering::Color start = m_animBg;
+    anim->SetStartValue(rendering::AnimationValue(start));
+    anim->SetEndValue(rendering::AnimationValue(target));
+
+    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
+        m_animBg = val.AsColor();
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    });
+
+    anim->Play();
+    wnd->GetTimeline()->Add(std::move(anim));
+    wnd->StartAnimTimer();
 }
 
 void ToolbarItem::DrawIcon(rendering::IRenderContext* context, const rendering::Rect& rect) {
@@ -156,22 +209,15 @@ rendering::Size ToolbarItem::OnMeasure(const rendering::Size& availableSize) {
 
 void ToolbarItem::OnRender(rendering::IRenderContext* context) {
     if (!context) return;
-    
+
     auto* render = GetRender();
     if (!render) return;
-    
+
     auto rect = render->GetRenderRect();
-    
-    // 选择背景色
-    rendering::Color bgColor = m_normalBg;
-    if (m_isPressed) {
-        bgColor = m_pressedBg;
-    } else if (m_isChecked) {
-        bgColor = m_checkedBg;
-    } else if (m_isHovered) {
-        bgColor = m_hoverBg;
-    }
-    
+
+    // 使用动画背景色
+    rendering::Color bgColor = m_animBg;
+
     // 绘制背景
     if (bgColor.a > 0) {
         auto bgBrush = context->CreateSolidColorBrush(bgColor);
@@ -229,6 +275,15 @@ void ToolbarSeparator::InitializeComponents() {
     GetComponents().AddComponent<components::RenderComponent>(this);
 }
 
+void ToolbarSeparator::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_lineColor = t.GetColor(kToolbarSeparatorLine);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
 void ToolbarSeparator::OnRender(rendering::IRenderContext* context) {
     if (!context) return;
     
@@ -256,6 +311,66 @@ rendering::Size ToolbarSeparator::OnMeasure(const rendering::Size& availableSize
 // Toolbar
 // ============================================================================
 Toolbar::Toolbar() {}
+
+void Toolbar::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_bgColor = t.GetColor(kToolbarBg);
+    m_borderColor = t.GetColor(kToolbarBorder);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+void Toolbar::OnKeyDown(KeyEventArgs& args) {
+    int step = 0;
+    if (m_orientation == Orientation::Horizontal) {
+        if (args.keyCode == VK_LEFT)  step = -1;
+        if (args.keyCode == VK_RIGHT) step = 1;
+    } else {
+        if (args.keyCode == VK_UP)   step = -1;
+        if (args.keyCode == VK_DOWN) step = 1;
+    }
+
+    if (step != 0) {
+        int count = GetFocusableItemCount();
+        if (count > 0) {
+            if (m_focusedItemIndex < 0) m_focusedItemIndex = 0;
+            m_focusedItemIndex = (m_focusedItemIndex + step + count) % count;
+            args.Handled = true;
+            if (auto* render = GetRender()) render->Invalidate();
+        }
+        return;
+    }
+
+    if (args.keyCode == VK_RETURN || args.keyCode == VK_SPACE) {
+        // 激活当前焦点项
+        int idx = 0;
+        for (auto& item : m_items) {
+            if (auto tbItem = std::dynamic_pointer_cast<ToolbarItem>(item)) {
+                if (idx == m_focusedItemIndex) {
+                    tbItem->InvokeCommand();
+                    args.Handled = true;
+                    break;
+                }
+                idx++;
+            }
+        }
+        return;
+    }
+
+    Panel::OnKeyDown(args);
+}
+
+int Toolbar::GetFocusableItemCount() const {
+    int count = 0;
+    for (auto& item : m_items) {
+        if (std::dynamic_pointer_cast<ToolbarItem>(item)) {
+            count++;
+        }
+    }
+    return count;
+}
 
 void Toolbar::InitializeComponents() {
     Panel::InitializeComponents();
@@ -440,9 +555,24 @@ void Toolbar::OnRenderChildren(rendering::IRenderContext* context) {
     }
     
     // 绘制子项
+    int itemIdx = 0;
     for (auto& item : m_items) {
         if (auto* itemRenderable = item->AsRenderable()) {
             itemRenderable->Render(context);
+        }
+        // 绘制键盘焦点指示器
+        if (std::dynamic_pointer_cast<ToolbarItem>(item)) {
+            if (itemIdx == m_focusedItemIndex && m_focusedItemIndex >= 0) {
+                if (auto* itemRender = item->GetRender()) {
+                    auto focusRect = itemRender->GetRenderRect();
+                    auto focusBrush = context->CreateSolidColorBrush(
+                        Theme::GetCurrent().GetColor(theme::kFocusVisual));
+                    if (focusBrush) {
+                        context->DrawRectangle(focusRect, focusBrush.get(), 1.0f);
+                    }
+                }
+            }
+            itemIdx++;
         }
     }
 }

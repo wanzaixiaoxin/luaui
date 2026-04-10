@@ -6,6 +6,8 @@
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
 #include "Logger.h"
+#include "Theme.h"
+#include "Window.h"
 
 namespace luaui {
 namespace controls {
@@ -68,13 +70,13 @@ void TabItem::SetIsSelected(bool selected) {
 
 void TabItem::OnMouseEnter() {
     m_isHovered = true;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void TabItem::OnMouseLeave() {
     m_isHovered = false;
     m_isCloseHovered = false;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void TabItem::OnMouseDown(MouseEventArgs& args) {
@@ -104,6 +106,56 @@ void TabItem::UpdateVisualState() {
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
+}
+
+void TabItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_hoverBg = t.GetColor(kTabHoverBg);
+    m_selectedBg = t.GetColor(kTabSelectedBg);
+    m_textColor = t.GetColor(kTabItemText);
+    m_selectedTextColor = t.GetColor(kTabItemSelectedText);
+    m_closeButtonColor = t.GetColor(kTabItemCloseBtn);
+    m_closeButtonHoverColor = t.GetColor(kTabItemCloseBtnHover);
+    m_animBg = m_normalBg;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+rendering::Color TabItem::GetTargetBgColor() const {
+    if (m_isSelected) return m_selectedBg;
+    if (m_isHovered) return m_hoverBg;
+    return m_normalBg;
+}
+
+void TabItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
+    auto* wnd = GetWindow();
+    if (!wnd || !wnd->GetTimeline()) {
+        m_animBg = target;
+        if (auto* render = GetRender()) render->Invalidate();
+        return;
+    }
+
+    auto anim = wnd->GetTimeline()->CreateAnimation();
+    anim->SetDuration(durationMs);
+    anim->SetEasing(rendering::Easing::CubicOut);
+    anim->SetFillMode(rendering::FillMode::Forwards);
+
+    rendering::Color start = m_animBg;
+    anim->SetStartValue(rendering::AnimationValue(start));
+    anim->SetEndValue(rendering::AnimationValue(target));
+
+    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
+        m_animBg = val.AsColor();
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    });
+
+    anim->Play();
+    wnd->GetTimeline()->Add(std::move(anim));
+    wnd->StartAnimTimer();
 }
 
 bool TabItem::HitTestCloseButton(float x, float y) {
@@ -162,15 +214,9 @@ void TabItem::OnRender(rendering::IRenderContext* context) {
     
     auto rect = render->GetRenderRect();
 
-    
-    // 绘制背景
-    rendering::Color bgColor = m_normalBg;
-    if (m_isSelected) {
-        bgColor = m_selectedBg;
-    } else if (m_isHovered) {
-        bgColor = m_hoverBg;
-    }
-    
+    // 使用动画背景色
+    rendering::Color bgColor = m_animBg;
+
     if (bgColor.a > 0) {
         auto bgBrush = context->CreateSolidColorBrush(bgColor);
         if (bgBrush) {
@@ -209,6 +255,17 @@ void TabItem::OnRender(rendering::IRenderContext* context) {
 // TabControl
 // ============================================================================
 TabControl::TabControl() {}
+
+void TabControl::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_tabStripBg = t.GetColor(kTabStripBg);
+    m_contentBg = t.GetColor(kTabContentBg);
+    m_borderColor = t.GetColor(kTabBorder);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void TabControl::InitializeComponents() {
     Panel::InitializeComponents();
@@ -613,6 +670,61 @@ void TabControl::OnMouseDown(MouseEventArgs& args) {
         args.Handled = true;  // 只有点击在标签栏上才标记为已处理
     }
     // 如果点击在内容区域，不标记 Handled，让事件传递给子控件
+}
+
+void TabControl::OnKeyDown(KeyEventArgs& args) {
+    if (m_tabs.empty()) {
+        Panel::OnKeyDown(args);
+        return;
+    }
+
+    bool isHorizontal = (m_tabStripPlacement == TabStripPlacement::Top ||
+                          m_tabStripPlacement == TabStripPlacement::Bottom);
+    int step = 0;
+
+    if (isHorizontal) {
+        if (args.keyCode == VK_LEFT)  step = -1;
+        if (args.keyCode == VK_RIGHT) step = 1;
+    } else {
+        if (args.keyCode == VK_UP)   step = -1;
+        if (args.keyCode == VK_DOWN) step = 1;
+    }
+
+    // Ctrl+Tab / Ctrl+Shift+Tab
+    if (args.keyCode == VK_TAB && args.Control) {
+        step = args.Shift ? -1 : 1;
+    }
+
+    if (step != 0) {
+        int newIndex = (m_selectedIndex + step + static_cast<int>(m_tabs.size()))
+                        % static_cast<int>(m_tabs.size());
+        SetSelectedIndex(newIndex);
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_HOME) {
+        SetSelectedIndex(0);
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_END) {
+        SetSelectedIndex(static_cast<int>(m_tabs.size()) - 1);
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_DELETE && m_selectedIndex >= 0) {
+        auto& tab = m_tabs[m_selectedIndex];
+        if (tab->GetCanClose()) {
+            OnTabClose(tab.get());
+            args.Handled = true;
+            return;
+        }
+    }
+
+    Panel::OnKeyDown(args);
 }
 
 } // namespace controls

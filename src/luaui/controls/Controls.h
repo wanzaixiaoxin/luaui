@@ -36,6 +36,7 @@
 #include "DatePicker.h"
 #include "TabControl.h"
 #include "Dialog.h"
+#include "FileTree.h"
 
 // Menu
 #include "Menu.h"
@@ -51,6 +52,11 @@
 
 // StatusBar
 #include "StatusBar.h"
+
+// SideBar & Splitter
+#include "SideBar.h"
+#include "Splitter.h"
+#include "FileTree.h"
 
 // Tooltip
 #include "Tooltip.h"

@@ -6,6 +6,7 @@
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
 #include "Window.h"
+#include "Theme.h"
 
 namespace luaui {
 namespace controls {
@@ -62,8 +63,8 @@ void MenuItem::SetSubmenu(const std::shared_ptr<Menu>& menu) {
 
 void MenuItem::OnMouseEnter() {
     m_isHovered = true;
-    UpdateVisualState();
-    
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
+
     // 通知父菜单
     if (m_parentMenu) {
         m_parentMenu->OnItemHovered(this);
@@ -72,7 +73,7 @@ void MenuItem::OnMouseEnter() {
 
 void MenuItem::OnMouseLeave() {
     m_isHovered = false;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void MenuItem::OnClick() {
@@ -98,6 +99,57 @@ void MenuItem::UpdateVisualState() {
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
+}
+
+void MenuItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_hoverBg = t.GetColor(kMenuItemHoverBg);
+    m_textColor = t.GetColor(kMenuItemText);
+    m_hoverTextColor = t.GetColor(kMenuItemText);
+    m_disabledTextColor = t.GetColor(kMenuItemDisabledText);
+    m_separatorColor = t.GetColor(kMenuItemSeparator);
+    m_checkColor = t.GetColor(kMenuItemCheckMark);
+    m_arrowColor = t.GetColor(kMenuItemArrow);
+    m_animBg = m_normalBg;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+rendering::Color MenuItem::GetTargetBgColor() const {
+    if (!m_itemEnabled) return m_normalBg;
+    if (m_isHovered) return m_hoverBg;
+    return m_normalBg;
+}
+
+void MenuItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
+    auto* wnd = GetWindow();
+    if (!wnd || !wnd->GetTimeline()) {
+        m_animBg = target;
+        if (auto* render = GetRender()) render->Invalidate();
+        return;
+    }
+
+    auto anim = wnd->GetTimeline()->CreateAnimation();
+    anim->SetDuration(durationMs);
+    anim->SetEasing(rendering::Easing::CubicOut);
+    anim->SetFillMode(rendering::FillMode::Forwards);
+
+    rendering::Color start = m_animBg;
+    anim->SetStartValue(rendering::AnimationValue(start));
+    anim->SetEndValue(rendering::AnimationValue(target));
+
+    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
+        m_animBg = val.AsColor();
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    });
+
+    anim->Play();
+    wnd->GetTimeline()->Add(std::move(anim));
+    wnd->StartAnimTimer();
 }
 
 rendering::Size MenuItem::OnMeasure(const rendering::Size& availableSize) {
@@ -152,9 +204,9 @@ void MenuItem::OnRender(rendering::IRenderContext* context) {
         return;
     }
     
-    // 绘制背景
-    if (m_isHovered && m_itemEnabled) {
-        auto bgBrush = context->CreateSolidColorBrush(m_hoverBg);
+    // 绘制背景（使用动画颜色）
+    if (m_animBg.a > 0 && m_itemEnabled) {
+        auto bgBrush = context->CreateSolidColorBrush(m_animBg);
         if (bgBrush) {
             context->FillRectangle(rect, bgBrush.get());
         }
@@ -230,6 +282,16 @@ void MenuItem::OnRender(rendering::IRenderContext* context) {
 // Menu
 // ============================================================================
 Menu::Menu() {}
+
+void Menu::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_bgColor = t.GetColor(kMenuBg);
+    m_borderColor = t.GetColor(kMenuBorder);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void Menu::InitializeComponents() {
     GetComponents().AddComponent<components::LayoutComponent>(this);
@@ -464,41 +526,103 @@ void Menu::OnMouseMove(MouseEventArgs& args) {
     if (auto* renderable = AsRenderable()) {
         rect = renderable->GetRenderRect();
     }
-    
+
     float localY = args.y - rect.y - m_borderWidth + m_scrollOffset;
     int index = HitTestItem(localY);
-    
+
     if (index >= 0) {
         if (m_hoveredItem != m_items[index].get()) {
-            // Call protected methods through friendship or use public interface
             if (m_hoveredItem) {
-                // Notify the item that mouse left
-                // m_hoveredItem->OnMouseLeave();  // Protected, can't call directly
+                m_hoveredItem->NotifyMouseLeave();
             }
             m_hoveredItem = m_items[index].get();
-            // m_hoveredItem->OnMouseEnter();  // Protected, can't call directly
+            m_hoveredItem->NotifyMouseEnter();
         }
     } else if (m_hoveredItem) {
-        // m_hoveredItem->OnMouseLeave();  // Protected, can't call directly
+        m_hoveredItem->NotifyMouseLeave();
         m_hoveredItem = nullptr;
     }
-    
+
     args.Handled = true;
 }
 
 void Menu::OnMouseLeave() {
-    // Cannot call OnMouseLeave directly as it's protected
-    // Menu is a friend of MenuItem, so this should work if declared properly
     if (m_hoveredItem) {
-        // m_hoveredItem->OnMouseLeave();
+        m_hoveredItem->NotifyMouseLeave();
         m_hoveredItem = nullptr;
     }
+}
+
+void Menu::OnKeyDown(KeyEventArgs& args) {
+    if (m_items.empty()) {
+        Control::OnKeyDown(args);
+        return;
+    }
+
+    if (args.keyCode == VK_UP) {
+        if (m_focusedIndex < 0) m_focusedIndex = static_cast<int>(m_items.size()) - 1;
+        else m_focusedIndex = (m_focusedIndex - 1 + static_cast<int>(m_items.size()))
+                               % static_cast<int>(m_items.size());
+        // 跳过分隔线
+        while (m_focusedIndex > 0 && m_items[m_focusedIndex]->GetItemType() == MenuItem::ItemType::Separator) {
+            m_focusedIndex = (m_focusedIndex - 1 + static_cast<int>(m_items.size()))
+                              % static_cast<int>(m_items.size());
+        }
+        m_hoveredItem = m_items[m_focusedIndex].get();
+        m_hoveredItem->NotifyMouseEnter();
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_DOWN) {
+        if (m_focusedIndex < 0) m_focusedIndex = 0;
+        else m_focusedIndex = (m_focusedIndex + 1) % static_cast<int>(m_items.size());
+        // 跳过分隔线
+        while (m_focusedIndex < static_cast<int>(m_items.size()) - 1 &&
+               m_items[m_focusedIndex]->GetItemType() == MenuItem::ItemType::Separator) {
+            m_focusedIndex = (m_focusedIndex + 1) % static_cast<int>(m_items.size());
+        }
+        m_hoveredItem = m_items[m_focusedIndex].get();
+        m_hoveredItem->NotifyMouseEnter();
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_RETURN || args.keyCode == VK_SPACE) {
+        if (m_focusedIndex >= 0 && m_focusedIndex < static_cast<int>(m_items.size())) {
+            m_items[m_focusedIndex]->InvokeCommand();
+            m_items[m_focusedIndex]->Click.Invoke(m_items[m_focusedIndex].get());
+            Close();
+        }
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_ESCAPE) {
+        Close();
+        args.Handled = true;
+        return;
+    }
+
+    Control::OnKeyDown(args);
 }
 
 // ============================================================================
 // MenuBar
 // ============================================================================
 MenuBar::MenuBar() {}
+
+void MenuBar::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_bgColor = t.GetColor(kMenuBarBg);
+    m_hoverBg = t.GetColor(kMenuBarHoverBg);
+    m_openBg = t.GetColor(kMenuBarOpenBg);
+    m_textColor = t.GetColor(kMenuBarText);
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
 
 void MenuBar::InitializeComponents() {
     Panel::InitializeComponents();
@@ -628,7 +752,8 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     }
     
     // 绘制底边框
-    auto borderBrush = context->CreateSolidColorBrush(rendering::Color::FromHex(0xCCCCCC));
+    auto& t = Theme::GetCurrent();
+    auto borderBrush = context->CreateSolidColorBrush(t.GetColor(theme::kMenuBorder));
     if (borderBrush) {
         context->DrawLine(rendering::Point(barRect.x, barRect.y + barRect.height - 1),
                           rendering::Point(barRect.x + barRect.width, barRect.y + barRect.height - 1),
@@ -704,15 +829,55 @@ void MenuBar::OnMouseDown(MouseEventArgs& args) {
     args.Handled = true;
 }
 
+void MenuBar::OnKeyDown(KeyEventArgs& args) {
+    if (m_menus.empty()) {
+        Panel::OnKeyDown(args);
+        return;
+    }
+
+    if (args.keyCode == VK_LEFT) {
+        if (m_openMenuIndex >= 0) {
+            m_menus[m_openMenuIndex].isOpen = false;
+            m_menus[m_openMenuIndex].menu->Close();
+            m_openMenuIndex = (m_openMenuIndex - 1 + static_cast<int>(m_menus.size()))
+                               % static_cast<int>(m_menus.size());
+            m_isKeyboardNavigating = true;
+            OpenMenu(m_openMenuIndex);
+        }
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_RIGHT) {
+        if (m_openMenuIndex >= 0) {
+            m_menus[m_openMenuIndex].isOpen = false;
+            m_menus[m_openMenuIndex].menu->Close();
+            m_openMenuIndex = (m_openMenuIndex + 1) % static_cast<int>(m_menus.size());
+            m_isKeyboardNavigating = true;
+            OpenMenu(m_openMenuIndex);
+        }
+        args.Handled = true;
+        return;
+    }
+
+    if (args.keyCode == VK_ESCAPE) {
+        CloseAllMenus();
+        args.Handled = true;
+        return;
+    }
+
+    Panel::OnKeyDown(args);
+}
+
 // ============================================================================
 // ContextMenu
 // ============================================================================
 ContextMenu::ContextMenu() {}
 
 void ContextMenu::ShowAtMouse() {
-    // 简化实现：在固定位置显示
-    // 实际应获取鼠标位置
-    OpenAt(100, 100);
+    POINT pt;
+    GetCursorPos(&pt);
+    OpenAt(static_cast<float>(pt.x), static_cast<float>(pt.y));
 }
 
 void ContextMenu::ShowRelativeTo(Control* control, float offsetX, float offsetY) {

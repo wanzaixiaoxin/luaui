@@ -77,6 +77,11 @@ inline constexpr const char* kTabStripBg         = "TabStripBg";
 inline constexpr const char* kTabSelectedBg      = "TabSelectedBg";
 inline constexpr const char* kTabHoverBg         = "TabHoverBg";
 inline constexpr const char* kTabBorder          = "TabBorder";
+inline constexpr const char* kTabContentBg       = "TabContentBg";
+inline constexpr const char* kTabItemText        = "TabItemText";
+inline constexpr const char* kTabItemSelectedText= "TabItemSelectedText";
+inline constexpr const char* kTabItemCloseBtn    = "TabItemCloseBtn";
+inline constexpr const char* kTabItemCloseBtnHover = "TabItemCloseBtnHover";
 
 // ============================================================================
 // ScrollBar / ScrollViewer
@@ -84,6 +89,69 @@ inline constexpr const char* kTabBorder          = "TabBorder";
 inline constexpr const char* kScrollBarTrack     = "ScrollBarTrack";
 inline constexpr const char* kScrollBarThumb     = "ScrollBarThumb";
 inline constexpr const char* kScrollBarThumbHover= "ScrollBarThumbHover";
+
+// ============================================================================
+// Menu / MenuBar / MenuItem
+// ============================================================================
+inline constexpr const char* kMenuBarBg          = "MenuBarBg";
+inline constexpr const char* kMenuBarHoverBg     = "MenuBarHoverBg";
+inline constexpr const char* kMenuBarOpenBg      = "MenuBarOpenBg";
+inline constexpr const char* kMenuBarText        = "MenuBarText";
+inline constexpr const char* kMenuBg             = "MenuBg";
+inline constexpr const char* kMenuBorder         = "MenuBorder";
+inline constexpr const char* kMenuItemHoverBg    = "MenuItemHoverBg";
+inline constexpr const char* kMenuItemText       = "MenuItemText";
+inline constexpr const char* kMenuItemDisabledText= "MenuItemDisabledText";
+inline constexpr const char* kMenuItemSeparator  = "MenuItemSeparator";
+inline constexpr const char* kMenuItemCheckMark  = "MenuItemCheckMark";
+inline constexpr const char* kMenuItemArrow      = "MenuItemArrow";
+
+// ============================================================================
+// Toolbar / ToolbarItem
+// ============================================================================
+inline constexpr const char* kToolbarBg          = "ToolbarBg";
+inline constexpr const char* kToolbarBorder      = "ToolbarBorder";
+inline constexpr const char* kToolbarItemHoverBg = "ToolbarItemHoverBg";
+inline constexpr const char* kToolbarItemPressedBg = "ToolbarItemPressedBg";
+inline constexpr const char* kToolbarItemCheckedBg = "ToolbarItemCheckedBg";
+inline constexpr const char* kToolbarItemText    = "ToolbarItemText";
+inline constexpr const char* kToolbarItemDisabledText = "ToolbarItemDisabledText";
+inline constexpr const char* kToolbarSeparatorLine= "ToolbarSeparatorLine";
+
+// ============================================================================
+// StatusBar
+// ============================================================================
+inline constexpr const char* kStatusBarBg        = "StatusBarBg";
+inline constexpr const char* kStatusBarBorder    = "StatusBarBorder";
+inline constexpr const char* kStatusBarGrip      = "StatusBarGrip";
+inline constexpr const char* kStatusBarItemText  = "StatusBarItemText";
+
+// ============================================================================
+// TreeView
+// ============================================================================
+inline constexpr const char* kTreeViewItemHoverBg    = "TreeViewItemHoverBg";
+inline constexpr const char* kTreeViewItemSelectedBg = "TreeViewItemSelectedBg";
+inline constexpr const char* kTreeViewItemText       = "TreeViewItemText";
+inline constexpr const char* kTreeViewItemSelectedText= "TreeViewItemSelectedText";
+inline constexpr const char* kTreeViewExpandBtn      = "TreeViewExpandBtn";
+
+// ============================================================================
+// SideBar
+// ============================================================================
+inline constexpr const char* kSideBarBg           = "SideBarBg";
+inline constexpr const char* kSideBarBorder       = "SideBarBorder";
+inline constexpr const char* kSideBarHeaderBg     = "SideBarHeaderBg";
+inline constexpr const char* kSideBarHeaderText   = "SideBarHeaderText";
+inline constexpr const char* kSideBarCollapseBtn  = "SideBarCollapseBtn";
+inline constexpr const char* kSideBarCollapseBtnHover = "SideBarCollapseBtnHover";
+
+// ============================================================================
+// Splitter
+// ============================================================================
+inline constexpr const char* kSplitterBg          = "SplitterBg";
+inline constexpr const char* kSplitterHoverBg     = "SplitterHoverBg";
+inline constexpr const char* kSplitterActiveBg    = "SplitterActiveBg";
+inline constexpr const char* kSplitterGrip        = "SplitterGrip";
 
 } // namespace theme
 } // namespace luaui

@@ -50,6 +50,12 @@ add_library(LuaUI_Controls STATIC
     TextBox.cpp
     TextBox.h
     Controls.h
+    SideBar.cpp
+    SideBar.h
+    Splitter.cpp
+    Splitter.h
+    FileTree.cpp
+    FileTree.h
     # Layouts
     layouts/StackPanel.cpp
     layouts/Grid.cpp

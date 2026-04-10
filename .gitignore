@@ -2,6 +2,7 @@
 build/
 build_*/
 
+
 # Visual Studio
 .vs/
 *.vcxproj
@@ -30,6 +31,8 @@ Thumbs.db
 .vscode/
 .codebuddy/
 .trae/
+.zread/
+.claude/
 
 # Log files
 *.log

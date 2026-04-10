@@ -3,6 +3,7 @@
 #include "Control.h"
 #include "Panel.h"
 #include "../rendering/Types.h"
+#include "../style/ThemeKeys.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -89,17 +90,24 @@ public:
     // 点击事件
     luaui::Delegate<MenuItem*> Click;
 
+    // 公开通知方法（供 Menu 调用）
+    void NotifyMouseEnter() { OnMouseEnter(); }
+    void NotifyMouseLeave() { OnMouseLeave(); }
+
 protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseEnter() override;
     void OnMouseLeave() override;
     void OnClick() override;
 
 private:
     void UpdateVisualState();
+    rendering::Color GetTargetBgColor() const;
+    void AnimateBgTo(const rendering::Color& target, float durationMs);
     
     ItemType m_itemType = ItemType::Normal;
     std::wstring m_header;
@@ -133,6 +141,7 @@ private:
     rendering::Color m_separatorColor = rendering::Color::FromHex(0xDDDDDD);
     rendering::Color m_checkColor = rendering::Color::FromHex(0x0078D4);
     rendering::Color m_arrowColor = rendering::Color::FromHex(0x666666);
+    rendering::Color m_animBg = rendering::Color::Transparent();
 };
 
 /**
@@ -176,9 +185,11 @@ protected:
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
     void OnRender(rendering::IRenderContext* context) override;
     void OnRenderChildren(rendering::IRenderContext* context);
-    
+    void ApplyTheme() override;
+
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseLeave() override;
+    void OnKeyDown(KeyEventArgs& args) override;
 
 private:
     friend class MenuItem;
@@ -193,6 +204,7 @@ private:
     MenuItem* m_hoveredItem = nullptr;
     MenuItem* m_openSubmenuItem = nullptr;
     MenuItem* m_parentItem = nullptr;
+    int m_focusedIndex = -1;
     
     bool m_isOpen = false;
     float m_maxHeight = 400.0f;
@@ -232,9 +244,11 @@ protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
+    void OnKeyDown(KeyEventArgs& args) override;
 
 private:
     struct MenuEntry {
@@ -243,13 +257,14 @@ private:
         bool isHovered = false;
         bool isOpen = false;
     };
-    
+
     void OpenMenu(int index);
     void CloseAllMenus();
     int HitTestMenu(float x);
-    
+
     std::vector<MenuEntry> m_menus;
     int m_openMenuIndex = -1;
+    bool m_isKeyboardNavigating = false;
     float m_menuHeight = 28.0f;
     float m_padding = 12.0f;
     

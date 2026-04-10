@@ -5,6 +5,8 @@
 #include "Interfaces/IRenderable.h"
 #include "Interfaces/ILayoutable.h"
 #include "IRenderContext.h"
+#include "Theme.h"
+#include "Window.h"
 #include <windows.h> // For VK_ constants
 
 namespace luaui {
@@ -140,12 +142,12 @@ void TreeViewItem::OnClick() {
 
 void TreeViewItem::OnMouseEnter() {
     m_isHovered = true;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void TreeViewItem::OnMouseLeave() {
     m_isHovered = false;
-    UpdateVisualState();
+    AnimateBgTo(GetTargetBgColor(), 150.0f);
 }
 
 void TreeViewItem::OnMouseDown(MouseEventArgs& args) {
@@ -172,6 +174,55 @@ void TreeViewItem::UpdateVisualState() {
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
+}
+
+void TreeViewItem::ApplyTheme() {
+    auto& t = Theme::GetCurrent();
+    using namespace theme;
+    m_hoverColor = t.GetColor(kTreeViewItemHoverBg);
+    m_selectedColor = t.GetColor(kTreeViewItemSelectedBg);
+    m_textColor = t.GetColor(kTreeViewItemText);
+    m_selectedTextColor = t.GetColor(kTreeViewItemSelectedText);
+    m_expandButtonColor = t.GetColor(kTreeViewExpandBtn);
+    m_animBg = m_bgColor;
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
+}
+
+rendering::Color TreeViewItem::GetTargetBgColor() const {
+    if (m_isSelected) return m_selectedColor;
+    if (m_isHovered) return m_hoverColor;
+    return m_bgColor;
+}
+
+void TreeViewItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
+    auto* wnd = GetWindow();
+    if (!wnd || !wnd->GetTimeline()) {
+        m_animBg = target;
+        if (auto* render = GetRender()) render->Invalidate();
+        return;
+    }
+
+    auto anim = wnd->GetTimeline()->CreateAnimation();
+    anim->SetDuration(durationMs);
+    anim->SetEasing(rendering::Easing::CubicOut);
+    anim->SetFillMode(rendering::FillMode::Forwards);
+
+    rendering::Color start = m_animBg;
+    anim->SetStartValue(rendering::AnimationValue(start));
+    anim->SetEndValue(rendering::AnimationValue(target));
+
+    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
+        m_animBg = val.AsColor();
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    });
+
+    anim->Play();
+    wnd->GetTimeline()->Add(std::move(anim));
+    wnd->StartAnimTimer();
 }
 
 void TreeViewItem::DrawExpandButton(rendering::IRenderContext* context, const rendering::Rect& rect) {
@@ -217,13 +268,8 @@ void TreeViewItem::OnRender(rendering::IRenderContext* context) {
     
     auto rect = render->GetRenderRect();
     
-    // 绘制背景
-    rendering::Color bgColor = m_bgColor;
-    if (m_isSelected) {
-        bgColor = m_selectedColor;
-    } else if (m_isHovered) {
-        bgColor = m_hoverColor;
-    }
+    // 绘制背景（使用动画颜色）
+    rendering::Color bgColor = m_animBg;
     
     if (bgColor.a > 0) {
         auto bgBrush = context->CreateSolidColorBrush(bgColor);

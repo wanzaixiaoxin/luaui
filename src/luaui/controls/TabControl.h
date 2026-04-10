@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "../rendering/Types.h"
+#include "../style/ThemeKeys.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -54,7 +55,8 @@ protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseEnter() override;
     void OnMouseLeave() override;
     void OnMouseDown(MouseEventArgs& args) override;
@@ -63,6 +65,8 @@ private:
     void UpdateVisualState();
     void DrawCloseButton(rendering::IRenderContext* context, const rendering::Rect& rect);
     bool HitTestCloseButton(float x, float y);
+    rendering::Color GetTargetBgColor() const;
+    void AnimateBgTo(const rendering::Color& target, float durationMs);
     
     std::wstring m_header;
     std::wstring m_icon;
@@ -89,7 +93,8 @@ private:
     rendering::Color m_selectedTextColor = rendering::Color::Black();
     rendering::Color m_closeButtonColor = rendering::Color::FromHex(0x999999);
     rendering::Color m_closeButtonHoverColor = rendering::Color::FromHex(0xE81123);
-    
+    rendering::Color m_animBg = rendering::Color::Transparent();
+
     friend class TabControl;
 };
 
@@ -152,9 +157,11 @@ protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
+    void OnKeyDown(KeyEventArgs& args) override;
 
 private:
     friend class TabItem;
@@ -181,6 +188,7 @@ private:
     float m_tabHeight = 32.0f;
     float m_tabWidth = 0;        // 0 = 自动宽度
     float m_tabSpacing = 0;      // 标签间距
+    float m_scrollOffset = 0.0f; // 溢出滚动偏移
     
     // 颜色
     rendering::Color m_tabStripBg = rendering::Color::FromHex(0xF0F0F0);

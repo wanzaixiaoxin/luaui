@@ -4,6 +4,7 @@
 #include "Button.h"
 #include "../rendering/Types.h"
 #include "layouts/DockPanel.h"
+#include "../style/ThemeKeys.h"
 #include <functional>
 #include <memory>
 #include <string>
@@ -77,7 +78,8 @@ protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
-    
+    void ApplyTheme() override;
+
     void OnMouseEnter() override;
     void OnMouseLeave() override;
     void OnMouseDown(MouseEventArgs& args) override;
@@ -88,6 +90,8 @@ private:
     void UpdateVisualState();
     void DrawIcon(rendering::IRenderContext* context, const rendering::Rect& rect);
     void DrawDropDownArrow(rendering::IRenderContext* context, const rendering::Rect& rect);
+    rendering::Color GetTargetBgColor() const;
+    void AnimateBgTo(const rendering::Color& target, float durationMs);
     
     std::wstring m_text;
     std::wstring m_icon;
@@ -126,6 +130,7 @@ private:
     rendering::Color m_checkedBg = rendering::Color::FromHex(0xCCE4F7);
     rendering::Color m_textColor = rendering::Color::Black();
     rendering::Color m_disabledColor = rendering::Color::FromHex(0x999999);
+    rendering::Color m_animBg = rendering::Color::Transparent();
 };
 
 /**
@@ -134,13 +139,14 @@ private:
 class ToolbarSeparator : public luaui::Control {
 public:
     ToolbarSeparator();
-    
+
     std::string GetTypeName() const override { return "ToolbarSeparator"; }
 
 protected:
     void InitializeComponents() override;
     void OnRender(rendering::IRenderContext* context) override;
     rendering::Size OnMeasure(const rendering::Size& availableSize) override;
+    void ApplyTheme() override;
 
 private:
     float m_width = 8.0f;
@@ -214,20 +220,26 @@ protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
+    void ApplyTheme() override;
+    void OnKeyDown(KeyEventArgs& args) override;
 
 private:
     void UpdateItemDisplay();
-    
+    int GetFocusableItemCount() const;
+
     std::vector<std::shared_ptr<Control>> m_items;
     Orientation m_orientation = Orientation::Horizontal;
     ToolbarStyle m_style = ToolbarStyle::Default;
-    
+
     float m_thickness = 32.0f;      // 水平=高度，垂直=宽度
     float m_itemSpacing = 2.0f;
     bool m_allowOverflow = true;
     bool m_showTextLabels = true;
     bool m_showIcons = true;
-    
+
+    // 键盘焦点
+    int m_focusedItemIndex = -1;
+
     // 颜色
     rendering::Color m_bgColor = rendering::Color::FromHex(0xF5F5F5);
     rendering::Color m_borderColor = rendering::Color::FromHex(0xCCCCCC);
