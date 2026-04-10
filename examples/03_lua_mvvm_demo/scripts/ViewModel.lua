@@ -295,7 +295,30 @@ function ViewModel:BtnClickCountCommand()
 end
 
 -- ============================================================================
+-- MenuBar / SideBar / StatusBar 命令
+-- ============================================================================
+ViewModel.MenuAction = "None"
+
+function ViewModel:SwitchToLightCommand()
+    self.CurrentTheme = "Light"
+    if Theme and Theme.SetCurrent then Theme.SetCurrent("Light") end
+    self:UpdateStatus()
+end
+
+function ViewModel:SwitchToDarkCommand()
+    self.CurrentTheme = "Dark"
+    if Theme and Theme.SetCurrent then Theme.SetCurrent("Dark") end
+    self:UpdateStatus()
+end
+
+function ViewModel:AboutLuaUICommand()
+    self.MenuAction = "About: LuaUI v1.0 - MVVM Demo"
+    self:UpdateStatus()
+end
+
+-- ============================================================================
 -- Items 相关 - 列表控件演示
+-- ============================================================================
 -- ============================================================================
 ViewModel.Items = {
     { Name = "Apple", Category = "Fruit", Value = 10, Stock = 32 },
@@ -368,12 +391,12 @@ end
 -- 辅助方法
 -- ============================================================================
 function ViewModel:UpdateStatus()
-    self.Status = string.format("Counter: %d | Feature: %s | Clicks: %d | LiveText: %d | Password: %d",
+    self.Status = string.format("Counter: %d | Feature: %s | Clicks: %d | Theme: %s | %s",
         self.Counter,
         self.IsFeatureEnabled and "ON" or "OFF",
         self.BtnClickCount,
-        char_count(self.LiveText),
-        char_count(self.PasswordText))
+        self.CurrentTheme,
+        self.MenuAction or "")
 end
 
 -- ============================================================================

@@ -709,6 +709,11 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
             BindButtonText(button, expression);
         }
     }
+    else if (auto menuItem = std::dynamic_pointer_cast<luaui::controls::MenuItem>(control)) {
+        if (propertyName == "Command") {
+            BindMenuItemCommand(menuItem, expression);
+        }
+    }
 }
 
 // ============================================================================
@@ -1509,6 +1514,43 @@ void MvvmXmlLoader::BindButtonCommand(std::shared_ptr<luaui::controls::Button> b
     }
     
     utils::Logger::InfoF("[MVVM] Button command '%s' bound successfully", commandName.c_str());
+}
+
+// ============================================================================
+// MenuItem 绑定 - Command（点击命令）
+// ============================================================================
+void MvvmXmlLoader::BindMenuItemCommand(std::shared_ptr<luaui::controls::MenuItem> menuItem,
+                                         const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto commandName = expression.path;
+
+    utils::Logger::InfoF("[MVVM] Binding MenuItem.Command to %s", commandName.c_str());
+
+    if (!dataContext) {
+        utils::Logger::Error("[MVVM] No DataContext available for MenuItem Command binding");
+        return;
+    }
+
+    auto luaNotifier = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
+    if (luaNotifier) {
+        if (!luaNotifier->HasFunction(commandName)) {
+            utils::Logger::Warning("[MVVM] Command '" + commandName + "' not found in Lua ViewModel");
+            return;
+        }
+
+        menuItem->Click.Add([luaNotifier, commandName](luaui::controls::MenuItem*) {
+            utils::Logger::InfoF("[MVVM] Executing Lua command (MenuItem): %s", commandName.c_str());
+            bool result = luaNotifier->CallFunction(commandName);
+            if (!result) {
+                utils::Logger::Warning("[MVVM] Lua command '" + commandName + "' execution failed");
+            }
+        });
+    } else {
+        utils::Logger::Warning("[MVVM] MenuItem Command binding only supported with Lua ViewModel");
+        return;
+    }
+
+    utils::Logger::InfoF("[MVVM] MenuItem command '%s' bound successfully", commandName.c_str());
 }
 
 // ============================================================================

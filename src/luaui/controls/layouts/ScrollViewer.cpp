@@ -72,10 +72,6 @@ rendering::Size ScrollViewer::OnMeasureChildren(const rendering::Size& available
 }
 
 rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize) {
-    auto* render = GetRender();
-    if (!render) return finalSize;
-
-    rendering::Rect contentRect = render->GetRenderRect();
     m_viewportWidth = finalSize.width;
     m_viewportHeight = finalSize.height;
 
@@ -83,8 +79,8 @@ rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize
         if (!m_children[i]->GetIsVisible()) continue;
         auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
-            float x = contentRect.x - m_horizontalOffset;
-            float y = contentRect.y - m_verticalOffset;
+            float x = -m_horizontalOffset;
+            float y = -m_verticalOffset;
             layoutable->Arrange(rendering::Rect(x, y, m_extentWidth, m_extentHeight));
         }
     }
@@ -96,18 +92,16 @@ rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize
 // ============================================================================
 
 void ScrollViewer::GlobalToLocal(float gx, float gy, float& lx, float& ly) {
-    float ox = 0, oy = 0;
-    Control* cur = this;
-    while (cur) {
-        if (auto* r = cur->GetRender()) {
-            ox += r->GetRenderRect().x;
-            oy += r->GetRenderRect().y;
-        }
-        auto p = cur->GetParent();
-        cur = p ? dynamic_cast<Control*>(p.get()) : nullptr;
+    // 将全局窗口坐标转换为ScrollViewer本地坐标
+    auto* render = GetRender();
+    if (render) {
+        auto rect = render->GetRenderRect();
+        lx = gx - rect.x;
+        ly = gy - rect.y;
+    } else {
+        lx = gx;
+        ly = gy;
     }
-    lx = gx - ox;
-    ly = gy - oy;
 }
 
 bool ScrollViewer::NeedVScroll() const {
@@ -279,26 +273,24 @@ void ScrollViewer::OnMouseMove(controls::MouseEventArgs& args) {
     if (!NeedVScroll()) return;
 
     if (m_dragging) {
-        // drag thumb
         auto* render = GetRender();
         if (!render) return;
 
         float vpH = render->GetRenderRect().height;
         float trackH = vpH - 2 * SB_MARGIN;
-        float thumbY, thumbH;
+        float thumbY = 0, thumbH = 0;
         CalcThumb(thumbY, thumbH);
         float scrollRange = trackH - thumbH;
         if (scrollRange <= 0) return;
 
-        float dy = args.y - m_dragStartY;
+        float deltaY = args.y - m_dragStartY;
         float maxOff = std::max(0.0f, m_extentHeight - m_viewportHeight);
-        float newOff = m_dragStartOffset + dy * (maxOff / scrollRange);
+        float newOff = m_dragStartOffset + deltaY * (maxOff / scrollRange);
         ApplyOffset(newOff);
         args.Handled = true;
         return;
     }
 
-    // detect hover
     bool wasHovered = m_sbHovered;
     m_sbHovered = HitTestTrack(args.x, args.y);
     if (m_sbHovered != wasHovered) {

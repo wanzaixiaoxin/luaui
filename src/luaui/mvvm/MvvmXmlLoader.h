@@ -140,6 +140,8 @@ private:
                            const BindingExpression& expression);
     void BindButtonText(std::shared_ptr<luaui::controls::Button> button,
                         const BindingExpression& expression);
+    void BindMenuItemCommand(std::shared_ptr<luaui::controls::MenuItem> menuItem,
+                             const BindingExpression& expression);
 };
 
 // 创建 MVVM XML 加载器

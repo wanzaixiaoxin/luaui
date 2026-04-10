@@ -88,14 +88,17 @@ void SideBar::ApplyTheme() {
 
 rendering::Size SideBar::OnMeasureChildren(const rendering::Size& availableSize) {
     float w = m_isCollapsed ? m_collapsedWidth : m_width;
+    float h = m_headerHeight;
     if (m_content && !m_isCollapsed) {
         if (auto* layoutable = m_content->AsLayoutable()) {
+            float availH = std::min(availableSize.height, 10000.0f) - m_headerHeight;
             interfaces::LayoutConstraint constraint;
-            constraint.available = rendering::Size(w, availableSize.height - m_headerHeight);
+            constraint.available = rendering::Size(w, availH);
             layoutable->Measure(constraint);
+            h += layoutable->GetDesiredSize().height;
         }
     }
-    return rendering::Size(w, availableSize.height);
+    return rendering::Size(w, h);
 }
 
 rendering::Size SideBar::OnArrangeChildren(const rendering::Size& finalSize) {
@@ -121,43 +124,43 @@ void SideBar::OnRenderChildren(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
 
-    auto rect = render->GetRenderRect();
+    float w = render->GetRenderRect().width;
+    float h = render->GetRenderRect().height;
 
-    // background
+    // background (local coordinates)
     auto bgBrush = context->CreateSolidColorBrush(m_bgColor);
     if (bgBrush) {
-        context->FillRectangle(rect, bgBrush.get());
+        context->FillRectangle(rendering::Rect(0, 0, w, h), bgBrush.get());
     }
 
-    // right border
+    // right border (local coordinates)
     auto borderBrush = context->CreateSolidColorBrush(m_sbBorderColor);
     if (borderBrush) {
         context->DrawLine(
-            rendering::Point(rect.x + rect.width - 1, rect.y),
-            rendering::Point(rect.x + rect.width - 1, rect.y + rect.height),
+            rendering::Point(w - 1, 0),
+            rendering::Point(w - 1, h),
             borderBrush.get(), 1.0f);
     }
 
-    // header area
-    rendering::Rect headerRect(rect.x, rect.y, rect.width, m_headerHeight);
-    DrawHeader(context, headerRect);
+    // header area (local coordinates)
+    DrawHeader(context, rendering::Rect(0, 0, w, m_headerHeight));
 
-    // collapse button
+    // collapse button (local coordinates)
     if (!m_isCollapsed) {
         float btnSize = 16.0f;
-        float btnX = rect.x + rect.width - btnSize - 8;
-        float btnY = rect.y + (m_headerHeight - btnSize) / 2;
+        float btnX = w - btnSize - 8;
+        float btnY = (m_headerHeight - btnSize) / 2;
         DrawCollapseButton(context, rendering::Rect(btnX, btnY, btnSize, btnSize));
     }
 
-    // title text
+    // title text (local coordinates)
     if (!m_isCollapsed && !m_title.empty()) {
         auto textBrush = context->CreateSolidColorBrush(m_headerText);
         auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", 14.0f);
         if (textBrush && textFormat) {
-            float textY = rect.y + (m_headerHeight - 14.0f) / 2;
+            float textY = (m_headerHeight - 14.0f) / 2;
             context->DrawTextString(m_title, textFormat.get(),
-                                    rendering::Point(rect.x + 12, textY), textBrush.get());
+                                    rendering::Point(12, textY), textBrush.get());
         }
     }
 
@@ -188,14 +191,27 @@ void SideBar::DrawCollapseButton(rendering::IRenderContext* context, const rende
 bool SideBar::HitTestCollapseButton(float x, float y) {
     auto* render = GetRender();
     if (!render) return false;
-    auto rect = render->GetRenderRect();
+
+    rendering::Rect rect = render->GetRenderRect();
+    float w = rect.width;
 
     float btnSize = 16.0f;
-    float btnX = rect.x + rect.width - btnSize - 8;
+    float btnX = rect.x + w - btnSize - 8;
     float btnY = rect.y + (m_headerHeight - btnSize) / 2;
 
     return x >= btnX && x <= btnX + btnSize &&
            y >= btnY && y <= btnY + btnSize;
+}
+
+void SideBar::OnMouseMove(MouseEventArgs& args) {
+    bool wasHovered = m_isHeaderHovered;
+    m_isHeaderHovered = HitTestCollapseButton(args.x, args.y);
+    
+    if (wasHovered != m_isHeaderHovered) {
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
+    }
 }
 
 void SideBar::OnMouseDown(MouseEventArgs& args) {

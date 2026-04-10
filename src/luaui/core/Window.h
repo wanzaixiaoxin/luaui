@@ -90,6 +90,10 @@ public:
     /** @brief 停止动画定时器（无活跃动画时自动调用以节省 CPU） */
     void StopAnimTimer();
 
+    // ========== 无框窗口 ==========
+    /** @brief 将窗口框架扩展到客户区，隐藏系统标题栏 */
+    void SetExtendFrameIntoClientArea(bool enable);
+
 protected:
     // ========== 生命周期回调 ==========
     virtual void OnLoaded() {}
@@ -178,6 +182,9 @@ private:
 
     // 主题回调
     size_t m_themeCallbackId = 0;
+
+    // 无框窗口
+    bool m_extendFrame = false;
 
     static const wchar_t* s_className;
     static bool s_classRegistered;

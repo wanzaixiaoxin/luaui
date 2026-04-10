@@ -459,6 +459,7 @@ void Window::HandleMouseMove(float x, float y) {
     }
 
     if (control) {
+        // 首先处理命中的控件
         if (auto* inputComp = control->GetInput()) {
             if (m_lastMouseOver != control) {
                 inputComp->RaiseMouseEnter();
@@ -467,14 +468,15 @@ void Window::HandleMouseMove(float x, float y) {
             inputComp->RaiseMouseMove(args);
         }
 
-        // 向父级链传递 MouseMove，让容器控件（如 ScrollViewer）能检测 hover
+        // 向父级链传递 MouseMove，让容器控件（如 ScrollViewer、MenuBar）能检测 hover
         controls::MouseEventArgs parentArgs{x, y, 0, false};
         auto parent = control->GetParent();
         Control* cur = parent ? static_cast<Control*>(parent.get()) : nullptr;
         while (cur) {
-            if (!cur->GetInput()) {
-                cur->OnMouseMove(parentArgs);
-            }
+            // 始终调用OnMouseMove，让控件自己决定是否处理
+            // ScrollViewer等容器需要接收事件来检测滚动条hover
+            // MenuBar需要接收事件来检测窗口按钮hover
+            cur->OnMouseMove(parentArgs);
             auto p = cur->GetParent();
             cur = p ? static_cast<Control*>(p.get()) : nullptr;
         }
@@ -714,6 +716,30 @@ void Window::UpdateTitleBarTheme() {
                  SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
+void Window::SetExtendFrameIntoClientArea(bool enable) {
+    m_extendFrame = enable;
+    if (!m_hWnd) return;
+
+    if (enable) {
+        // Remove caption to hide title bar, keep frame for resize/shadow/buttons
+        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        style &= ~WS_CAPTION;
+        style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+        SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+        // Extend DWM frame into client area for glass/shadow effect
+        MARGINS margins = { -1, -1, -1, -1 };
+        DwmExtendFrameIntoClientArea(m_hWnd, &margins);
+
+        // Force window to recalculate frame
+        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+                     SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    } else {
+        MARGINS margins = { 0, 0, 0, 0 };
+        DwmExtendFrameIntoClientArea(m_hWnd, &margins);
+    }
+}
+
 // ============================================================================
 // 窗口过程
 // ============================================================================
@@ -769,6 +795,23 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
         case WM_KILLFOCUS: {
             Logger::Debug("[Window] WM_KILLFOCUS");
             return 0;
+        }
+
+        case WM_NCHITTEST: {
+            if (!m_extendFrame) break;
+            LRESULT hit = DefWindowProc(m_hWnd, WM_NCHITTEST, wP, lP);
+            if (hit == HTCLIENT) {
+                POINT pt = { GET_X_LPARAM(lP), GET_Y_LPARAM(lP) };
+                ScreenToClient(m_hWnd, &pt);
+                // 顶部菜单栏区域允许拖拽窗体（除了窗口按钮区域）
+                if (pt.y >= 0 && pt.y < 32) {
+                    // 检查是否点击了窗口按钮区域（右侧135px）
+                    if (pt.x < static_cast<LONG>(m_width) - 135) {
+                        return HTCAPTION;
+                    }
+                }
+            }
+            return hit;
         }
         
         // ========== 鼠标事件 ==========

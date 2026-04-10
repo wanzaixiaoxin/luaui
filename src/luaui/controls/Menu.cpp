@@ -626,16 +626,22 @@ void MenuBar::ApplyTheme() {
 
 void MenuBar::InitializeComponents() {
     Panel::InitializeComponents();
+
+    // 添加InputComponent以接收鼠标事件
+    GetComponents().AddComponent<components::InputComponent>(this);
 }
 
 void MenuBar::AddMenu(const std::wstring& header, const std::shared_ptr<Menu>& menu) {
     if (!menu) return;
-    
+
     MenuEntry entry;
     entry.header = header;
     entry.menu = menu;
     m_menus.push_back(entry);
-    
+
+    // Menu不作为Panel的子控件添加，避免被裁剪
+    // Menu将在OpenMenu时临时添加到窗口根控件
+
     if (auto* layout = GetLayout()) {
         layout->InvalidateMeasure();
     }
@@ -662,31 +668,40 @@ void MenuBar::ClearMenus() {
 
 void MenuBar::OpenMenu(int index) {
     if (index < 0 || index >= static_cast<int>(m_menus.size())) return;
-    
+
     // 关闭其他菜单
     if (m_openMenuIndex >= 0 && m_openMenuIndex != index) {
         m_menus[m_openMenuIndex].isOpen = false;
         m_menus[m_openMenuIndex].menu->Close();
     }
-    
+
     m_openMenuIndex = index;
     m_menus[index].isOpen = true;
-    
+
     // 计算菜单位置
-    rendering::Rect barRect;
-    if (auto* renderable = AsRenderable()) {
-        barRect = renderable->GetRenderRect();
-    }
-    
-    float x = barRect.x;
+    auto* barRender = GetRender();
+    if (!barRender) return;
+
+    rendering::Rect barRect = barRender->GetRenderRect();
+
+    float x = barRect.x + m_padding;
     for (int i = 0; i < index; ++i) {
         x += static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
     }
-    
-    m_menus[index].menu->OpenAt(x, barRect.y + barRect.height);
-    
-    if (auto* render = GetRender()) {
-        render->Invalidate();
+
+    // 先测量Menu的大小
+    auto& menu = m_menus[index].menu;
+    if (auto* layout = menu->GetLayout()) {
+        interfaces::LayoutConstraint constraint;
+        constraint.available = rendering::Size(barRect.width, 400); // 最大高度400
+        constraint.maxHeight = 400;
+        layout->Measure(constraint);
+    }
+
+    menu->OpenAt(x, barRect.y + barRect.height);
+
+    if (auto* r = GetRender()) {
+        r->Invalidate();
     }
 }
 
@@ -706,12 +721,17 @@ void MenuBar::CloseAllMenus() {
     }
 }
 
-int MenuBar::HitTestMenu(float x) {
-    rendering::Rect barRect;
-    if (auto* renderable = AsRenderable()) {
-        barRect = renderable->GetRenderRect();
+int MenuBar::HitTestMenu(float x, float y) {
+    auto* render = GetRender();
+    if (!render) return -1;
+
+    rendering::Rect barRect = render->GetRenderRect();
+
+    // 检查Y坐标是否在菜单栏范围内
+    if (y < barRect.y || y >= barRect.y + barRect.height) {
+        return -1;
     }
-    
+
     float currentX = barRect.x + m_padding;
     for (size_t i = 0; i < m_menus.size(); ++i) {
         float menuWidth = static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
@@ -760,6 +780,10 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
                           borderBrush.get(), 1.0f);
     }
     
+    // 计算窗口按钮占用的宽度
+    float btnAreaWidth = m_showWindowControls ? (m_btnWidth * 3) : 0;
+    float maxMenuWidth = barRect.width - btnAreaWidth - m_padding * 2;
+    
     // 绘制菜单项
     float x = barRect.x + m_padding;
     auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
@@ -767,6 +791,12 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     for (size_t i = 0; i < m_menus.size(); ++i) {
         const auto& entry = m_menus[i];
         float menuWidth = static_cast<float>(entry.header.length()) * m_fontSize * 0.6f + m_padding * 2;
+        
+        // 确保不超出可用空间
+        if (x + menuWidth > barRect.x + barRect.width - btnAreaWidth - m_padding) {
+            break;
+        }
+        
         rendering::Rect menuRect(x, barRect.y, menuWidth, barRect.height);
         
         // 绘制背景
@@ -792,30 +822,175 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
         
         x += menuWidth;
     }
+    
+    // 绘制窗口控制按钮
+    DrawWindowButtons(context, barRect);
+
+    // 手动渲染打开的Menu（Menu不作为子控件，避免被裁剪）
+    if (m_openMenuIndex >= 0 && m_openMenuIndex < static_cast<int>(m_menus.size())) {
+        auto& menu = m_menus[m_openMenuIndex].menu;
+        if (menu && menu->GetIsVisible()) {
+            // 获取Menu的渲染矩形
+            auto* menuRender = menu->GetRender();
+            if (menuRender) {
+                const auto& menuRect = menuRender->GetRenderRect();
+                // 渲染Menu
+                menu->OnRender(context);
+            }
+        }
+    }
+}
+
+MenuBar::WindowButton MenuBar::HitTestWindowButton(float x, float y) {
+    if (!m_showWindowControls) return WindowButton::None;
+
+    auto* render = GetRender();
+    if (!render) return WindowButton::None;
+
+    rendering::Rect barRect = render->GetRenderRect();
+    float btnY = barRect.y;
+    float btnH = barRect.height;
+
+    // 按钮从右向左排列：关闭、最大化、最小化
+    float closeX = barRect.x + barRect.width - m_btnWidth;
+    float maxX = closeX - m_btnWidth;
+    float minX = maxX - m_btnWidth;
+
+    // 检查Y坐标是否在菜单栏范围内
+    if (y >= btnY && y < btnY + btnH) {
+        // 检查X坐标落在哪个按钮区域
+        if (x >= closeX && x < closeX + m_btnWidth) return WindowButton::Close;
+        if (x >= maxX && x < maxX + m_btnWidth) return WindowButton::Maximize;
+        if (x >= minX && x < minX + m_btnWidth) return WindowButton::Minimize;
+    }
+    return WindowButton::None;
+}
+
+void MenuBar::DrawWindowButtons(rendering::IRenderContext* context, const rendering::Rect& rect) {
+    if (!m_showWindowControls) return;
+    
+    float btnY = rect.y;
+    float btnH = rect.height;
+    
+    // 按钮从右向左排列：最小化、最大化、关闭
+    float closeX = rect.x + rect.width - m_btnWidth;
+    float maxX = closeX - m_btnWidth;
+    float minX = maxX - m_btnWidth;
+    
+    auto textFormat = context->CreateTextFormat(L"Segoe MDL2 Assets", 10.0f);
+    if (!textFormat) {
+        textFormat = context->CreateTextFormat(L"Microsoft YaHei", 10.0f);
+    }
+    if (textFormat) {
+        textFormat->SetTextAlignment(rendering::TextAlignment::Center);
+        textFormat->SetParagraphAlignment(rendering::ParagraphAlignment::Center);
+    }
+    
+    // 绘制最小化按钮
+    rendering::Color minBg = (m_pressedBtn == WindowButton::Minimize) ? m_btnPressBg :
+                              (m_hoveredBtn == WindowButton::Minimize) ? m_btnHoverBg : rendering::Color::Transparent();
+    auto minBrush = context->CreateSolidColorBrush(minBg);
+    if (minBrush) {
+        context->FillRectangle(rendering::Rect(minX, btnY, m_btnWidth, btnH), minBrush.get());
+    }
+    auto minTextBrush = context->CreateSolidColorBrush(m_textColor);
+    if (minTextBrush && textFormat) {
+        context->DrawTextString(L"\uE921", textFormat.get(), 
+                                rendering::Rect(minX, btnY, m_btnWidth, btnH), minTextBrush.get());
+    }
+    
+    // 绘制最大化按钮
+    rendering::Color maxBg = (m_pressedBtn == WindowButton::Maximize) ? m_btnPressBg :
+                              (m_hoveredBtn == WindowButton::Maximize) ? m_btnHoverBg : rendering::Color::Transparent();
+    auto maxBrush = context->CreateSolidColorBrush(maxBg);
+    if (maxBrush) {
+        context->FillRectangle(rendering::Rect(maxX, btnY, m_btnWidth, btnH), maxBrush.get());
+    }
+    auto maxTextBrush = context->CreateSolidColorBrush(m_textColor);
+    if (maxTextBrush && textFormat) {
+        context->DrawTextString(L"\uE922", textFormat.get(),
+                                rendering::Rect(maxX, btnY, m_btnWidth, btnH), maxTextBrush.get());
+    }
+    
+    // 绘制关闭按钮
+    rendering::Color closeBg = (m_pressedBtn == WindowButton::Close) ? m_closePressBg :
+                                (m_hoveredBtn == WindowButton::Close) ? m_closeHoverBg : rendering::Color::Transparent();
+    auto closeBrush = context->CreateSolidColorBrush(closeBg);
+    if (closeBrush) {
+        context->FillRectangle(rendering::Rect(closeX, btnY, m_btnWidth, btnH), closeBrush.get());
+    }
+    rendering::Color closeTextColor = (m_hoveredBtn == WindowButton::Close) ? rendering::Color::White() : m_textColor;
+    auto closeTextBrush = context->CreateSolidColorBrush(closeTextColor);
+    if (closeTextBrush && textFormat) {
+        context->DrawTextString(L"\uE8BB", textFormat.get(),
+                                rendering::Rect(closeX, btnY, m_btnWidth, btnH), closeTextBrush.get());
+    }
+}
+
+void MenuBar::ExecuteWindowButton(WindowButton btn) {
+    auto* wnd = GetWindow();
+    if (!wnd) return;
+    
+    HWND hwnd = wnd->GetHandle();
+    if (!hwnd) return;
+    
+    switch (btn) {
+        case WindowButton::Minimize:
+            ShowWindow(hwnd, SW_MINIMIZE);
+            break;
+        case WindowButton::Maximize:
+            if (IsZoomed(hwnd)) {
+                ShowWindow(hwnd, SW_RESTORE);
+            } else {
+                ShowWindow(hwnd, SW_MAXIMIZE);
+            }
+            break;
+        case WindowButton::Close:
+            PostMessage(hwnd, WM_CLOSE, 0, 0);
+            break;
+        default:
+            break;
+    }
 }
 
 void MenuBar::OnMouseMove(MouseEventArgs& args) {
-    int index = HitTestMenu(args.x);
-    
+    int index = HitTestMenu(args.x, args.y);
+
     for (size_t i = 0; i < m_menus.size(); ++i) {
         bool wasHovered = m_menus[i].isHovered;
         m_menus[i].isHovered = (static_cast<int>(i) == index);
-        
+
         // 如果有一个菜单已打开，悬停到其他菜单时自动打开
         if (m_openMenuIndex >= 0 && m_menus[i].isHovered && !wasHovered && static_cast<int>(i) != m_openMenuIndex) {
             OpenMenu(static_cast<int>(i));
         }
     }
-    
+
+    // 检测窗口按钮悬停
+    WindowButton prevHovered = m_hoveredBtn;
+    m_hoveredBtn = HitTestWindowButton(args.x, args.y);
+    if (prevHovered != m_hoveredBtn) {
+        if (auto* render = GetRender()) render->Invalidate();
+    }
+
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
-    
+
     args.Handled = true;
 }
 
 void MenuBar::OnMouseDown(MouseEventArgs& args) {
-    int index = HitTestMenu(args.x);
+    // 先检测窗口按钮
+    WindowButton btn = HitTestWindowButton(args.x, args.y);
+    if (btn != WindowButton::None) {
+        m_pressedBtn = btn;
+        if (auto* render = GetRender()) render->Invalidate();
+        args.Handled = true;
+        return;
+    }
+    
+    int index = HitTestMenu(args.x, args.y);
     if (index >= 0) {
         if (m_openMenuIndex == index) {
             // 点击已打开的菜单，关闭它
@@ -825,6 +1000,18 @@ void MenuBar::OnMouseDown(MouseEventArgs& args) {
         }
     } else {
         CloseAllMenus();
+    }
+    args.Handled = true;
+}
+
+void MenuBar::OnMouseUp(MouseEventArgs& args) {
+    if (m_pressedBtn != WindowButton::None) {
+        WindowButton btn = HitTestWindowButton(args.x, args.y);
+        if (btn == m_pressedBtn) {
+            ExecuteWindowButton(btn);
+        }
+        m_pressedBtn = WindowButton::None;
+        if (auto* render = GetRender()) render->Invalidate();
     }
     args.Handled = true;
 }

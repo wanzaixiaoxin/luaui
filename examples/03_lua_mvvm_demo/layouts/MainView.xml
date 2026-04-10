@@ -1,237 +1,282 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- LuaUI MVVM Demo Layout - Using StackPanel as root (Window is created by host) -->
-<!-- Click handler names match Lua function names ending with "Command" -->
-<ScrollViewer>
-<StackPanel Orientation="Vertical" Margin="24" Spacing="12">
+<!-- LuaUI MVVM Demo Layout - DockPanel root with window-level chrome -->
+<DockPanel>
 
-    <!-- Title + Theme Switcher -->
-    <Border Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="8">
-            <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold"/>
-            <TextBlock Text="{Binding Description}" FontSize="13"/>
+    <!-- 顶部菜单栏 -->
+    <MenuBar DockPanel.Dock="Top">
+        <Menu Header="文件">
+            <MenuItem Header="新建" InputGestureText="Ctrl+N"/>
+            <MenuItem Header="打开" InputGestureText="Ctrl+O"/>
+            <Separator/>
+            <MenuItem Header="退出"/>
+        </Menu>
+        <Menu Header="编辑">
+            <MenuItem Header="撤销" InputGestureText="Ctrl+Z"/>
+            <MenuItem Header="重做" InputGestureText="Ctrl+Y"/>
+            <Separator/>
+            <MenuItem Header="剪切" InputGestureText="Ctrl+X"/>
+            <MenuItem Header="复制" InputGestureText="Ctrl+C"/>
+            <MenuItem Header="粘贴" InputGestureText="Ctrl+V"/>
+        </Menu>
+        <Menu Header="主题">
+            <MenuItem Header="切换到浅色" Click="SwitchToLightCommand"/>
+            <MenuItem Header="切换到深色" Click="SwitchToDarkCommand"/>
+        </Menu>
+        <Menu Header="帮助">
+            <MenuItem Header="关于 LuaUI" Click="AboutLuaUICommand"/>
+        </Menu>
+    </MenuBar>
 
-            <!-- Theme Switcher -->
-            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                <TextBlock Text="Theme:" VerticalAlignment="Center" FontSize="13"/>
-                <TextBlock Text="{Binding CurrentTheme}" FontSize="13" FontWeight="Bold"/>
-                <Button Content="切换主题" Width="80" Click="ToggleThemeCommand"/>
-            </StackPanel>
+    <!-- 底部状态栏 -->
+    <StatusBar DockPanel.Dock="Bottom">
+        <StatusBarItem Text="就绪" Width="200"/>
+        <StatusBarItem ItemType="Spring"/>
+        <StatusBarItem Text="LuaUI v1.0" Width="100" ShowBorder="true"/>
+    </StatusBar>
+
+    <!-- 左侧导航栏 -->
+    <SideBar DockPanel.Dock="Left" Title="导航" Width="200" MinWidth="150" MaxWidth="300" Pinned="true">
+        <StackPanel Spacing="4" Margin="4">
+            <Button Content="首页" Width="180" Height="28"/>
+            <Button Content="计数器" Width="180" Height="28"/>
+            <Button Content="文本框测试" Width="180" Height="28"/>
+            <Button Content="按钮测试" Width="180" Height="28"/>
+            <Button Content="列表和表格" Width="180" Height="28"/>
         </StackPanel>
-    </Border>
+    </SideBar>
 
-    <!-- Counter Section -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
+    <!-- 主内容区 (最后一个子元素自动填充剩余空间) -->
+    <ScrollViewer>
+    <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
 
-            <StackPanel Orientation="Horizontal" Spacing="16">
-                <TextBlock Text="Count:" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Counter}" FontSize="32" FontWeight="Bold" Foreground="#2196F3"/>
+        <!-- 标题 + 主题切换 -->
+        <Border Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="8">
+                <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{Binding Description}" FontSize="13"/>
+
+                <!-- 主题切换 -->
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <TextBlock Text="Theme:" VerticalAlignment="Center" FontSize="13"/>
+                    <TextBlock Text="{Binding CurrentTheme}" FontSize="13" FontWeight="Bold"/>
+                    <Button Content="切换主题" Width="80" Click="ToggleThemeCommand"/>
+                </StackPanel>
             </StackPanel>
+        </Border>
 
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="-" Width="40" Click="DecrementCommand"/>
-                <Button Content="+" Width="40" Click="IncrementCommand"/>
-                <Button Content="Reset" Margin="16,0,0,0" Click="ResetCommand"/>
+        <!-- 计数器区域 -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="Count:" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Counter}" FontSize="32" FontWeight="Bold" Foreground="#2196F3"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="-" Width="40" Click="DecrementCommand"/>
+                    <Button Content="+" Width="40" Click="IncrementCommand"/>
+                    <Button Content="Reset" Margin="16,0,0,0" Click="ResetCommand"/>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
-    </Border>
+        </Border>
 
-    <!-- ================================================================== -->
-    <!-- TextBox 完整测试区域 -->
-    <!-- ================================================================== -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="TextBox 完整测试" FontWeight="SemiBold" FontSize="16"/>
-            <TextBlock Text="覆盖 TwoWay 绑定、双输入同步、MaxLength、Password、ReadOnly、程序化更新和长文本光标滚动。" FontSize="12" Foreground="#757575"/>
+        <!-- ================================================================== -->
+        <!-- TextBox 完整测试区域 -->
+        <!-- ================================================================== -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="TextBox 完整测试" FontWeight="SemiBold" FontSize="16"/>
+                <TextBlock Text="覆盖 TwoWay 绑定、双输入同步、MaxLength、Password、ReadOnly、程序化更新和长文本光标滚动。" FontSize="12" Foreground="#757575"/>
 
-            <TextBlock Text="1. TwoWay 绑定 + 双 TextBox 同步" FontSize="13" Foreground="#666666"/>
-            <TextBox Name="LiveTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
-                     Placeholder="Type here to test TwoWay binding, selection, undo/redo and clipboard."/>
-            <TextBox Name="MirrorTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
-                     Placeholder="Bound to the same LiveText property. Edit either box."/>
-            <TextBlock Text="{Binding LiveTextSummary}" FontSize="12" Foreground="#1976D2"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="写入问候语" Click="LoadGreetingCommand"/>
-                <Button Content="写入长文本" Click="LoadLongTextCommand"/>
-                <Button Content="写入中英混合" Click="LoadMixedTextCommand"/>
-                <Button Content="清空" Click="ClearLiveTextCommand"/>
+                <TextBlock Text="1. TwoWay 绑定 + 双 TextBox 同步" FontSize="13" Foreground="#666666"/>
+                <TextBox Name="LiveTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                         Placeholder="在此输入测试 TwoWay 绑定、选区、撤销重做和剪贴板。"/>
+                <TextBox Name="MirrorTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                         Placeholder="绑定到同一个 LiveText 属性，编辑任一文本框即可同步。"/>
+                <TextBlock Text="{Binding LiveTextSummary}" FontSize="12" Foreground="#1976D2"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="写入问候语" Click="LoadGreetingCommand"/>
+                    <Button Content="写入长文本" Click="LoadLongTextCommand"/>
+                    <Button Content="写入中英混合" Click="LoadMixedTextCommand"/>
+                    <Button Content="清空" Click="ClearLiveTextCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="2. MaxLength 限制 (12)" FontSize="13" Foreground="#666666"/>
+                <TextBox Name="LimitedTextBox" Width="320" Height="32" Text="{Binding LimitedText, Mode=TwoWay}"
+                         MaxLength="12" Placeholder="MaxLength = 12，输入和粘贴都会被截断。"/>
+                <TextBlock Text="{Binding LimitedTextSummary}" FontSize="12" Foreground="#E65100"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="填充短样例" Click="FillLimitedSampleCommand"/>
+                    <Button Content="清空限制框" Click="ClearLimitedTextCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="3. Password 模式" FontSize="13" Foreground="#666666"/>
+                <TextBox Name="PasswordTextBox" Width="320" Height="32" Text="{Binding PasswordText, Mode=TwoWay}"
+                         IsPassword="True" MaxLength="24" Placeholder="密码模式已启用。"/>
+                <TextBlock Text="{Binding PasswordSummary}" FontSize="12" Foreground="#8E24AA"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="填充示例密码" Click="FillPasswordSampleCommand"/>
+                    <Button Content="清空密码" Click="ClearPasswordCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="4. ReadOnly 文本框" FontSize="13" Foreground="#666666"/>
+                <TextBox Name="ReadOnlyTextBox" Width="520" Height="32" Text="{Binding ReadOnlyText}"
+                         IsReadOnly="True" Placeholder="此字段为只读，仅可通过 Lua 代码修改。"/>
+                <TextBlock Text="{Binding ReadOnlySummary}" FontSize="12" Foreground="#546E7A"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="加载短文本" Click="LoadReadonlyShortCommand"/>
+                    <Button Content="加载长文本" Click="LoadReadonlyLongCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="5. 长文本滚动 / Home End / Ctrl 导航" FontSize="13" Foreground="#666666"/>
+                <TextBox Name="ScrollTextBox" Width="520" Height="32" Text="{Binding ScrollText, Mode=TwoWay}"
+                         Placeholder="加载长文本样例，测试 Home/End 和 Ctrl+Arrow。"/>
+                <TextBlock Text="{Binding ScrollTextSummary}" FontSize="12" Foreground="#2E7D32"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="写入路径样例" Click="LoadScrollPathCommand"/>
+                    <Button Content="写入命令行样例" Click="LoadScrollCommandCommand"/>
+                    <Button Content="清空滚动框" Click="ClearScrollTextCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding TextBoxStatus}" FontSize="12" Foreground="#5D4037"/>
+
+                <TextBlock Text="手测建议:" FontSize="12" FontWeight="SemiBold" Foreground="#616161"/>
+                <TextBlock Text="Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+Z / Ctrl+Y" FontSize="12" Foreground="#757575"/>
+                <TextBlock Text="Shift+Arrow 选区, Ctrl+Arrow 单词跳转, Ctrl+Backspace/Delete 单词删除" FontSize="12" Foreground="#757575"/>
+                <TextBlock Text="在长文本框中测试点击定位、拖拽选区、Home/End 和光标自动滚动。" FontSize="12" Foreground="#757575"/>
             </StackPanel>
+        </Border>
 
-            <TextBlock Text="2. MaxLength 限制 (12)" FontSize="13" Foreground="#666666"/>
-            <TextBox Name="LimitedTextBox" Width="320" Height="32" Text="{Binding LimitedText, Mode=TwoWay}"
-                     MaxLength="12" Placeholder="MaxLength = 12. Paste and typing should both clamp."/>
-            <TextBlock Text="{Binding LimitedTextSummary}" FontSize="12" Foreground="#E65100"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="填充短样例" Click="FillLimitedSampleCommand"/>
-                <Button Content="清空限制框" Click="ClearLimitedTextCommand"/>
+        <!-- ================================================================== -->
+        <!-- Button 新功能测试区域 -->
+        <!-- ================================================================== -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="Button 新功能测试" FontWeight="SemiBold" FontSize="16"/>
+
+                <!-- 1. 基础外观：圆角 + 边框 + 前景色 -->
+                <TextBlock Text="1. 圆角 / 边框 / 前景色" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="默认按钮" Width="100" Height="34"/>
+                    <Button Content="绿色按钮" Width="100" Height="34"
+                            Background="#22C55E" Foreground="#FFFFFF"
+                            CornerRadius="6" BorderBrush="#16A34A" BorderThickness="1"/>
+                    <Button Content="红色按钮" Width="100" Height="34"
+                            Background="#EF4444" Foreground="#FFFFFF"
+                            CornerRadius="6" BorderBrush="#DC2626" BorderThickness="1"/>
+                    <Button Content="蓝色按钮" Width="100" Height="34"
+                            Background="#3B82F6" Foreground="#FFFFFF"
+                            CornerRadius="17" BorderBrush="#2563EB" BorderThickness="1"/>
+                </StackPanel>
+
+                <!-- 2. 禁用态 -->
+                <TextBlock Text="2. 禁用状态 (IsEnabled=false)" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="正常按钮" Width="100" Height="34" CornerRadius="6"/>
+                    <Button Content="禁用按钮" Width="100" Height="34" CornerRadius="6" IsEnabled="false"/>
+                    <Button Content="禁用(绿)" Width="100" Height="34"
+                            Background="#22C55E" Foreground="#FFFFFF" CornerRadius="6" IsEnabled="false"/>
+                </StackPanel>
+
+                <!-- 3. 动态禁用：点击后切换 IsEnabled -->
+                <TextBlock Text="3. 动态切换禁用 (点击按钮切换状态)" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding ToggleBtnText}" Width="160" Height="34"
+                            CornerRadius="6" Click="ToggleDisableCommand"/>
+                    <TextBlock Text="{Binding DisableStatusText}" FontSize="13" Foreground="#2196F3"/>
+                </StackPanel>
+
+                <!-- 4. FontSize 测试 -->
+                <TextBlock Text="4. 字体大小" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="小号12" Width="80" Height="28" FontSize="12" CornerRadius="4"/>
+                    <Button Content="默认14" Width="80" Height="32" FontSize="14" CornerRadius="4"/>
+                    <Button Content="中号16" Width="90" Height="36" FontSize="16" CornerRadius="4"/>
+                    <Button Content="大号20" Width="100" Height="40" FontSize="20" CornerRadius="4"/>
+                </StackPanel>
+
+                <!-- 5. MVVM 绑定：按钮文本随 ViewModel 变化 -->
+                <TextBlock Text="5. MVVM 绑定 (按钮文本绑定到 ViewModel)" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{Binding BtnLabel}" Width="120" Height="34"
+                            CornerRadius="6" Click="ChangeLabelCommand"/>
+                    <TextBlock Text="点击按钮切换文本" FontSize="12" Foreground="#999999"/>
+                </StackPanel>
+
+                <!-- 6. 多种圆角对比 -->
+                <TextBlock Text="6. 圆角大小对比" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="R=0" Width="70" Height="34" CornerRadius="0"/>
+                    <Button Content="R=4" Width="70" Height="34" CornerRadius="4"/>
+                    <Button Content="R=8" Width="70" Height="34" CornerRadius="8"/>
+                    <Button Content="R=12" Width="70" Height="34" CornerRadius="12"/>
+                    <Button Content="R=17" Width="70" Height="34" CornerRadius="17"/>
+                </StackPanel>
+
+                <!-- 7. 点击计数：验证 Click 事件 -->
+                <TextBlock Text="7. 点击事件 (计数器)" FontSize="13" Foreground="#666666"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="点我计数" Width="100" Height="34"
+                            CornerRadius="6" Click="BtnClickCountCommand"/>
+                    <TextBlock Text="{Binding BtnClickCountText}" FontSize="14" Foreground="#E65100"/>
+                </StackPanel>
             </StackPanel>
+        </Border>
 
-            <TextBlock Text="3. Password 模式" FontSize="13" Foreground="#666666"/>
-            <TextBox Name="PasswordTextBox" Width="320" Height="32" Text="{Binding PasswordText, Mode=TwoWay}"
-                     IsPassword="True" MaxLength="24" Placeholder="Password mode is enabled for this field."/>
-            <TextBlock Text="{Binding PasswordSummary}" FontSize="12" Foreground="#8E24AA"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="填充示例密码" Click="FillPasswordSampleCommand"/>
-                <Button Content="清空密码" Click="ClearPasswordCommand"/>
+        <!-- 功能开关 -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
+
+                <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}"/>
+
+                <Button Content="Toggle Feature" Click="ToggleCommand"/>
+
+                <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
             </StackPanel>
+        </Border>
 
-            <TextBlock Text="4. ReadOnly 文本框" FontSize="13" Foreground="#666666"/>
-            <TextBox Name="ReadOnlyTextBox" Width="520" Height="32" Text="{Binding ReadOnlyText}"
-                     IsReadOnly="True" Placeholder="This field is read-only and should only change from Lua."/>
-            <TextBlock Text="{Binding ReadOnlySummary}" FontSize="12" Foreground="#546E7A"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="加载短文本" Click="LoadReadonlyShortCommand"/>
-                <Button Content="加载长文本" Click="LoadReadonlyLongCommand"/>
+        <!-- 列表控件 -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="Items Collection (ListBox Demo)" FontWeight="SemiBold" FontSize="16"/>
+                <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
+
+                <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
+                    <ListBox ItemsSource="{Binding Items}"
+                             SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+                             Height="120"/>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Add Item" Click="AddItemCommand"/>
+                    <Button Content="Remove Selected" Click="RemoveItemCommand"/>
+                    <Button Content="Clear All" Click="ClearItemsCommand"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding SelectedItemText}" FontSize="12" Foreground="#2196F3"/>
             </StackPanel>
+        </Border>
 
-            <TextBlock Text="5. 长文本滚动 / Home End / Ctrl 导航" FontSize="13" Foreground="#666666"/>
-            <TextBox Name="ScrollTextBox" Width="520" Height="32" Text="{Binding ScrollText, Mode=TwoWay}"
-                     Placeholder="Load a long sample, then test Home/End and Ctrl+Arrow."/>
-            <TextBlock Text="{Binding ScrollTextSummary}" FontSize="12" Foreground="#2E7D32"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="写入路径样例" Click="LoadScrollPathCommand"/>
-                <Button Content="写入命令行样例" Click="LoadScrollCommandCommand"/>
-                <Button Content="清空滚动框" Click="ClearScrollTextCommand"/>
+        <!-- 数据表格 -->
+        <Border Background="#F5F5F5" Padding="16">
+            <StackPanel Orientation="Vertical" Spacing="12">
+                <TextBlock Text="Items Collection (DataGrid Demo)" FontWeight="SemiBold" FontSize="16"/>
+                <TextBlock Text="相同的 Lua 集合渲染为表格，添加、删除和清空操作会重建表格。" FontSize="12" Foreground="#757575"/>
+
+                <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
+                    <DataGrid Height="180"
+                              ItemsSource="{Binding Items, ConverterParameter='Product:Name|Category:Category|Price:Value|Stock:Stock'}"/>
+                </Border>
             </StackPanel>
+        </Border>
 
-            <TextBlock Text="{Binding TextBoxStatus}" FontSize="12" Foreground="#5D4037"/>
+        <!-- 状态栏 -->
+        <TextBlock Text="{Binding Status}" FontSize="12" FontStyle="Italic" Foreground="#757575" Margin="0,16,0,0"/>
 
-            <TextBlock Text="手测建议:" FontSize="12" FontWeight="SemiBold" Foreground="#616161"/>
-            <TextBlock Text="Ctrl+A / Ctrl+C / Ctrl+X / Ctrl+V / Ctrl+Z / Ctrl+Y" FontSize="12" Foreground="#757575"/>
-            <TextBlock Text="Shift+Arrow 选区, Ctrl+Arrow 单词跳转, Ctrl+Backspace/Delete 单词删除" FontSize="12" Foreground="#757575"/>
-            <TextBlock Text="在长文本框中测试点击定位、拖拽选区、Home/End 和光标自动滚动。" FontSize="12" Foreground="#757575"/>
-        </StackPanel>
-    </Border>
+    </StackPanel>
+    </ScrollViewer>
 
-    <!-- ================================================================== -->
-    <!-- Button 新功能测试区域 -->
-    <!-- ================================================================== -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Button 新功能测试" FontWeight="SemiBold" FontSize="16"/>
-
-            <!-- 1. 基础外观：圆角 + 边框 + 前景色 -->
-            <TextBlock Text="1. 圆角 / 边框 / 前景色" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="默认按钮" Width="100" Height="34"/>
-                <Button Content="绿色按钮" Width="100" Height="34"
-                        Background="#22C55E" Foreground="#FFFFFF"
-                        CornerRadius="6" BorderBrush="#16A34A" BorderThickness="1"/>
-                <Button Content="红色按钮" Width="100" Height="34"
-                        Background="#EF4444" Foreground="#FFFFFF"
-                        CornerRadius="6" BorderBrush="#DC2626" BorderThickness="1"/>
-                <Button Content="蓝色按钮" Width="100" Height="34"
-                        Background="#3B82F6" Foreground="#FFFFFF"
-                        CornerRadius="17" BorderBrush="#2563EB" BorderThickness="1"/>
-            </StackPanel>
-
-            <!-- 2. 禁用态 -->
-            <TextBlock Text="2. 禁用状态 (IsEnabled=false)" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="正常按钮" Width="100" Height="34" CornerRadius="6"/>
-                <Button Content="禁用按钮" Width="100" Height="34" CornerRadius="6" IsEnabled="false"/>
-                <Button Content="禁用(绿)" Width="100" Height="34"
-                        Background="#22C55E" Foreground="#FFFFFF" CornerRadius="6" IsEnabled="false"/>
-            </StackPanel>
-
-            <!-- 3. 动态禁用：点击后切换 IsEnabled -->
-            <TextBlock Text="3. 动态切换禁用 (点击按钮切换状态)" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="{Binding ToggleBtnText}" Width="160" Height="34"
-                        CornerRadius="6" Click="ToggleDisableCommand"/>
-                <TextBlock Text="{Binding DisableStatusText}" FontSize="13" Foreground="#2196F3"/>
-            </StackPanel>
-
-            <!-- 4. FontSize 测试 -->
-            <TextBlock Text="4. 字体大小" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="小号12" Width="80" Height="28" FontSize="12" CornerRadius="4"/>
-                <Button Content="默认14" Width="80" Height="32" FontSize="14" CornerRadius="4"/>
-                <Button Content="中号16" Width="90" Height="36" FontSize="16" CornerRadius="4"/>
-                <Button Content="大号20" Width="100" Height="40" FontSize="20" CornerRadius="4"/>
-            </StackPanel>
-
-            <!-- 5. MVVM 绑定：按钮文本随 ViewModel 变化 -->
-            <TextBlock Text="5. MVVM 绑定 (按钮文本绑定到 ViewModel)" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="{Binding BtnLabel}" Width="120" Height="34"
-                        CornerRadius="6" Click="ChangeLabelCommand"/>
-                <TextBlock Text="点击按钮切换文本" FontSize="12" Foreground="#999999"/>
-            </StackPanel>
-
-            <!-- 6. 多种圆角对比 -->
-            <TextBlock Text="6. 圆角大小对比" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="R=0" Width="70" Height="34" CornerRadius="0"/>
-                <Button Content="R=4" Width="70" Height="34" CornerRadius="4"/>
-                <Button Content="R=8" Width="70" Height="34" CornerRadius="8"/>
-                <Button Content="R=12" Width="70" Height="34" CornerRadius="12"/>
-                <Button Content="R=17" Width="70" Height="34" CornerRadius="17"/>
-            </StackPanel>
-
-            <!-- 7. 点击计数：验证 Click 事件 -->
-            <TextBlock Text="7. 点击事件 (计数器)" FontSize="13" Foreground="#666666"/>
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="点我计数" Width="100" Height="34"
-                        CornerRadius="6" Click="BtnClickCountCommand"/>
-                <TextBlock Text="{Binding BtnClickCountText}" FontSize="14" Foreground="#E65100"/>
-            </StackPanel>
-        </StackPanel>
-    </Border>
-
-    <!-- Feature Toggle Section -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
-
-            <CheckBox Content="Enable Feature" IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}"/>
-
-            <Button Content="Toggle Feature" Click="ToggleCommand"/>
-
-            <TextBlock Text="{Binding FeatureStatusText}" FontSize="12" Foreground="#757575"/>
-        </StackPanel>
-    </Border>
-
-    <!-- Items Section -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Items Collection (ListBox Demo)" FontWeight="SemiBold" FontSize="16"/>
-            <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
-
-            <!-- ListBox displaying Items collection - with border for visibility -->
-            <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
-                <ListBox ItemsSource="{Binding Items}"
-                         SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
-                         Height="120"/>
-            </Border>
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Add Item" Click="AddItemCommand"/>
-                <Button Content="Remove Selected" Click="RemoveItemCommand"/>
-                <Button Content="Clear All" Click="ClearItemsCommand"/>
-            </StackPanel>
-
-            <!-- Selected item details -->
-            <TextBlock Text="{Binding SelectedItemText}" FontSize="12" Foreground="#2196F3"/>
-        </StackPanel>
-    </Border>
-
-    <!-- DataGrid Section -->
-    <Border Background="#F5F5F5" Padding="16">
-        <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Items Collection (DataGrid Demo)" FontWeight="SemiBold" FontSize="16"/>
-            <TextBlock Text="Same Lua collection rendered as a table. Add, remove, and clear actions rebuild the grid." FontSize="12" Foreground="#757575"/>
-
-            <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="#FFFFFF">
-                <DataGrid Height="180"
-                          ItemsSource="{Binding Items, ConverterParameter='Product:Name|Category:Category|Price:Value|Stock:Stock'}"/>
-            </Border>
-        </StackPanel>
-    </Border>
-
-    <!-- Status Bar -->
-    <TextBlock Text="{Binding Status}" FontSize="12" FontStyle="Italic" Foreground="#757575" Margin="0,16,0,0"/>
-
-</StackPanel>
-</ScrollViewer>
+</DockPanel>

@@ -193,6 +193,7 @@ protected:
 
 private:
     friend class MenuItem;
+    friend class MenuBar;
     
     void OnItemHovered(MenuItem* item);
     void OnItemClicked(MenuItem* item);
@@ -223,6 +224,7 @@ private:
  * 
  * 应用场景：
  * - 文件、编辑、视图等主菜单
+ * - 支持窗口控制按钮（最小化、最大化、关闭）
  */
 class MenuBar : public Panel {
 public:
@@ -238,6 +240,10 @@ public:
     // 高度
     float GetMenuHeight() const { return m_menuHeight; }
     void SetMenuHeight(float height) { m_menuHeight = height; }
+    
+    // 窗口控制按钮
+    void SetShowWindowControls(bool show) { m_showWindowControls = show; }
+    bool GetShowWindowControls() const { return m_showWindowControls; }
 
 protected:
     void InitializeComponents() override;
@@ -248,6 +254,7 @@ protected:
 
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
     void OnKeyDown(KeyEventArgs& args) override;
 
 private:
@@ -257,10 +264,20 @@ private:
         bool isHovered = false;
         bool isOpen = false;
     };
+    
+    enum class WindowButton {
+        None,
+        Minimize,
+        Maximize,
+        Close
+    };
 
     void OpenMenu(int index);
     void CloseAllMenus();
-    int HitTestMenu(float x);
+    int HitTestMenu(float x, float y);
+    WindowButton HitTestWindowButton(float x, float y);
+    void DrawWindowButtons(rendering::IRenderContext* context, const rendering::Rect& rect);
+    void ExecuteWindowButton(WindowButton btn);
 
     std::vector<MenuEntry> m_menus;
     int m_openMenuIndex = -1;
@@ -268,10 +285,20 @@ private:
     float m_menuHeight = 28.0f;
     float m_padding = 12.0f;
     
+    // 窗口控制按钮
+    bool m_showWindowControls = true;
+    float m_btnWidth = 45.0f;
+    WindowButton m_hoveredBtn = WindowButton::None;
+    WindowButton m_pressedBtn = WindowButton::None;
+    
     rendering::Color m_bgColor = rendering::Color::FromHex(0xF5F5F5);
     rendering::Color m_hoverBg = rendering::Color::FromHex(0xE5F3FF);
     rendering::Color m_openBg = rendering::Color::FromHex(0xCCE4F7);
     rendering::Color m_textColor = rendering::Color::Black();
+    rendering::Color m_btnHoverBg = rendering::Color::FromHex(0xE5E5E5);
+    rendering::Color m_btnPressBg = rendering::Color::FromHex(0xCCCCCC);
+    rendering::Color m_closeHoverBg = rendering::Color::FromHex(0xE81123);
+    rendering::Color m_closePressBg = rendering::Color::FromHex(0xF1707A);
     float m_fontSize = 14.0f;
 };
 

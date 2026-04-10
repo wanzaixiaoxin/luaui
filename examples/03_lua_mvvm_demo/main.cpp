@@ -60,6 +60,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
         }
 
         if (auto* window = host.GetWindow()) {
+            window->SetExtendFrameIntoClientArea(true);
             ::SetWindowPos(
                 window->GetHandle(),
                 nullptr,

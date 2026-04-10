@@ -129,20 +129,22 @@ rendering::Size StatusBarItem::OnMeasure(const rendering::Size& availableSize) {
 
 void StatusBarItem::OnRender(rendering::IRenderContext* context) {
     if (!context) return;
-    
+
     auto* render = GetRender();
     if (!render) return;
-    
-    auto rect = render->GetRenderRect();
-    
+
+    // 使用本地坐标（RenderComponent 已应用位移变换）
+    float w = render->GetRenderRect().width;
+    float h = render->GetRenderRect().height;
+
     // 绘制边框
     if (m_showBorder) {
         auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
         if (borderBrush) {
-            context->DrawRectangle(rect, borderBrush.get(), 1.0f);
+            context->DrawRectangle(rendering::Rect(0, 0, w, h), borderBrush.get(), 1.0f);
         }
     }
-    
+
     // 文本类型已在子控件中绘制
     // 这里可以绘制图标等其他元素
 }
@@ -303,17 +305,18 @@ void StatusBar::DrawSizingGrip(rendering::IRenderContext* context,
 
 bool StatusBar::HitTestSizingGrip(float x, float y) {
     if (!m_showSizingGrip) return false;
-    
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
-    
-    float gripX = rect.x + rect.width - m_gripSize;
-    float gripY = rect.y + rect.height - m_gripSize;
-    
-    return x >= gripX && x <= rect.x + rect.width &&
-           y >= gripY && y <= rect.y + rect.height;
+
+    auto* render = GetRender();
+    if (!render) return false;
+
+    float w = render->GetRenderRect().width;
+    float h = render->GetRenderRect().height;
+
+    float gripX = w - m_gripSize;
+    float gripY = h - m_gripSize;
+
+    return x >= gripX && x <= w &&
+           y >= gripY && y <= h;
 }
 
 void StatusBar::OnMouseDown(MouseEventArgs& args) {
@@ -382,64 +385,60 @@ rendering::Size StatusBar::OnMeasureChildren(const rendering::Size& availableSiz
 }
 
 rendering::Size StatusBar::OnArrangeChildren(const rendering::Size& finalSize) {
-    rendering::Rect rect;
-    if (auto* renderable = AsRenderable()) {
-        rect = renderable->GetRenderRect();
-    }
-    
-    float x = rect.x + m_itemSpacing;
-    float y = rect.y;
-    float height = rect.height;
-    
+    // 使用本地坐标（RenderComponent 已应用位移变换）
+    float x = m_itemSpacing;
+    float y = 0;
+    float height = finalSize.height;
+
     for (auto& item : m_items) {
         if (auto* layoutable = item->AsLayoutable()) {
             auto size = layoutable->GetDesiredSize();
-            
+
             // 垂直居中
             float itemY = y + (height - size.height) / 2;
             layoutable->Arrange(rendering::Rect(x, itemY, size.width, size.height));
-            
+
             x += size.width + m_itemSpacing;
         }
     }
-    
+
     return finalSize;
 }
 
 void StatusBar::OnRenderChildren(rendering::IRenderContext* context) {
     if (!context) return;
-    
+
     auto* render = GetRender();
     if (!render) return;
-    
-    auto rect = render->GetRenderRect();
-    
+
+    // 使用本地坐标（RenderComponent 已应用位移变换）
+    float w = render->GetRenderRect().width;
+    float h = render->GetRenderRect().height;
+
     // 绘制背景
     auto bgBrush = context->CreateSolidColorBrush(m_bgColor);
     if (bgBrush) {
-        context->FillRectangle(rect, bgBrush.get());
+        context->FillRectangle(rendering::Rect(0, 0, w, h), bgBrush.get());
     }
-    
+
     // 绘制上边框
     auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
     if (borderBrush) {
-        context->DrawLine(rendering::Point(rect.x, rect.y),
-                          rendering::Point(rect.x + rect.width, rect.y),
+        context->DrawLine(rendering::Point(0, 0),
+                          rendering::Point(w, 0),
                           borderBrush.get(), 1.0f);
     }
-    
+
     // 绘制子项
     for (auto& item : m_items) {
         if (auto* itemRenderable = item->AsRenderable()) {
             itemRenderable->Render(context);
         }
     }
-    
+
     // 绘制尺寸调整手柄
     if (m_showSizingGrip) {
-        rendering::Rect gripRect(rect.x + rect.width - m_gripSize,
-                                  rect.y,
-                                  m_gripSize, rect.height);
+        rendering::Rect gripRect(w - m_gripSize, 0, m_gripSize, h);
         DrawSizingGrip(context, gripRect);
     }
 }

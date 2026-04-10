@@ -59,6 +59,7 @@ protected:
     rendering::Size OnArrangeChildren(const rendering::Size& finalSize) override;
     void OnRenderChildren(rendering::IRenderContext* context) override;
 
+    void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
 
 private:

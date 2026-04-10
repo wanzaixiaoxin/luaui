@@ -12,6 +12,10 @@
 #include "ListBox.h"       // ListBox and ListBoxItem
 #include "DataGrid.h"      // DataGrid
 #include "layouts/ScrollViewer.h"
+#include "Menu.h"
+#include "SideBar.h"
+#include "StatusBar.h"
+#include "layouts/DockPanel.h"
 #include <algorithm>
 #include <cctype>
 
@@ -111,6 +115,27 @@ private:
         RegisterElement("Image", []() { return std::make_shared<Image>(); });
         RegisterElement("Rectangle", []() { return std::make_shared<Rectangle>(); });
         RegisterElement("Ellipse", []() { return std::make_shared<Ellipse>(); });
+
+        // Menu system
+        RegisterElement("MenuBar", []() { return std::make_shared<MenuBar>(); });
+        RegisterElement("Menu", []() { return std::make_shared<Menu>(); });
+        RegisterElement("MenuItem", []() { return std::make_shared<MenuItem>(); });
+        RegisterElement("ContextMenu", []() { return std::make_shared<ContextMenu>(); });
+        RegisterElement("Separator", []() {
+            auto item = std::make_shared<MenuItem>();
+            item->SetItemType(MenuItem::ItemType::Separator);
+            return item;
+        });
+
+        // SideBar
+        RegisterElement("SideBar", []() { return std::make_shared<SideBar>(); });
+
+        // StatusBar
+        RegisterElement("StatusBar", []() { return std::make_shared<StatusBar>(); });
+        RegisterElement("StatusBarItem", []() { return std::make_shared<StatusBarItem>(); });
+
+        // DockPanel
+        RegisterElement("DockPanel", []() { return std::make_shared<DockPanel>(); });
     }
     
     std::shared_ptr<luaui::Control> LoadElement(const tinyxml2::XMLElement* element) {
@@ -153,6 +178,9 @@ private:
                 if (TypeConverter::ToFloat(value, width)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetWidth(width);
+                    }
+                    if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                        sideBar->SetSideBarWidth(width);
                     }
                 }
             }
@@ -291,6 +319,8 @@ private:
                         rb->SetText(wtext);
                     } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetText(wtext);
+                    } else if (auto si = std::dynamic_pointer_cast<controls::StatusBarItem>(control)) {
+                        si->SetText(wtext);
                     }
                 } else {
                     std::wstring wtext = Utf8ToW(value);
@@ -304,6 +334,8 @@ private:
                         rb->SetText(wtext);
                     } else if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetText(wtext);
+                    } else if (auto si = std::dynamic_pointer_cast<controls::StatusBarItem>(control)) {
+                        si->SetText(wtext);
                     }
                 }
             }
@@ -476,6 +508,108 @@ private:
                     }
                 }
             }
+            // Header (MenuItem, Menu)
+            else if (name == "Header") {
+                std::wstring wval = Utf8ToW(value);
+                if (auto menuItem = std::dynamic_pointer_cast<controls::MenuItem>(control)) {
+                    menuItem->SetHeader(wval);
+                }
+            }
+            // InputGestureText (MenuItem)
+            else if (name == "InputGestureText") {
+                std::wstring wval = Utf8ToW(value);
+                if (auto menuItem = std::dynamic_pointer_cast<controls::MenuItem>(control)) {
+                    menuItem->SetInputGestureText(wval);
+                }
+            }
+            // IsCheckable (MenuItem)
+            else if (name == "IsCheckable") {
+                if (auto menuItem = std::dynamic_pointer_cast<controls::MenuItem>(control)) {
+                    menuItem->SetIsCheckable(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // IsChecked (MenuItem) - extends existing IsChecked for CheckBox/RadioButton
+            // MenuHeight (MenuBar)
+            else if (name == "MenuHeight") {
+                float h;
+                if (TypeConverter::ToFloat(value, h)) {
+                    if (auto menuBar = std::dynamic_pointer_cast<controls::MenuBar>(control)) {
+                        menuBar->SetMenuHeight(h);
+                    }
+                }
+            }
+            // Title (SideBar)
+            else if (name == "Title") {
+                std::wstring wval = Utf8ToW(value);
+                if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                    sideBar->SetTitle(wval);
+                }
+            }
+            // Collapsed (SideBar)
+            else if (name == "Collapsed") {
+                if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                    sideBar->SetIsCollapsed(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // Pinned (SideBar)
+            else if (name == "Pinned") {
+                if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                    sideBar->SetIsPinned(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // MinWidth (SideBar)
+            else if (name == "MinWidth") {
+                float w;
+                if (TypeConverter::ToFloat(value, w)) {
+                    if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                        sideBar->SetMinWidth(w);
+                    }
+                }
+            }
+            // MaxWidth (SideBar)
+            else if (name == "MaxWidth") {
+                float w;
+                if (TypeConverter::ToFloat(value, w)) {
+                    if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
+                        sideBar->SetMaxWidth(w);
+                    }
+                }
+            }
+            // ShowSizingGrip (StatusBar)
+            else if (name == "ShowSizingGrip") {
+                if (auto statusBar = std::dynamic_pointer_cast<controls::StatusBar>(control)) {
+                    statusBar->SetShowSizingGrip(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // ItemType (StatusBarItem)
+            else if (name == "ItemType") {
+                if (auto item = std::dynamic_pointer_cast<controls::StatusBarItem>(control)) {
+                    if (value == "Text") item->SetItemType(StatusBarItem::ItemType::Text);
+                    else if (value == "Progress") item->SetItemType(StatusBarItem::ItemType::Progress);
+                    else if (value == "Panel") item->SetItemType(StatusBarItem::ItemType::Panel);
+                    else if (value == "Spring") item->SetItemType(StatusBarItem::ItemType::Spring);
+                }
+            }
+            // ShowBorder (StatusBarItem)
+            else if (name == "ShowBorder") {
+                if (auto item = std::dynamic_pointer_cast<controls::StatusBarItem>(control)) {
+                    item->SetShowBorder(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // DockPanel.Dock attached property
+            else if (name == "DockPanel.Dock" || name == "Dock") {
+                Dock dock = Dock::Left;
+                if (value == "Top") dock = Dock::Top;
+                else if (value == "Right") dock = Dock::Right;
+                else if (value == "Bottom") dock = Dock::Bottom;
+                DockPanel::SetDock(control, dock);
+            }
+            // LastChildFill (DockPanel)
+            else if (name == "LastChildFill") {
+                if (auto dockPanel = std::dynamic_pointer_cast<controls::DockPanel>(control)) {
+                    dockPanel->SetLastChildFill(value == "True" || value == "true" || value == "1");
+                }
+            }
             // Click event: Click="SomeCommand" or Click="{Binding SomeCommand}"
             else if (name == "Click") {
                 auto it = m_clickHandlers.find(value);
@@ -493,6 +627,9 @@ private:
                     }
                 } else if (std::dynamic_pointer_cast<controls::Button>(control)) {
                     // no registered C++ handler -> defer to MvvmXmlLoader (Lua command binding)
+                    RecordDeferredBinding(control, "Command", value);
+                } else if (std::dynamic_pointer_cast<controls::MenuItem>(control)) {
+                    // MenuItem Click -> defer to MvvmXmlLoader (Lua command binding)
                     RecordDeferredBinding(control, "Command", value);
                 } else {
                     luaui::utils::Logger::WarningF("[XML] Click handler '%s' not found (registered handlers: %zu)", 
@@ -515,7 +652,7 @@ private:
         }
     }
     
-    void LoadChildren(const std::shared_ptr<luaui::Control>& parent, 
+    void LoadChildren(const std::shared_ptr<luaui::Control>& parent,
                       const tinyxml2::XMLElement* element) {
         // 特殊处理 Border - 使用 SetChild 而不是 AddChild
         if (auto border = std::dynamic_pointer_cast<controls::Border>(parent)) {
@@ -533,16 +670,99 @@ private:
             }
             return;
         }
-        
+
+        // MenuBar: 子元素为 Menu，通过 AddMenu 添加
+        if (auto menuBar = std::dynamic_pointer_cast<controls::MenuBar>(parent)) {
+            for (const auto* childElem = element->FirstChildElement(); childElem;
+                 childElem = childElem->NextSiblingElement()) {
+                std::string tag = childElem->Name();
+                if (tag == "Menu") {
+                    auto menu = std::make_shared<Menu>();
+                    ApplyAttributes(menu, childElem);
+                    LoadMenuItems(menu, childElem);
+                    std::wstring header;
+                    if (const auto* attr = childElem->FindAttribute("Header")) {
+                        header = Utf8ToW(attr->Value());
+                    }
+                    menuBar->AddMenu(header, menu);
+                }
+            }
+            return;
+        }
+
+        // Menu / ContextMenu: 子元素为 MenuItem / Separator
+        if (auto menu = std::dynamic_pointer_cast<controls::Menu>(parent)) {
+            LoadMenuItems(menu, element);
+            return;
+        }
+        if (auto ctxMenu = std::dynamic_pointer_cast<controls::ContextMenu>(parent)) {
+            LoadMenuItems(ctxMenu, element);
+            return;
+        }
+
+        // SideBar: 单内容子元素，通过 SetContent
+        if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(parent)) {
+            if (const auto* childElem = element->FirstChildElement()) {
+                auto child = LoadElement(childElem);
+                if (child) {
+                    sideBar->SetContent(child);
+                }
+            }
+            return;
+        }
+
+        // StatusBar: 子元素为 StatusBarItem
+        if (auto statusBar = std::dynamic_pointer_cast<controls::StatusBar>(parent)) {
+            for (const auto* childElem = element->FirstChildElement(); childElem;
+                 childElem = childElem->NextSiblingElement()) {
+                std::string tag = childElem->Name();
+                if (tag == "StatusBarItem") {
+                    auto item = std::make_shared<StatusBarItem>();
+                    ApplyAttributes(item, childElem);
+                    statusBar->AddItem(item);
+                }
+            }
+            return;
+        }
+
         // 尝试作为 Panel 添加子元素
         auto panel = std::dynamic_pointer_cast<controls::Panel>(parent);
         if (!panel) return;
-        
+
         for (const tinyxml2::XMLElement* childElem = element->FirstChildElement();
              childElem; childElem = childElem->NextSiblingElement()) {
             auto child = LoadElement(childElem);
             if (child) {
                 panel->AddChild(child);
+            }
+        }
+    }
+
+    // 辅助方法：加载菜单项（Menu 和 ContextMenu 共用）
+    void LoadMenuItems(const std::shared_ptr<Menu>& menu,
+                       const tinyxml2::XMLElement* element) {
+        for (const auto* childElem = element->FirstChildElement(); childElem;
+             childElem = childElem->NextSiblingElement()) {
+            std::string tag = childElem->Name();
+
+            if (tag == "Separator") {
+                auto item = std::make_shared<MenuItem>();
+                item->SetItemType(MenuItem::ItemType::Separator);
+                menu->AddItem(item);
+            }
+            else if (tag == "MenuItem") {
+                auto item = std::make_shared<MenuItem>();
+                ApplyAttributes(item, childElem);
+
+                // 检查是否有子 Menu（子菜单）
+                if (const auto* subMenuElem = childElem->FirstChildElement("Menu")) {
+                    auto subMenu = std::make_shared<Menu>();
+                    ApplyAttributes(subMenu, subMenuElem);
+                    LoadMenuItems(subMenu, subMenuElem);
+                    item->SetSubmenu(subMenu);
+                }
+
+                menu->AddItem(item);
             }
         }
     }
