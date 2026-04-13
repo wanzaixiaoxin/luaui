@@ -34,6 +34,7 @@ Thumbs.db
 .zread/
 .claude/
 .arts/
+.codeartsdoer/
 
 # Log files
 *.log

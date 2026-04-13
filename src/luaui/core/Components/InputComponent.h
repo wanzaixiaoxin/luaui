@@ -40,6 +40,7 @@ public:
     void RaiseMouseUp(controls::MouseEventArgs& args);
     void RaiseMouseMove(controls::MouseEventArgs& args);
     void RaiseMouseWheel(controls::MouseEventArgs& args);
+    void RaiseMouseDoubleClick(controls::MouseEventArgs& args);
     void RaiseMouseEnter();
     void RaiseMouseLeave();
     void RaiseKeyDown(controls::KeyEventArgs& args);

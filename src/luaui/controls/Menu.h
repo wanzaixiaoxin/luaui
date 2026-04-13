@@ -255,6 +255,11 @@ public:
     // 窗口控制按钮
     void SetShowWindowControls(bool show) { m_showWindowControls = show; }
     bool GetShowWindowControls() const { return m_showWindowControls; }
+    
+    // 检查指定位置是否是空白区域（可以拖拽窗口的区域）
+    // barRect 是 MenuBar 的渲染矩形（全局坐标）
+    // 返回 true 表示是空白区域，可以拖拽
+    bool IsBlankArea(float x, float y, const rendering::Rect& barRect) const;
 
 protected:
     void InitializeComponents() override;
@@ -266,6 +271,7 @@ protected:
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseDown(MouseEventArgs& args) override;
     void OnMouseUp(MouseEventArgs& args) override;
+    void OnMouseDoubleClick(MouseEventArgs& args) override;
     void OnKeyDown(KeyEventArgs& args) override;
 
 private:

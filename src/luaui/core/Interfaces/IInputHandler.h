@@ -29,6 +29,7 @@ public:
     virtual void OnMouseEnter() {}
     virtual void OnMouseLeave() {}
     virtual void OnMouseWheel(controls::MouseEventArgs& args) { (void)args; }
+    virtual void OnMouseDoubleClick(controls::MouseEventArgs& args) { (void)args; }
     
     // ========== 键盘事件 ==========
     virtual void OnPreviewKeyDown(controls::KeyEventArgs& args) { (void)args; }

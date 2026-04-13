@@ -135,9 +135,20 @@ rendering::Size MenuItem::OnMeasure(const rendering::Size& availableSize) {
     width += m_iconWidth;    // 图标区域
     width += m_padding;      // 间距
     
-    // 文本宽度（估算）
+    // 文本宽度（更准确的估算）
+    // 中文字符宽度约为 fontSize，英文字符宽度约为 fontSize * 0.5
     if (!m_header.empty()) {
-        width += static_cast<float>(m_header.length()) * m_fontSize * 0.6f;
+        float textWidth = 0;
+        for (wchar_t ch : m_header) {
+            if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                // 中文字符
+                textWidth += m_fontSize;
+            } else {
+                // 英文/其他字符
+                textWidth += m_fontSize * 0.5f;
+            }
+        }
+        width += textWidth;
     }
     
     width += m_padding * 2;  // 右边距
@@ -414,15 +425,14 @@ int Menu::HitTestItem(float y) {
 }
 
 rendering::Size Menu::OnMeasure(const rendering::Size& availableSize) {
-    (void)availableSize;
-    
     float maxWidth = 0;
     float totalHeight = 0;
     
     for (auto& item : m_items) {
         if (auto* layoutable = item->AsLayoutable()) {
             interfaces::LayoutConstraint constraint;
-            constraint.available = rendering::Size(m_itemWidth, 0);
+            // 使用足够大的宽度让菜单项能够完整测量
+            constraint.available = rendering::Size(availableSize.width > 0 ? availableSize.width : 1000, 0);
             layoutable->Measure(constraint);
             auto size = layoutable->GetDesiredSize();
             maxWidth = std::max(maxWidth, size.width);
@@ -696,6 +706,7 @@ void MenuBar::OpenMenu(int index) {
     auto* barRender = GetRender();
     float barX = barRender ? barRender->GetRenderRect().x : 0;
     float barY = barRender ? barRender->GetRenderRect().y : 0;
+    float barWidth = barRender ? barRender->GetRenderRect().width : 980.0f;
 
     float x = barX + m_padding;
     for (int i = 0; i < index; ++i) {
@@ -706,12 +717,20 @@ void MenuBar::OpenMenu(int index) {
     // 先测量Menu的大小
     auto& menu = m_menus[index].menu;
     if (auto* layout = menu->GetLayout()) {
-        auto* barRender = GetRender();
-        float barWidth = barRender ? barRender->GetRenderRect().width : 980.0f;
         interfaces::LayoutConstraint constraint;
-        constraint.available = rendering::Size(barWidth, 400);
+        constraint.available = rendering::Size(1000, 400);  // 使用足够大的宽度来测量
         constraint.maxHeight = 400;
         layout->Measure(constraint);
+    }
+
+    // 获取菜单的期望大小
+    auto menuSize = menu->GetLayout() ? menu->GetLayout()->GetDesiredSize() : rendering::Size(200, 100);
+    
+    // 检查菜单是否超出窗口右边界，如果超出则调整位置
+    float windowWidth = barX + barWidth;  // 窗口右边界
+    if (x + menuSize.width > windowWidth) {
+        x = windowWidth - menuSize.width - 5;  // 留一点边距
+        if (x < barX) x = barX;  // 确保不超出左边界
     }
 
     // 将Menu关联到窗口弹出层
@@ -988,6 +1007,33 @@ void MenuBar::ExecuteWindowButton(WindowButton btn) {
     }
 }
 
+bool MenuBar::IsBlankArea(float x, float y, const rendering::Rect& barRect) const {
+    // 检查Y坐标是否在菜单栏范围内
+    if (y < barRect.y || y >= barRect.y + barRect.height) {
+        return true; // 不在菜单栏范围内
+    }
+    
+    // 检查是否在窗口按钮区域
+    float btnAreaWidth = m_showWindowControls ? (m_btnWidth * 3) : 0;
+    float btnStartX = barRect.x + barRect.width - btnAreaWidth;
+    if (x >= btnStartX && x < barRect.x + barRect.width) {
+        return false; // 在窗口按钮区域，不是空白
+    }
+    
+    // 检查是否在菜单项上
+    float currentX = barRect.x + m_padding;
+    for (size_t i = 0; i < m_menus.size(); ++i) {
+        float menuWidth = static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
+        if (x >= currentX && x <= currentX + menuWidth) {
+            return false; // 在菜单项上，不是空白
+        }
+        currentX += menuWidth;
+    }
+    
+    // 在菜单栏范围内，但不在菜单项或窗口按钮上，是空白区域
+    return true;
+}
+
 void MenuBar::OnMouseMove(MouseEventArgs& args) {
     int index = HitTestMenu(args.x, args.y);
 
@@ -1059,6 +1105,21 @@ void MenuBar::OnMouseUp(MouseEventArgs& args) {
     }
     
     // 注意：Menu 事件由 Window::HitTest 直接路由，不再需要手动转发
+    
+    args.Handled = true;
+}
+
+void MenuBar::OnMouseDoubleClick(MouseEventArgs& args) {
+    // 检查是否在空白区域双击（不在菜单项上，也不在窗口按钮上）
+    int menuIndex = HitTestMenu(args.x, args.y);
+    WindowButton btn = HitTestWindowButton(args.x, args.y);
+    
+    if (menuIndex < 0 && btn == WindowButton::None) {
+        // 在空白区域双击，执行最大化/还原
+        ExecuteWindowButton(WindowButton::Maximize);
+        args.Handled = true;
+        return;
+    }
     
     args.Handled = true;
 }

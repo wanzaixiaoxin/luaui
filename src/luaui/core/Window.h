@@ -137,6 +137,7 @@ private:
     void HandleMouseMove(float x, float y);
     void HandleMouseDown(float x, float y, int button);
     void HandleMouseUp(float x, float y, int button);
+    void HandleMouseDoubleClick(float x, float y, int button);
     void HandleMouseWheel(float x, float y, int delta);
     void HandleKeyDown(int keyCode);
     void HandleKeyUp(int keyCode);

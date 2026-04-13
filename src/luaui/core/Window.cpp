@@ -3,6 +3,7 @@
 #include "../rendering/d2d/D2DAnimation.h"
 #include "../controls/Control.h"
 #include "../controls/Panel.h"
+#include "../controls/Menu.h"
 #include "Components/InputComponent.h"
 #include "../utils/Logger.h"
 #include "../style/Theme.h"
@@ -625,6 +626,32 @@ void Window::HandleMouseUp(float x, float y, int button) {
     InvalidateRender();
 }
 
+void Window::HandleMouseDoubleClick(float x, float y, int button) {
+    auto* control = HitTest(m_root.get(), x, y, 0, 0);
+    
+    utils::Logger::InfoF("[Window] MouseDoubleClick: %s at (%.1f,%.1f)",
+        control ? control->GetTypeName().c_str() : "null", x, y);
+    
+    if (control) {
+        controls::MouseEventArgs args{x, y, button, false};
+
+        // 从命中的控件开始，向上冒泡直到有人处理
+        Control* current = control;
+        while (current && !args.Handled) {
+            if (auto* inputComp = current->GetInput()) {
+                inputComp->RaiseMouseDoubleClick(args);
+            } else {
+                current->OnMouseDoubleClick(args);
+            }
+            // 向父控件冒泡
+            auto parent = current->GetParent();
+            current = parent ? static_cast<Control*>(parent.get()) : nullptr;
+        }
+    }
+    
+    InvalidateRender();
+}
+
 void Window::HandleMouseWheel(float x, float y, int delta) {
     auto* control = m_capturedControl ? m_capturedControl : HitTest(m_root.get(), x, y, 0, 0);
 
@@ -862,19 +889,32 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
                         if (hitControl) {
                             utils::Logger::DebugF("[WM_NCHITTEST] HitTest found: %s at (%d,%d)",
                                 hitControl->GetTypeName().c_str(), pt.x, pt.y);
-                            // 如果命中的控件有 InputComponent，说明是可交互控件（如 MenuBar）
-                            // 返回 HTCLIENT 让鼠标消息正常路由到控件
-                            if (hitControl->GetInput()) {
-                                return HTCLIENT;
-                            }
-                            // 也检查父链上是否有 MenuBar（Menu 是 MenuBar 的子控件）
+                            
+                            // 检查父链上是否有 MenuBar
                             Control* cur = hitControl;
                             while (cur) {
                                 if (cur->GetTypeName() == "MenuBar") {
+                                    // 找到 MenuBar，检查是否是空白区域
+                                    auto* menuBarRender = cur->GetRender();
+                                    if (menuBarRender) {
+                                        auto barRect = menuBarRender->GetRenderRect();
+                                        // 使用全局坐标检查
+                                        if (static_cast<controls::MenuBar*>(cur)->IsBlankArea(
+                                            static_cast<float>(pt.x), static_cast<float>(pt.y), barRect)) {
+                                            // 是空白区域，允许拖拽
+                                            return HTCAPTION;
+                                        }
+                                    }
+                                    // 不是空白区域，返回 HTCLIENT 让事件路由到控件
                                     return HTCLIENT;
                                 }
                                 auto parent = cur->GetParent();
                                 cur = parent ? static_cast<Control*>(parent.get()) : nullptr;
+                            }
+                            
+                            // 如果命中的控件有 InputComponent，说明是可交互控件
+                            if (hitControl->GetInput()) {
+                                return HTCLIENT;
                             }
                         }
                     }
@@ -906,6 +946,13 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
             float x = static_cast<float>(GET_X_LPARAM(lP));
             float y = static_cast<float>(GET_Y_LPARAM(lP));
             HandleMouseUp(x, y, 0);
+            return 0;
+        }
+        
+        case WM_LBUTTONDBLCLK: {
+            float x = static_cast<float>(GET_X_LPARAM(lP));
+            float y = static_cast<float>(GET_Y_LPARAM(lP));
+            HandleMouseDoubleClick(x, y, 0);
             return 0;
         }
         

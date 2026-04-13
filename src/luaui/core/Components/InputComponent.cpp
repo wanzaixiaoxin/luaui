@@ -40,6 +40,11 @@ void InputComponent::RaiseMouseWheel(controls::MouseEventArgs& args) {
     if (m_owner) m_owner->OnMouseWheel(args);
 }
 
+void InputComponent::RaiseMouseDoubleClick(controls::MouseEventArgs& args) {
+    OnMouseDoubleClick(args);
+    if (m_owner) m_owner->OnMouseDoubleClick(args);
+}
+
 void InputComponent::RaiseMouseEnter() {
     m_mouseOver = true;
     OnMouseEnter();
