@@ -317,6 +317,17 @@ void Window::OnRender() {
     // 清除脏矩形区域
     m_dirtyRegion.Clear();
     
+    // 渲染弹出层控件（如 Menu）——在所有其他控件之后渲染，确保在最上层
+    for (auto& weak : m_popups) {
+        if (auto popup = weak.lock()) {
+            if (popup->GetIsVisible()) {
+                if (auto* renderable = popup->AsRenderable()) {
+                    renderable->Render(context);
+                }
+            }
+        }
+    }
+    
     m_renderer->Present();
 }
 
@@ -335,23 +346,49 @@ void Window::RenderWithClipping(Control* control, rendering::IRenderContext* con
         return;  // 完全在裁剪区域外，跳过渲染
     }
     
-    // 渲染当前控件
+    // 渲染当前控件（Panel 的 RenderOverride 会处理子控件渲染）
     if (auto* renderable = control->AsRenderable()) {
         renderable->Render(context);
     }
     
-    // 递归渲染子控件
-    size_t childCount = control->GetChildCount();
-    for (size_t i = 0; i < childCount; ++i) {
-        auto child = control->GetChild(i);
-        if (auto childControl = std::dynamic_pointer_cast<Control>(child)) {
-            RenderWithClipping(childControl.get(), context, clipRect);
+    // 只有非 Panel 类型才递归渲染子控件
+    // Panel 的子控件由 PanelRenderComponent::RenderOverride → OnRenderChildren 处理
+    // 避免子控件被渲染两次
+    if (!dynamic_cast<controls::Panel*>(control)) {
+        size_t childCount = control->GetChildCount();
+        for (size_t i = 0; i < childCount; ++i) {
+            auto child = control->GetChild(i);
+            if (auto childControl = std::dynamic_pointer_cast<Control>(child)) {
+                RenderWithClipping(childControl.get(), context, clipRect);
+            }
         }
     }
 }
 
 void Window::Render() {
     OnRender();
+}
+
+void Window::RegisterPopup(const std::shared_ptr<Control>& popup) {
+    if (!popup) return;
+    // 避免重复注册
+    for (auto& weak : m_popups) {
+        if (auto existing = weak.lock()) {
+            if (existing.get() == popup.get()) return;
+        }
+    }
+    m_popups.push_back(popup);
+}
+
+void Window::UnregisterPopup(const std::shared_ptr<Control>& popup) {
+    if (!popup) return;
+    m_popups.erase(
+        std::remove_if(m_popups.begin(), m_popups.end(),
+            [&popup](const std::weak_ptr<Control>& weak) {
+                auto existing = weak.lock();
+                return !existing || existing.get() == popup.get();
+            }),
+        m_popups.end());
 }
 
 // ============================================================================
@@ -396,6 +433,28 @@ void Window::ClearFocus() {
 // ============================================================================
 
 Control* Window::HitTest(Control* root, float x, float y, float offsetX, float offsetY) {
+    // 先检查弹出层控件（它们在最上层）
+    for (auto it = m_popups.rbegin(); it != m_popups.rend(); ++it) {
+        if (auto popup = it->lock()) {
+            if (popup->GetIsVisible()) {
+                if (auto* result = HitTestControl(popup.get(), x, y, 0, 0)) {
+                    return result;
+                }
+            }
+        }
+    }
+    
+    // 再检查常规控件
+    if (root) {
+        if (auto* result = HitTestControl(root, x, y, offsetX, offsetY)) {
+            return result;
+        }
+    }
+    
+    return nullptr;
+}
+
+Control* Window::HitTestControl(Control* root, float x, float y, float offsetX, float offsetY) {
     if (!root) return nullptr;
     
     // 检查控件是否可见
@@ -422,7 +481,7 @@ Control* Window::HitTest(Control* root, float x, float y, float offsetX, float o
             // 从后向前遍历（后添加的在上面）
             for (int i = static_cast<int>(panel->GetChildCount()) - 1; i >= 0; --i) {
                 auto* child = static_cast<Control*>(panel->GetChild(i).get());
-                if (auto* result = HitTest(child, x, y, childOffsetX, childOffsetY)) {
+                if (auto* result = HitTestControl(child, x, y, childOffsetX, childOffsetY)) {
                     return result;
                 }
             }
@@ -451,6 +510,11 @@ void Window::HandleMouseMove(float x, float y) {
     }
 
     auto* control = HitTest(m_root.get(), x, y);
+    
+    Logger::TraceF("[Window] HandleMouseMove: (%.1f,%.1f) hit=%s captured=%s", 
+        x, y, 
+        control ? control->GetTypeName().c_str() : "null",
+        m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
 
     if (m_lastMouseOver && m_lastMouseOver != control) {
         if (auto* inputComp = m_lastMouseOver->GetInput()) {
@@ -489,8 +553,9 @@ void Window::HandleMouseMove(float x, float y) {
 void Window::HandleMouseDown(float x, float y, int button) {
     auto* control = HitTest(m_root.get(), x, y, 0, 0);
     
-    utils::Logger::TraceF("[Window] MouseDown: %s at (%.1f,%.1f)",
-        control ? control->GetTypeName().c_str() : "null", x, y);
+    utils::Logger::InfoF("[Window] MouseDown: %s at (%.1f,%.1f) captured=%s",
+        control ? control->GetTypeName().c_str() : "null", x, y,
+        m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
     
     if (control) {
         m_capturedControl = control;
@@ -795,6 +860,8 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
                         auto* hitControl = HitTest(m_root.get(), 
                             static_cast<float>(pt.x), static_cast<float>(pt.y), 0, 0);
                         if (hitControl) {
+                            utils::Logger::DebugF("[WM_NCHITTEST] HitTest found: %s at (%d,%d)",
+                                hitControl->GetTypeName().c_str(), pt.x, pt.y);
                             // 如果命中的控件有 InputComponent，说明是可交互控件（如 MenuBar）
                             // 返回 HTCLIENT 让鼠标消息正常路由到控件
                             if (hitControl->GetInput()) {

@@ -442,51 +442,58 @@ void Menu::OnRender(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
     
+    // 使用本地坐标（0,0,width,height），由 RenderComponent::Render 的 MultiplyTransform 处理位置偏移
     auto rect = render->GetRenderRect();
+    rendering::Rect localRect(0, 0, rect.width, rect.height);
+    
+    utils::Logger::DebugF("[Menu] OnRender: renderRect=%.1f,%.1f %.1fx%.1f items=%d isOpen=%d",
+        rect.x, rect.y, rect.width, rect.height, (int)m_items.size(), m_isOpen);
     
     // 绘制阴影（简化版）
     auto shadowBrush = context->CreateSolidColorBrush(rendering::Color(0, 0, 0, 0.2f));
     if (shadowBrush) {
         context->FillRectangle(
-            rendering::Rect(rect.x + m_shadowOffset, rect.y + m_shadowOffset,
-                           rect.width, rect.height),
+            rendering::Rect(localRect.x + m_shadowOffset, localRect.y + m_shadowOffset,
+                           localRect.width, localRect.height),
             shadowBrush.get());
     }
     
     // 绘制背景
     auto bgBrush = context->CreateSolidColorBrush(m_bgColor);
     if (bgBrush) {
-        context->FillRectangle(rect, bgBrush.get());
+        context->FillRectangle(localRect, bgBrush.get());
     }
     
     // 绘制边框
     auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
     if (borderBrush) {
-        context->DrawRectangle(rect, borderBrush.get(), m_borderWidth);
+        context->DrawRectangle(localRect, borderBrush.get(), m_borderWidth);
     }
+    
+    // 渲染菜单项（Menu 不是 Panel，需要手动调用 OnRenderChildren）
+    OnRenderChildren(context);
 }
 
 void Menu::OnRenderChildren(rendering::IRenderContext* context) {
     if (!context) return;
     
-    rendering::Rect contentRect;
-    if (auto* renderable = AsRenderable()) {
-        contentRect = renderable->GetRenderRect();
-    }
+    // 使用本地坐标，由 RenderComponent::Render 的 MultiplyTransform 处理位置偏移
+    float y = m_borderWidth - m_scrollOffset;
+    float x = m_borderWidth;
     
-    float y = contentRect.y + m_borderWidth - m_scrollOffset;
-    float x = contentRect.x + m_borderWidth;
-    float width = contentRect.width - m_borderWidth * 2;
+    auto* render = GetRender();
+    float width = render ? render->GetRenderRect().width : 200;
+    float height = render ? render->GetRenderRect().height : 100;
     
     for (auto& item : m_items) {
         if (auto* layoutable = item->AsLayoutable()) {
             auto size = layoutable->GetDesiredSize();
             
             // 可见性测试
-            if (y + size.height > contentRect.y && y < contentRect.y + contentRect.height) {
-                // 设置菜单项的渲染区域
+            if (y + size.height > 0 && y < height) {
+                // 设置菜单项的渲染区域（使用本地坐标）
                 if (auto* itemLayoutable = item->AsLayoutable()) {
-                    itemLayoutable->Arrange(rendering::Rect(x, y, width, size.height));
+                    itemLayoutable->Arrange(rendering::Rect(x, y, width - m_borderWidth * 2, size.height));
                 }
                 // 直接调用OnRender而不是通过RenderComponent::Render
                 // 避免MultiplyTransform导致的坐标双重偏移
@@ -505,7 +512,8 @@ void Menu::OnMouseMove(MouseEventArgs& args) {
     }
 
     // 将窗口绝对坐标转换为Menu的本地坐标
-    float localY = args.y - m_coordOffsetY - rect.y - m_borderWidth + m_scrollOffset;
+    // Menu 的 renderRect 已经是窗口全局坐标（弹出层），不需要额外偏移
+    float localY = args.y - rect.y - m_borderWidth + m_scrollOffset;
     int index = HitTestItem(localY);
 
     if (index >= 0) {
@@ -538,7 +546,8 @@ void Menu::OnMouseDown(MouseEventArgs& args) {
     }
 
     // 将窗口绝对坐标转换为Menu的本地坐标
-    float localY = args.y - m_coordOffsetY - rect.y - m_borderWidth + m_scrollOffset;
+    // Menu 的 renderRect 已经是窗口全局坐标（弹出层），不需要额外偏移
+    float localY = args.y - rect.y - m_borderWidth + m_scrollOffset;
     int index = HitTestItem(localY);
 
     if (index >= 0 && index < static_cast<int>(m_items.size())) {
@@ -670,6 +679,8 @@ void MenuBar::ClearMenus() {
 void MenuBar::OpenMenu(int index) {
     if (index < 0 || index >= static_cast<int>(m_menus.size())) return;
 
+    utils::Logger::InfoF("[MenuBar] OpenMenu(%d), menu count=%d", index, (int)m_menus.size());
+
     // 关闭其他菜单
     if (m_openMenuIndex >= 0 && m_openMenuIndex != index) {
         m_menus[m_openMenuIndex].isOpen = false;
@@ -680,13 +691,17 @@ void MenuBar::OpenMenu(int index) {
     m_openMenuIndex = index;
     m_menus[index].isOpen = true;
 
-    // 计算菜单位置（使用相对于MenuBar的本地坐标）
-    // Menu作为MenuBar的子控件，HitTest会将Menu的rect加上MenuBar的全局偏移
-    float x = m_padding;
+    // 计算菜单位置（使用窗口全局坐标）
+    // Menu作为弹出层控件，不再作为MenuBar的子控件，需要使用全局坐标
+    auto* barRender = GetRender();
+    float barX = barRender ? barRender->GetRenderRect().x : 0;
+    float barY = barRender ? barRender->GetRenderRect().y : 0;
+
+    float x = barX + m_padding;
     for (int i = 0; i < index; ++i) {
         x += static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
     }
-    float y = m_menuHeight; // Menu在MenuBar下方
+    float y = barY + m_menuHeight; // Menu在MenuBar下方
 
     // 先测量Menu的大小
     auto& menu = m_menus[index].menu;
@@ -699,18 +714,18 @@ void MenuBar::OpenMenu(int index) {
         layout->Measure(constraint);
     }
 
-    // 将Menu添加为MenuBar子控件以接收事件和HitTest
+    // 将Menu关联到窗口弹出层
     AddMenuToWindow(menu);
     
-    // 设置坐标偏移（MenuBar的全局位置），用于将窗口绝对坐标转换为Menu的本地坐标
-    auto* barRender = GetRender();
-    if (barRender) {
-        const auto& barRect = barRender->GetRenderRect();
-        menu->SetCoordinateOffset(barRect.x, barRect.y);
-    }
-    
-    // 使用本地坐标（相对于MenuBar）设置Menu位置
+    // 使用窗口全局坐标设置Menu位置
     menu->OpenAt(x, y);
+
+    utils::Logger::InfoF("[MenuBar] Menu opened at global(%.1f,%.1f), menu visible=%d, rect=%.1f,%.1f %.1fx%.1f",
+        x, y, menu->GetIsVisible(),
+        menu->GetRender() ? menu->GetRender()->GetRenderRect().x : -1,
+        menu->GetRender() ? menu->GetRender()->GetRenderRect().y : -1,
+        menu->GetRender() ? menu->GetRender()->GetRenderRect().width : -1,
+        menu->GetRender() ? menu->GetRender()->GetRenderRect().height : -1);
 
     if (auto* r = GetRender()) {
         r->Invalidate();
@@ -735,14 +750,19 @@ void MenuBar::CloseAllMenus() {
 }
 
 void MenuBar::AddMenuToWindow(const std::shared_ptr<Menu>& menu) {
-    // 将Menu添加为MenuBar自身的子控件（而不是窗口根Panel）
-    // 这样HitTest可以找到Menu，且MenuBar的OnArrangeChildren不会覆盖Menu的位置
-    Panel::AddChild(menu);
+    // 设置Window指针，使Menu的Invalidate能通知窗口重绘
+    if (auto* window = GetWindow()) {
+        menu->SetWindow(window);
+        // 将Menu注册为弹出层控件，在所有其他控件之后渲染（确保不被覆盖）
+        window->RegisterPopup(menu);
+    }
 }
 
 void MenuBar::RemoveMenuFromWindow(const std::shared_ptr<Menu>& menu) {
-    // 从MenuBar的子控件列表中移除Menu
-    Panel::RemoveChild(menu);
+    if (auto* window = GetWindow()) {
+        window->UnregisterPopup(menu);
+    }
+    menu->SetWindow(nullptr);
 }
 
 int MenuBar::HitTestMenu(float x, float y) {
@@ -787,29 +807,31 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     auto* render = GetRender();
     if (!render) return;
     
-    auto barRect = render->GetRenderRect();
+    // 使用本地坐标（0,0,width,height），由 RenderComponent::Render 的 MultiplyTransform 处理位置偏移
+    auto barSize = render->GetRenderRect();
+    rendering::Rect localRect(0, 0, barSize.width, barSize.height);
     
     // 绘制背景
     auto bgBrush = context->CreateSolidColorBrush(m_bgColor);
     if (bgBrush) {
-        context->FillRectangle(barRect, bgBrush.get());
+        context->FillRectangle(localRect, bgBrush.get());
     }
     
     // 绘制底边框
     auto& t = Theme::GetCurrent();
     auto borderBrush = context->CreateSolidColorBrush(t.GetColor(theme::kMenuBorder));
     if (borderBrush) {
-        context->DrawLine(rendering::Point(barRect.x, barRect.y + barRect.height - 1),
-                          rendering::Point(barRect.x + barRect.width, barRect.y + barRect.height - 1),
+        context->DrawLine(rendering::Point(0, localRect.height - 1),
+                          rendering::Point(localRect.width, localRect.height - 1),
                           borderBrush.get(), 1.0f);
     }
     
     // 计算窗口按钮占用的宽度
     float btnAreaWidth = m_showWindowControls ? (m_btnWidth * 3) : 0;
-    float maxMenuWidth = barRect.width - btnAreaWidth - m_padding * 2;
+    float maxMenuWidth = localRect.width - btnAreaWidth - m_padding * 2;
     
-    // 绘制菜单项
-    float x = barRect.x + m_padding;
+    // 绘制菜单项（使用本地坐标）
+    float x = m_padding;
     auto textFormat = context->CreateTextFormat(L"Microsoft YaHei", m_fontSize);
     
     for (size_t i = 0; i < m_menus.size(); ++i) {
@@ -817,11 +839,11 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
         float menuWidth = static_cast<float>(entry.header.length()) * m_fontSize * 0.6f + m_padding * 2;
         
         // 确保不超出可用空间
-        if (x + menuWidth > barRect.x + barRect.width - btnAreaWidth - m_padding) {
+        if (x + menuWidth > localRect.width - btnAreaWidth - m_padding) {
             break;
         }
         
-        rendering::Rect menuRect(x, barRect.y, menuWidth, barRect.height);
+        rendering::Rect menuRect(x, 0, menuWidth, localRect.height);
         
         // 绘制背景
         if (entry.isOpen) {
@@ -839,7 +861,7 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
         // 绘制文本
         auto textBrush = context->CreateSolidColorBrush(m_textColor);
         if (textBrush && textFormat) {
-            float textY = barRect.y + (barRect.height - m_fontSize) / 2;
+            float textY = (localRect.height - m_fontSize) / 2;
             context->DrawTextString(entry.header, textFormat.get(),
                                     rendering::Point(x + m_padding, textY), textBrush.get());
         }
@@ -847,22 +869,11 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
         x += menuWidth;
     }
     
-    // 绘制窗口控制按钮
-    DrawWindowButtons(context, barRect);
+    // 绘制窗口控制按钮（使用本地坐标）
+    DrawWindowButtons(context, localRect);
 
-    // 手动渲染打开的Menu（Menu使用相对于MenuBar的本地坐标，在MenuBar的变换坐标系中渲染）
-    if (m_openMenuIndex >= 0 && m_openMenuIndex < static_cast<int>(m_menus.size())) {
-        auto& menu = m_menus[m_openMenuIndex].menu;
-        if (menu && menu->GetIsVisible()) {
-            auto* menuRender = menu->GetRender();
-            if (menuRender) {
-                // 渲染Menu背景和边框
-                menu->OnRender(context);
-                // 渲染Menu的菜单项
-                menu->OnRenderChildren(context);
-            }
-        }
-    }
+    // 注意：Menu 不再在 MenuBar 的 OnRenderChildren 中渲染
+    // Menu 已注册为 Window 的弹出层控件，在所有其他控件之后渲染，确保不被覆盖
 }
 
 MenuBar::WindowButton MenuBar::HitTestWindowButton(float x, float y) {
@@ -997,6 +1008,8 @@ void MenuBar::OnMouseMove(MouseEventArgs& args) {
         if (auto* render = GetRender()) render->Invalidate();
     }
 
+    // 注意：Menu 事件由 Window::HitTest 直接路由，不再需要手动转发
+
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
@@ -1005,6 +1018,8 @@ void MenuBar::OnMouseMove(MouseEventArgs& args) {
 }
 
 void MenuBar::OnMouseDown(MouseEventArgs& args) {
+    utils::Logger::InfoF("[MenuBar] OnMouseDown at (%.1f,%.1f)", args.x, args.y);
+
     // 先检测窗口按钮
     WindowButton btn = HitTestWindowButton(args.x, args.y);
     if (btn != WindowButton::None) {
@@ -1014,6 +1029,8 @@ void MenuBar::OnMouseDown(MouseEventArgs& args) {
         return;
     }
     
+    // 注意：Menu 事件由 Window::HitTest 直接路由，不再需要手动转发
+    // 如果点击不在 MenuBar 区域内（且不在 Menu 内），关闭菜单
     int index = HitTestMenu(args.x, args.y);
     if (index >= 0) {
         if (m_openMenuIndex == index) {
@@ -1023,6 +1040,7 @@ void MenuBar::OnMouseDown(MouseEventArgs& args) {
             OpenMenu(index);
         }
     } else {
+        // 点击MenuBar区域外，关闭所有菜单
         CloseAllMenus();
     }
     args.Handled = true;
@@ -1036,7 +1054,12 @@ void MenuBar::OnMouseUp(MouseEventArgs& args) {
         }
         m_pressedBtn = WindowButton::None;
         if (auto* render = GetRender()) render->Invalidate();
+        args.Handled = true;
+        return;
     }
+    
+    // 注意：Menu 事件由 Window::HitTest 直接路由，不再需要手动转发
+    
     args.Handled = true;
 }
 

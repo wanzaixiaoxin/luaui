@@ -74,6 +74,12 @@ public:
      */
     rendering::ResourceCache* GetResourceCache() const { return m_resourceCache.get(); }
     
+    // ========== 弹出层管理 ==========
+    /** @brief 注册弹出层控件（如 Menu），在最上层渲染 */
+    void RegisterPopup(const std::shared_ptr<Control>& popup);
+    /** @brief 取消注册弹出层控件 */
+    void UnregisterPopup(const std::shared_ptr<Control>& popup);
+
     // ========== 焦点管理 ==========
     Control* GetFocusedControl() const { return m_focusedControl; }
     void SetFocusedControl(Control* control);
@@ -138,6 +144,7 @@ private:
     
     // ========== 命中测试 ==========
     Control* HitTest(Control* root, float x, float y, float offsetX = 0, float offsetY = 0);
+    Control* HitTestControl(Control* root, float x, float y, float offsetX, float offsetY);
     
     // ========== 带裁剪的渲染 ==========
     void RenderWithClipping(Control* control, rendering::IRenderContext* context, 
@@ -185,6 +192,9 @@ private:
 
     // 无框窗口
     bool m_extendFrame = false;
+
+    // 弹出层控件（如 Menu），在所有其他控件之后渲染
+    std::vector<std::weak_ptr<Control>> m_popups;
 
     static const wchar_t* s_className;
     static bool s_classRegistered;

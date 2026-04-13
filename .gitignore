@@ -33,6 +33,7 @@ Thumbs.db
 .trae/
 .zread/
 .claude/
+.arts/
 
 # Log files
 *.log
