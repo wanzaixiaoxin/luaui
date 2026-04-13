@@ -3,6 +3,7 @@
 #include "Control.h"
 #include "Panel.h"
 #include "../rendering/Types.h"
+#include "../rendering/IAnimation.h"
 #include "../style/ThemeKeys.h"
 #include <functional>
 #include <memory>
@@ -106,8 +107,7 @@ protected:
 
 private:
     void UpdateVisualState();
-    rendering::Color GetTargetBgColor() const;
-    void AnimateBgTo(const rendering::Color& target, float durationMs);
+    rendering::Color GetCurrentBgColor() const;
     
     ItemType m_itemType = ItemType::Normal;
     std::wstring m_header;
@@ -141,7 +141,6 @@ private:
     rendering::Color m_separatorColor = rendering::Color::FromHex(0xDDDDDD);
     rendering::Color m_checkColor = rendering::Color::FromHex(0x0078D4);
     rendering::Color m_arrowColor = rendering::Color::FromHex(0x666666);
-    rendering::Color m_animBg = rendering::Color::Transparent();
 };
 
 /**

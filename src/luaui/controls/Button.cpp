@@ -30,7 +30,6 @@ void Button::ApplyTheme() {
         m_hoverBackground    = t.GetColor(kButtonHoverBg);
         m_pressedBackground  = t.GetColor(kButtonPressedBg);
         m_disabledBackground = t.GetColor(kButtonDisabledBg);
-        m_animBg             = m_normalBackground;
     }
     
     // 如果有自定义前景色，则不应用主题前景色
@@ -133,7 +132,6 @@ void Button::SetStateColors(const rendering::Color& normal,
     m_normalBackground = normal;
     m_hoverBackground = hover;
     m_pressedBackground = pressed;
-    m_animBg = normal;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
@@ -156,49 +154,20 @@ void Button::SetCustomBackground(const rendering::Color& color) {
     // Auto-generate hover (lighter) and pressed (darker) colors
     m_hoverBackground = rendering::Color(color.r * 1.15f, color.g * 1.15f, color.b * 1.15f, color.a);
     m_pressedBackground = rendering::Color(color.r * 0.85f, color.g * 0.85f, color.b * 0.85f, color.a);
-    m_animBg = color;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
 }
 
 // ============================================================================
-// 动画辅助
+// 获取当前背景色
 // ============================================================================
 
-rendering::Color Button::GetTargetBgColor() const {
+rendering::Color Button::GetCurrentBgColor() const {
     if (!GetIsEnabled()) return m_disabledBackground;
     if (m_isPressed) return m_pressedBackground;
     if (m_isHovered) return m_hoverBackground;
     return m_normalBackground;
-}
-
-void Button::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
 }
 
 // ============================================================================
@@ -213,7 +182,7 @@ void Button::OnRender(rendering::IRenderContext* context) {
 
     rendering::Rect localRect(0, 0, render->GetRenderRect().width, render->GetRenderRect().height);
 
-    rendering::Color bgColor = m_animBg;
+    rendering::Color bgColor = GetCurrentBgColor();
     rendering::Color fgColor = GetIsEnabled() ? m_foreground : m_disabledForeground;
     rendering::Color borderColor = GetIsEnabled() ? m_borderBrush : m_disabledBorderBrush;
 
@@ -274,27 +243,27 @@ void Button::OnMouseDown(MouseEventArgs& args) {
     (void)args;
     if (!GetIsEnabled()) return;
     m_isPressed = true;
-    AnimateBgTo(GetTargetBgColor(), 100.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void Button::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     if (m_isPressed) {
         m_isPressed = false;
-        AnimateBgTo(GetTargetBgColor(), 150.0f);
+        if (auto* render = GetRender()) render->Invalidate();
     }
 }
 
 void Button::OnMouseEnter() {
     if (!GetIsEnabled()) return;
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void Button::OnMouseLeave() {
     m_isHovered = false;
     m_isPressed = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void Button::OnClick() {

@@ -22,5 +22,9 @@ struct MouseEventArgs {
     bool Handled = false;
 };
 
+// 动画时长常量（毫秒）
+constexpr float kHoverAnimMs  = 40.0f;   // 鼠标划出
+constexpr float kPressAnimMs  = 50.0f;   // 按下/释放
+
 } // namespace controls
 } // namespace luaui

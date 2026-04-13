@@ -2,6 +2,7 @@
 
 #include "Control.h"
 #include "../rendering/Types.h"
+#include "../rendering/IAnimation.h"
 #include "../style/ThemeKeys.h"
 
 namespace luaui {
@@ -51,8 +52,7 @@ protected:
     void OnMouseUp(MouseEventArgs& args) override;
 
 private:
-    rendering::Color GetTargetBgColor() const;
-    void AnimateBgTo(const rendering::Color& target, float durationMs);
+    rendering::Color GetCurrentBgColor() const;
     void DrawGripDots(rendering::IRenderContext* context, const rendering::Rect& rect);
 
     bool m_isVertical = true;
@@ -68,7 +68,7 @@ private:
     rendering::Color m_hoverBg;
     rendering::Color m_activeBg;
     rendering::Color m_gripColor;
-    rendering::Color m_animBg;
+
 };
 
 } // namespace controls

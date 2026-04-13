@@ -5,7 +5,6 @@
 #include "../core/Components/RenderComponent.h"
 #include "../core/Components/InputComponent.h"
 #include "../rendering/Types.h"
-#include "../rendering/IAnimation.h"
 #include "../style/ThemeKeys.h"
 #include <string>
 
@@ -89,18 +88,12 @@ protected:
     virtual rendering::Size OnMeasure(const rendering::Size& availableSize);
 
 private:
-    /** @brief 获取目标背景色（根据当前交互状态） */
-    rendering::Color GetTargetBgColor() const;
-
-    /** @brief 创建背景色过渡动画 */
-    void AnimateBgTo(const rendering::Color& target, float durationMs);
+    /** @brief 获取当前背景色（根据当前交互状态） */
+    rendering::Color GetCurrentBgColor() const;
 
     bool m_isHovered = false;
     bool m_isPressed = false;
     std::wstring m_text;
-
-    // 动画驱动的背景色
-    rendering::Color m_animBg = rendering::Color::FromHex(0xE0E0E0);
 
     // 外观属性
     rendering::Color m_foreground = rendering::Color::Black();

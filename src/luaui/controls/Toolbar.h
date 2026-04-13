@@ -3,6 +3,7 @@
 #include "Panel.h"
 #include "Button.h"
 #include "../rendering/Types.h"
+#include "../rendering/IAnimation.h"
 #include "layouts/DockPanel.h"
 #include "../style/ThemeKeys.h"
 #include <functional>
@@ -90,8 +91,7 @@ private:
     void UpdateVisualState();
     void DrawIcon(rendering::IRenderContext* context, const rendering::Rect& rect);
     void DrawDropDownArrow(rendering::IRenderContext* context, const rendering::Rect& rect);
-    rendering::Color GetTargetBgColor() const;
-    void AnimateBgTo(const rendering::Color& target, float durationMs);
+    rendering::Color GetCurrentBgColor() const;
     
     std::wstring m_text;
     std::wstring m_icon;
@@ -130,7 +130,6 @@ private:
     rendering::Color m_checkedBg = rendering::Color::FromHex(0xCCE4F7);
     rendering::Color m_textColor = rendering::Color::Black();
     rendering::Color m_disabledColor = rendering::Color::FromHex(0x999999);
-    rendering::Color m_animBg = rendering::Color::Transparent();
 };
 
 /**

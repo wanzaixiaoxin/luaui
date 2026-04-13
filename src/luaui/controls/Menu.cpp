@@ -63,7 +63,7 @@ void MenuItem::SetSubmenu(const std::shared_ptr<Menu>& menu) {
 
 void MenuItem::OnMouseEnter() {
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 
     // 通知父菜单
     if (m_parentMenu) {
@@ -73,7 +73,7 @@ void MenuItem::OnMouseEnter() {
 
 void MenuItem::OnMouseLeave() {
     m_isHovered = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void MenuItem::OnClick() {
@@ -111,45 +111,15 @@ void MenuItem::ApplyTheme() {
     m_separatorColor = t.GetColor(kMenuItemSeparator);
     m_checkColor = t.GetColor(kMenuItemCheckMark);
     m_arrowColor = t.GetColor(kMenuItemArrow);
-    m_animBg = m_normalBg;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
 }
 
-rendering::Color MenuItem::GetTargetBgColor() const {
+rendering::Color MenuItem::GetCurrentBgColor() const {
     if (!m_itemEnabled) return m_normalBg;
     if (m_isHovered) return m_hoverBg;
     return m_normalBg;
-}
-
-void MenuItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        if (auto* render = GetRender()) render->Invalidate();
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
 }
 
 rendering::Size MenuItem::OnMeasure(const rendering::Size& availableSize) {
@@ -204,9 +174,10 @@ void MenuItem::OnRender(rendering::IRenderContext* context) {
         return;
     }
     
-    // 绘制背景（使用动画颜色）
-    if (m_animBg.a > 0 && m_itemEnabled) {
-        auto bgBrush = context->CreateSolidColorBrush(m_animBg);
+    // 绘制背景
+    rendering::Color bgColor = GetCurrentBgColor();
+    if (bgColor.a > 0 && m_itemEnabled) {
+        auto bgBrush = context->CreateSolidColorBrush(bgColor);
         if (bgBrush) {
             context->FillRectangle(rect, bgBrush.get());
         }

@@ -2,6 +2,7 @@
 
 #include "Panel.h"
 #include "../rendering/Types.h"
+#include "../rendering/IAnimation.h"
 #include "../style/ThemeKeys.h"
 #include <memory>
 #include <vector>
@@ -65,8 +66,7 @@ private:
     void UpdateVisualState();
     void DrawCloseButton(rendering::IRenderContext* context, const rendering::Rect& rect);
     bool HitTestCloseButton(float x, float y);
-    rendering::Color GetTargetBgColor() const;
-    void AnimateBgTo(const rendering::Color& target, float durationMs);
+    rendering::Color GetCurrentBgColor() const;
     
     std::wstring m_header;
     std::wstring m_icon;
@@ -93,7 +93,7 @@ private:
     rendering::Color m_selectedTextColor = rendering::Color::Black();
     rendering::Color m_closeButtonColor = rendering::Color::FromHex(0x999999);
     rendering::Color m_closeButtonHoverColor = rendering::Color::FromHex(0xE81123);
-    rendering::Color m_animBg = rendering::Color::Transparent();
+
 
     friend class TabControl;
 };

@@ -679,27 +679,12 @@ void Window::UpdateTitleBarTheme() {
     bool isDark = (bg.r + bg.g + bg.b) / 3.0f < 0.5f;
 
     // DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Windows 10 1809+)
-    // 值为 TRUE 时标题栏使用深色模式（标题文字变白等）
+    // 值为 TRUE 时标题栏使用深色模式（按钮图标变白、悬停对比度正确）
     BOOL darkValue = isDark ? TRUE : FALSE;
     DwmSetWindowAttribute(m_hWnd, 20, &darkValue, sizeof(darkValue));
 
-    // DWMWA_CAPTION_COLOR = 35 (Windows 11 22H2+ / Build 22598+)
-    // 允许自定义标题栏背景色，与工作区颜色匹配
-    // COLORREF 格式：0x00BBGGRR（与 Color 的 RGBA 顺序不同）
-    COLORREF captionColor = RGB(
-        static_cast<BYTE>(bg.r * 255.0f),
-        static_cast<BYTE>(bg.g * 255.0f),
-        static_cast<BYTE>(bg.b * 255.0f)
-    );
-    // 尝试设置自定义标题栏颜色，旧版 Windows 会忽略此属性
-    DwmSetWindowAttribute(m_hWnd, 35, &captionColor, sizeof(captionColor));
-
-    // DWMWA_TEXT_COLOR = 36 (Windows 11 22H2+)
-    // 自定义标题栏文字颜色
-    COLORREF textColor = isDark
-        ? RGB(0xFF, 0xFF, 0xFF)  // 白色文字
-        : RGB(0x00, 0x00, 0x00); // 黑色文字
-    DwmSetWindowAttribute(m_hWnd, 36, &textColor, sizeof(textColor));
+    // 不再设置 DWMWA_CAPTION_COLOR (35) 和 DWMWA_TEXT_COLOR (36)
+    // 自定义标题栏颜色会导致 DWM 按钮悬停色与图标色对比度不足
 
     // DWM 对上述属性变更不会自动触发标题栏重绘。
     // 通过发送 WM_NCACTIVATE 模拟激活/失活，强制 DWM 重新渲染标题栏。

@@ -42,7 +42,6 @@ void Splitter::ApplyTheme() {
     m_hoverBg = t.GetColor(kSplitterHoverBg);
     m_activeBg = t.GetColor(kSplitterActiveBg);
     m_gripColor = t.GetColor(kSplitterGrip);
-    m_animBg = m_bgColor;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
@@ -65,7 +64,7 @@ void Splitter::OnRender(rendering::IRenderContext* context) {
     auto rect = render->GetRenderRect();
 
     // 绘制背景
-    auto bgBrush = context->CreateSolidColorBrush(m_animBg);
+    auto bgBrush = context->CreateSolidColorBrush(GetCurrentBgColor());
     if (bgBrush) {
         context->FillRectangle(rect, bgBrush.get());
     }
@@ -98,55 +97,26 @@ void Splitter::DrawGripDots(rendering::IRenderContext* context, const rendering:
     }
 }
 
-rendering::Color Splitter::GetTargetBgColor() const {
+rendering::Color Splitter::GetCurrentBgColor() const {
     if (m_isDragging) return m_activeBg;
     if (m_isHovered) return m_hoverBg;
     return m_bgColor;
 }
 
-void Splitter::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        if (auto* render = GetRender()) render->Invalidate();
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
-}
-
 void Splitter::OnMouseEnter() {
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void Splitter::OnMouseLeave() {
     m_isHovered = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void Splitter::OnMouseDown(MouseEventArgs& args) {
     m_isDragging = true;
     m_dragStartPos = m_isVertical ? args.x : args.y;
-    AnimateBgTo(GetTargetBgColor(), 100.0f);
+    if (auto* render = GetRender()) render->Invalidate();
     args.Handled = true;
 }
 
@@ -163,7 +133,7 @@ void Splitter::OnMouseMove(MouseEventArgs& args) {
 void Splitter::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     m_isDragging = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 } // namespace controls

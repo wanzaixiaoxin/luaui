@@ -70,13 +70,13 @@ void TabItem::SetIsSelected(bool selected) {
 
 void TabItem::OnMouseEnter() {
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void TabItem::OnMouseLeave() {
     m_isHovered = false;
     m_isCloseHovered = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void TabItem::OnMouseDown(MouseEventArgs& args) {
@@ -117,45 +117,15 @@ void TabItem::ApplyTheme() {
     m_selectedTextColor = t.GetColor(kTabItemSelectedText);
     m_closeButtonColor = t.GetColor(kTabItemCloseBtn);
     m_closeButtonHoverColor = t.GetColor(kTabItemCloseBtnHover);
-    m_animBg = m_normalBg;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
 }
 
-rendering::Color TabItem::GetTargetBgColor() const {
+rendering::Color TabItem::GetCurrentBgColor() const {
     if (m_isSelected) return m_selectedBg;
     if (m_isHovered) return m_hoverBg;
     return m_normalBg;
-}
-
-void TabItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        if (auto* render = GetRender()) render->Invalidate();
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
 }
 
 bool TabItem::HitTestCloseButton(float x, float y) {
@@ -215,7 +185,7 @@ void TabItem::OnRender(rendering::IRenderContext* context) {
     auto rect = render->GetRenderRect();
 
     // 使用动画背景色
-    rendering::Color bgColor = m_animBg;
+    rendering::Color bgColor = GetCurrentBgColor();
 
     if (bgColor.a > 0) {
         auto bgBrush = context->CreateSolidColorBrush(bgColor);

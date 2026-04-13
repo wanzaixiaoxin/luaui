@@ -60,13 +60,13 @@ void ToolbarItem::SetIsPressed(bool pressed) {
 
 void ToolbarItem::OnMouseEnter() {
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void ToolbarItem::OnMouseLeave() {
     m_isHovered = false;
     m_isPressed = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void ToolbarItem::OnMouseDown(MouseEventArgs& args) {
@@ -76,14 +76,14 @@ void ToolbarItem::OnMouseDown(MouseEventArgs& args) {
     } else {
         m_isPressed = true;
     }
-    AnimateBgTo(GetTargetBgColor(), 100.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void ToolbarItem::OnMouseUp(MouseEventArgs& args) {
     (void)args;
     if (!m_isCheckable) {
         m_isPressed = false;
-        AnimateBgTo(GetTargetBgColor(), 150.0f);
+        if (auto* render = GetRender()) render->Invalidate();
     }
 }
 
@@ -105,47 +105,17 @@ void ToolbarItem::ApplyTheme() {
     m_checkedBg = t.GetColor(kToolbarItemCheckedBg);
     m_textColor = t.GetColor(kToolbarItemText);
     m_disabledColor = t.GetColor(kToolbarItemDisabledText);
-    m_animBg = m_normalBg;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
 }
 
-rendering::Color ToolbarItem::GetTargetBgColor() const {
+rendering::Color ToolbarItem::GetCurrentBgColor() const {
     if (!GetIsEnabled()) return m_normalBg;
     if (m_isPressed) return m_pressedBg;
     if (m_isChecked) return m_checkedBg;
     if (m_isHovered) return m_hoverBg;
     return m_normalBg;
-}
-
-void ToolbarItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        if (auto* render = GetRender()) render->Invalidate();
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
 }
 
 void ToolbarItem::DrawIcon(rendering::IRenderContext* context, const rendering::Rect& rect) {
@@ -216,7 +186,7 @@ void ToolbarItem::OnRender(rendering::IRenderContext* context) {
     auto rect = render->GetRenderRect();
 
     // 使用动画背景色
-    rendering::Color bgColor = m_animBg;
+    rendering::Color bgColor = GetCurrentBgColor();
 
     // 绘制背景
     if (bgColor.a > 0) {

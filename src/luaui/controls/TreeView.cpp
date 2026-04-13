@@ -142,12 +142,12 @@ void TreeViewItem::OnClick() {
 
 void TreeViewItem::OnMouseEnter() {
     m_isHovered = true;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void TreeViewItem::OnMouseLeave() {
     m_isHovered = false;
-    AnimateBgTo(GetTargetBgColor(), 150.0f);
+    if (auto* render = GetRender()) render->Invalidate();
 }
 
 void TreeViewItem::OnMouseDown(MouseEventArgs& args) {
@@ -184,45 +184,15 @@ void TreeViewItem::ApplyTheme() {
     m_textColor = t.GetColor(kTreeViewItemText);
     m_selectedTextColor = t.GetColor(kTreeViewItemSelectedText);
     m_expandButtonColor = t.GetColor(kTreeViewExpandBtn);
-    m_animBg = m_bgColor;
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
 }
 
-rendering::Color TreeViewItem::GetTargetBgColor() const {
+rendering::Color TreeViewItem::GetCurrentBgColor() const {
     if (m_isSelected) return m_selectedColor;
     if (m_isHovered) return m_hoverColor;
     return m_bgColor;
-}
-
-void TreeViewItem::AnimateBgTo(const rendering::Color& target, float durationMs) {
-    auto* wnd = GetWindow();
-    if (!wnd || !wnd->GetTimeline()) {
-        m_animBg = target;
-        if (auto* render = GetRender()) render->Invalidate();
-        return;
-    }
-
-    auto anim = wnd->GetTimeline()->CreateAnimation();
-    anim->SetDuration(durationMs);
-    anim->SetEasing(rendering::Easing::CubicOut);
-    anim->SetFillMode(rendering::FillMode::Forwards);
-
-    rendering::Color start = m_animBg;
-    anim->SetStartValue(rendering::AnimationValue(start));
-    anim->SetEndValue(rendering::AnimationValue(target));
-
-    anim->SetUpdateCallback([this](const rendering::AnimationValue& val) {
-        m_animBg = val.AsColor();
-        if (auto* render = GetRender()) {
-            render->Invalidate();
-        }
-    });
-
-    anim->Play();
-    wnd->GetTimeline()->Add(std::move(anim));
-    wnd->StartAnimTimer();
 }
 
 void TreeViewItem::DrawExpandButton(rendering::IRenderContext* context, const rendering::Rect& rect) {
@@ -269,7 +239,7 @@ void TreeViewItem::OnRender(rendering::IRenderContext* context) {
     auto rect = render->GetRenderRect();
     
     // 绘制背景（使用动画颜色）
-    rendering::Color bgColor = m_animBg;
+    rendering::Color bgColor = GetCurrentBgColor();
     
     if (bgColor.a > 0) {
         auto bgBrush = context->CreateSolidColorBrush(bgColor);
