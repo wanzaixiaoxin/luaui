@@ -788,9 +788,30 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
             if (hit == HTCLIENT) {
                 POINT pt = { GET_X_LPARAM(lP), GET_Y_LPARAM(lP) };
                 ScreenToClient(m_hWnd, &pt);
-                // 顶部菜单栏区域允许拖拽窗体（除了窗口按钮区域）
+                // 顶部标题栏区域（y < 32）需要区分拖拽和交互
                 if (pt.y >= 0 && pt.y < 32) {
-                    // 检查是否点击了窗口按钮区域（右侧135px）
+                    // 先用框架 HitTest 检查是否点到了可交互控件
+                    if (m_root) {
+                        auto* hitControl = HitTest(m_root.get(), 
+                            static_cast<float>(pt.x), static_cast<float>(pt.y), 0, 0);
+                        if (hitControl) {
+                            // 如果命中的控件有 InputComponent，说明是可交互控件（如 MenuBar）
+                            // 返回 HTCLIENT 让鼠标消息正常路由到控件
+                            if (hitControl->GetInput()) {
+                                return HTCLIENT;
+                            }
+                            // 也检查父链上是否有 MenuBar（Menu 是 MenuBar 的子控件）
+                            Control* cur = hitControl;
+                            while (cur) {
+                                if (cur->GetTypeName() == "MenuBar") {
+                                    return HTCLIENT;
+                                }
+                                auto parent = cur->GetParent();
+                                cur = parent ? static_cast<Control*>(parent.get()) : nullptr;
+                            }
+                        }
+                    }
+                    // 没有命中可交互控件，允许拖拽窗体
                     if (pt.x < static_cast<LONG>(m_width) - 135) {
                         return HTCAPTION;
                     }

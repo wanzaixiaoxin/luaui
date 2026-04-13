@@ -106,6 +106,7 @@ protected:
     void OnClick() override;
 
 private:
+    friend class Menu;
     void UpdateVisualState();
     rendering::Color GetCurrentBgColor() const;
     
@@ -171,6 +172,11 @@ public:
     void Close();
     bool GetIsOpen() const { return m_isOpen; }
     
+    // 坐标偏移（用于将窗口绝对坐标转换为Menu的本地坐标）
+    void SetCoordinateOffset(float offsetX, float offsetY) { m_coordOffsetX = offsetX; m_coordOffsetY = offsetY; }
+    float GetCoordinateOffsetX() const { return m_coordOffsetX; }
+    float GetCoordinateOffsetY() const { return m_coordOffsetY; }
+    
     // 父菜单项（子菜单用）
     MenuItem* GetParentItem() const { return m_parentItem; }
     void SetParentItem(MenuItem* item) { m_parentItem = item; }
@@ -188,6 +194,8 @@ protected:
 
     void OnMouseMove(MouseEventArgs& args) override;
     void OnMouseLeave() override;
+    void OnMouseDown(MouseEventArgs& args) override;
+    void OnMouseUp(MouseEventArgs& args) override;
     void OnKeyDown(KeyEventArgs& args) override;
 
 private:
@@ -210,6 +218,10 @@ private:
     float m_maxHeight = 400.0f;
     float m_scrollOffset = 0.0f;
     float m_itemWidth = 200.0f;
+    
+    // 坐标偏移（MenuBar全局位置，用于坐标转换）
+    float m_coordOffsetX = 0.0f;
+    float m_coordOffsetY = 0.0f;
     
     // 外观
     rendering::Color m_bgColor = rendering::Color::White();
@@ -277,6 +289,8 @@ private:
     WindowButton HitTestWindowButton(float x, float y);
     void DrawWindowButtons(rendering::IRenderContext* context, const rendering::Rect& rect);
     void ExecuteWindowButton(WindowButton btn);
+    void AddMenuToWindow(const std::shared_ptr<Menu>& menu);
+    void RemoveMenuFromWindow(const std::shared_ptr<Menu>& menu);
 
     std::vector<MenuEntry> m_menus;
     int m_openMenuIndex = -1;

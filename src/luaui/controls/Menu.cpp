@@ -7,6 +7,7 @@
 #include "IRenderContext.h"
 #include "Window.h"
 #include "Theme.h"
+#include "Panel.h"
 
 namespace luaui {
 namespace controls {
@@ -474,20 +475,25 @@ void Menu::OnRenderChildren(rendering::IRenderContext* context) {
     }
     
     float y = contentRect.y + m_borderWidth - m_scrollOffset;
+    float x = contentRect.x + m_borderWidth;
+    float width = contentRect.width - m_borderWidth * 2;
     
     for (auto& item : m_items) {
-        if (auto* itemRenderable = item->AsRenderable()) {
-            if (auto* layoutable = item->AsLayoutable()) {
-                auto size = layoutable->GetDesiredSize();
-                
-                // 可见性测试
-                if (y + size.height > contentRect.y && y < contentRect.y + contentRect.height) {
-                    // 临时调整渲染区域
-                    itemRenderable->Render(context);
+        if (auto* layoutable = item->AsLayoutable()) {
+            auto size = layoutable->GetDesiredSize();
+            
+            // 可见性测试
+            if (y + size.height > contentRect.y && y < contentRect.y + contentRect.height) {
+                // 设置菜单项的渲染区域
+                if (auto* itemLayoutable = item->AsLayoutable()) {
+                    itemLayoutable->Arrange(rendering::Rect(x, y, width, size.height));
                 }
-                
-                y += size.height;
+                // 直接调用OnRender而不是通过RenderComponent::Render
+                // 避免MultiplyTransform导致的坐标双重偏移
+                item->OnRender(context);
             }
+            
+            y += size.height;
         }
     }
 }
@@ -498,7 +504,8 @@ void Menu::OnMouseMove(MouseEventArgs& args) {
         rect = renderable->GetRenderRect();
     }
 
-    float localY = args.y - rect.y - m_borderWidth + m_scrollOffset;
+    // 将窗口绝对坐标转换为Menu的本地坐标
+    float localY = args.y - m_coordOffsetY - rect.y - m_borderWidth + m_scrollOffset;
     int index = HitTestItem(localY);
 
     if (index >= 0) {
@@ -522,6 +529,29 @@ void Menu::OnMouseLeave() {
         m_hoveredItem->NotifyMouseLeave();
         m_hoveredItem = nullptr;
     }
+}
+
+void Menu::OnMouseDown(MouseEventArgs& args) {
+    rendering::Rect rect;
+    if (auto* renderable = AsRenderable()) {
+        rect = renderable->GetRenderRect();
+    }
+
+    // 将窗口绝对坐标转换为Menu的本地坐标
+    float localY = args.y - m_coordOffsetY - rect.y - m_borderWidth + m_scrollOffset;
+    int index = HitTestItem(localY);
+
+    if (index >= 0 && index < static_cast<int>(m_items.size())) {
+        MenuItem* item = m_items[index].get();
+        if (item->GetIsEnabled() && item->GetItemType() != MenuItem::ItemType::Separator) {
+            item->OnClick();
+        }
+    }
+    args.Handled = true;
+}
+
+void Menu::OnMouseUp(MouseEventArgs& args) {
+    args.Handled = true;
 }
 
 void Menu::OnKeyDown(KeyEventArgs& args) {
@@ -644,32 +674,43 @@ void MenuBar::OpenMenu(int index) {
     if (m_openMenuIndex >= 0 && m_openMenuIndex != index) {
         m_menus[m_openMenuIndex].isOpen = false;
         m_menus[m_openMenuIndex].menu->Close();
+        RemoveMenuFromWindow(m_menus[m_openMenuIndex].menu);
     }
 
     m_openMenuIndex = index;
     m_menus[index].isOpen = true;
 
-    // 计算菜单位置
-    auto* barRender = GetRender();
-    if (!barRender) return;
-
-    rendering::Rect barRect = barRender->GetRenderRect();
-
-    float x = barRect.x + m_padding;
+    // 计算菜单位置（使用相对于MenuBar的本地坐标）
+    // Menu作为MenuBar的子控件，HitTest会将Menu的rect加上MenuBar的全局偏移
+    float x = m_padding;
     for (int i = 0; i < index; ++i) {
         x += static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
     }
+    float y = m_menuHeight; // Menu在MenuBar下方
 
     // 先测量Menu的大小
     auto& menu = m_menus[index].menu;
     if (auto* layout = menu->GetLayout()) {
+        auto* barRender = GetRender();
+        float barWidth = barRender ? barRender->GetRenderRect().width : 980.0f;
         interfaces::LayoutConstraint constraint;
-        constraint.available = rendering::Size(barRect.width, 400); // 最大高度400
+        constraint.available = rendering::Size(barWidth, 400);
         constraint.maxHeight = 400;
         layout->Measure(constraint);
     }
 
-    menu->OpenAt(x, barRect.y + barRect.height);
+    // 将Menu添加为MenuBar子控件以接收事件和HitTest
+    AddMenuToWindow(menu);
+    
+    // 设置坐标偏移（MenuBar的全局位置），用于将窗口绝对坐标转换为Menu的本地坐标
+    auto* barRender = GetRender();
+    if (barRender) {
+        const auto& barRect = barRender->GetRenderRect();
+        menu->SetCoordinateOffset(barRect.x, barRect.y);
+    }
+    
+    // 使用本地坐标（相对于MenuBar）设置Menu位置
+    menu->OpenAt(x, y);
 
     if (auto* r = GetRender()) {
         r->Invalidate();
@@ -679,6 +720,7 @@ void MenuBar::OpenMenu(int index) {
 void MenuBar::CloseAllMenus() {
     if (m_openMenuIndex >= 0) {
         m_menus[m_openMenuIndex].isOpen = false;
+        RemoveMenuFromWindow(m_menus[m_openMenuIndex].menu);
         m_menus[m_openMenuIndex].menu->Close();
         m_openMenuIndex = -1;
     }
@@ -690,6 +732,17 @@ void MenuBar::CloseAllMenus() {
     if (auto* render = GetRender()) {
         render->Invalidate();
     }
+}
+
+void MenuBar::AddMenuToWindow(const std::shared_ptr<Menu>& menu) {
+    // 将Menu添加为MenuBar自身的子控件（而不是窗口根Panel）
+    // 这样HitTest可以找到Menu，且MenuBar的OnArrangeChildren不会覆盖Menu的位置
+    Panel::AddChild(menu);
+}
+
+void MenuBar::RemoveMenuFromWindow(const std::shared_ptr<Menu>& menu) {
+    // 从MenuBar的子控件列表中移除Menu
+    Panel::RemoveChild(menu);
 }
 
 int MenuBar::HitTestMenu(float x, float y) {
@@ -797,16 +850,16 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     // 绘制窗口控制按钮
     DrawWindowButtons(context, barRect);
 
-    // 手动渲染打开的Menu（Menu不作为子控件，避免被裁剪）
+    // 手动渲染打开的Menu（Menu使用相对于MenuBar的本地坐标，在MenuBar的变换坐标系中渲染）
     if (m_openMenuIndex >= 0 && m_openMenuIndex < static_cast<int>(m_menus.size())) {
         auto& menu = m_menus[m_openMenuIndex].menu;
         if (menu && menu->GetIsVisible()) {
-            // 获取Menu的渲染矩形
             auto* menuRender = menu->GetRender();
             if (menuRender) {
-                const auto& menuRect = menuRender->GetRenderRect();
-                // 渲染Menu
+                // 渲染Menu背景和边框
                 menu->OnRender(context);
+                // 渲染Menu的菜单项
+                menu->OnRenderChildren(context);
             }
         }
     }
