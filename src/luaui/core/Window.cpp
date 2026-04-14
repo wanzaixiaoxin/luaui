@@ -616,28 +616,11 @@ void Window::HandleMouseDown(float x, float y, int button) {
         
         // 如果点击的不是菜单相关控件,关闭所有弹出菜单
         if (!isMenuRelated) {
-            for (auto& weak : m_popups) {
-                if (auto popup = weak.lock()) {
-                    if (popup->GetIsVisible() && popup->GetTypeName() == "Menu") {
-                        // 调用 Menu::Close() 关闭菜单
-                        if (auto* menu = dynamic_cast<controls::Menu*>(popup.get())) {
-                            menu->Close();
-                        }
-                    }
-                }
-            }
+            CloseAllPopupMenus();
         }
     } else {
         // 点击空白区域,关闭所有弹出菜单
-        for (auto& weak : m_popups) {
-            if (auto popup = weak.lock()) {
-                if (popup->GetIsVisible() && popup->GetTypeName() == "Menu") {
-                    if (auto* menu = dynamic_cast<controls::Menu*>(popup.get())) {
-                        menu->Close();
-                    }
-                }
-            }
-        }
+        CloseAllPopupMenus();
     }
     
     if (control) {
@@ -1140,6 +1123,19 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
 // ============================================================================
 // 可重写的虚拟函数（默认实现）
 // ============================================================================
+
+void Window::CloseAllPopupMenus() {
+    for (auto& weak : m_popups) {
+        if (auto popup = weak.lock()) {
+            if (popup->GetIsVisible() && popup->GetTypeName() == "Menu") {
+                // 调用 Menu::Close() 关闭菜单
+                if (auto* menu = dynamic_cast<controls::Menu*>(popup.get())) {
+                    menu->Close();
+                }
+            }
+        }
+    }
+}
 
 void Window::OnMouseMove(float x, float y) {
     (void)x;

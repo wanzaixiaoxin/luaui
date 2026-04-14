@@ -196,6 +196,9 @@ private:
 
     // 弹出层控件（如 Menu），在所有其他控件之后渲染
     std::vector<std::weak_ptr<Control>> m_popups;
+    
+    // 关闭所有弹出菜单
+    void CloseAllPopupMenus();
 
     static const wchar_t* s_className;
     static bool s_classRegistered;

@@ -570,6 +570,11 @@ void Menu::OnMouseLeave() {
     if (m_hoveredItem) {
         m_hoveredItem->NotifyMouseLeave();
         m_hoveredItem = nullptr;
+        
+        // 强制重新渲染以清除悬停状态
+        if (auto* render = GetRender()) {
+            render->Invalidate();
+        }
     }
 }
 
@@ -893,7 +898,6 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     
     // 计算窗口按钮占用的宽度
     float btnAreaWidth = m_showWindowControls ? (m_btnWidth * 3) : 0;
-    float maxMenuWidth = localRect.width - btnAreaWidth - m_padding * 2;
     
     // 绘制菜单项（使用本地坐标）
     float x = m_padding;
