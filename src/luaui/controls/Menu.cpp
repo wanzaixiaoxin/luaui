@@ -459,12 +459,23 @@ void Menu::OnRender(rendering::IRenderContext* context) {
     utils::Logger::DebugF("[Menu] OnRender: renderRect=%.1f,%.1f %.1fx%.1f items=%d isOpen=%d",
         rect.x, rect.y, rect.width, rect.height, (int)m_items.size(), m_isOpen);
     
-    // 绘制阴影（简化版）
-    auto shadowBrush = context->CreateSolidColorBrush(rendering::Color(0, 0, 0, 0.2f));
+    // 绘制阴影（只在右下角）
+    auto shadowBrush = context->CreateSolidColorBrush(rendering::Color(0, 0, 0, 0.15f));
     if (shadowBrush) {
+        // 右侧阴影
         context->FillRectangle(
-            rendering::Rect(localRect.x + m_shadowOffset, localRect.y + m_shadowOffset,
-                           localRect.width, localRect.height),
+            rendering::Rect(localRect.x + localRect.width, localRect.y + m_shadowOffset,
+                           m_shadowOffset, localRect.height),
+            shadowBrush.get());
+        // 下方阴影
+        context->FillRectangle(
+            rendering::Rect(localRect.x + m_shadowOffset, localRect.y + localRect.height,
+                           localRect.width, m_shadowOffset),
+            shadowBrush.get());
+        // 右下角阴影
+        context->FillRectangle(
+            rendering::Rect(localRect.x + localRect.width, localRect.y + localRect.height,
+                           m_shadowOffset, m_shadowOffset),
             shadowBrush.get());
     }
     
@@ -474,10 +485,24 @@ void Menu::OnRender(rendering::IRenderContext* context) {
         context->FillRectangle(localRect, bgBrush.get());
     }
     
-    // 绘制边框
+    // 绘制边框（不包括顶部，因为菜单紧贴MenuBar）
     auto borderBrush = context->CreateSolidColorBrush(m_borderColor);
     if (borderBrush) {
-        context->DrawRectangle(localRect, borderBrush.get(), m_borderWidth);
+        // 左边框
+        context->DrawLine(
+            rendering::Point(localRect.x, localRect.y),
+            rendering::Point(localRect.x, localRect.y + localRect.height),
+            borderBrush.get(), m_borderWidth);
+        // 右边框
+        context->DrawLine(
+            rendering::Point(localRect.x + localRect.width, localRect.y),
+            rendering::Point(localRect.x + localRect.width, localRect.y + localRect.height),
+            borderBrush.get(), m_borderWidth);
+        // 底边框
+        context->DrawLine(
+            rendering::Point(localRect.x, localRect.y + localRect.height),
+            rendering::Point(localRect.x + localRect.width, localRect.y + localRect.height),
+            borderBrush.get(), m_borderWidth);
     }
     
     // 渲染菜单项（Menu 不是 Panel，需要手动调用 OnRenderChildren）
@@ -712,10 +737,13 @@ void MenuBar::OpenMenu(int index) {
     for (int i = 0; i < index; ++i) {
         x += static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
     }
-    float y = barY + m_menuHeight; // Menu在MenuBar下方
 
     // 先测量Menu的大小
     auto& menu = m_menus[index].menu;
+    
+    // Menu在MenuBar下方
+    float y = barY + m_menuHeight;
+    
     if (auto* layout = menu->GetLayout()) {
         interfaces::LayoutConstraint constraint;
         constraint.available = rendering::Size(1000, 400);  // 使用足够大的宽度来测量
@@ -830,20 +858,21 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     auto barSize = render->GetRenderRect();
     rendering::Rect localRect(0, 0, barSize.width, barSize.height);
     
-    // 绘制背景
+    // 绘制背景（向下扩展1像素以覆盖与Menu之间的间隙）
     auto bgBrush = context->CreateSolidColorBrush(m_bgColor);
     if (bgBrush) {
-        context->FillRectangle(localRect, bgBrush.get());
+        rendering::Rect bgRect(localRect.x, localRect.y, localRect.width, localRect.height + 1.0f);
+        context->FillRectangle(bgRect, bgBrush.get());
     }
     
-    // 绘制底边框
-    auto& t = Theme::GetCurrent();
-    auto borderBrush = context->CreateSolidColorBrush(t.GetColor(theme::kMenuBorder));
-    if (borderBrush) {
-        context->DrawLine(rendering::Point(0, localRect.height - 1),
-                          rendering::Point(localRect.width, localRect.height - 1),
-                          borderBrush.get(), 1.0f);
-    }
+    // 不绘制底边框，让菜单的顶部边框来处理
+    // auto& t = Theme::GetCurrent();
+    // auto borderBrush = context->CreateSolidColorBrush(t.GetColor(theme::kMenuBorder));
+    // if (borderBrush) {
+    //     context->DrawLine(rendering::Point(0, localRect.height - 1),
+    //                       rendering::Point(localRect.width, localRect.height - 1),
+    //                       borderBrush.get(), 1.0f);
+    // }
     
     // 计算窗口按钮占用的宽度
     float btnAreaWidth = m_showWindowControls ? (m_btnWidth * 3) : 0;

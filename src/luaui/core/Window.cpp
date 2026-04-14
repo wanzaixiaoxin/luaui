@@ -16,6 +16,19 @@
 using namespace luaui::utils;
 
 namespace luaui {
+namespace {
+
+BYTE ToColorByte(float channel) {
+    if (channel <= 0.0f) return 0;
+    if (channel >= 1.0f) return 255;
+    return static_cast<BYTE>(channel * 255.0f + 0.5f);
+}
+
+COLORREF ToColorRef(const rendering::Color& color) {
+    return RGB(ToColorByte(color.r), ToColorByte(color.g), ToColorByte(color.b));
+}
+
+} // namespace
 
 const wchar_t* Window::s_className = L"LuaUI_WindowClass";
 bool Window::s_classRegistered = false;
@@ -764,22 +777,19 @@ void Window::OnAnimTimerTick() {
 void Window::UpdateTitleBarTheme() {
     if (!m_hWnd) return;
 
-    auto& t = controls::Theme::GetCurrent();
-    auto bg = t.GetColor(theme::kBackgroundPrimary);
+    const auto& currentTheme = controls::Theme::GetCurrent();
+    const auto background = currentTheme.GetColor(theme::kBackgroundPrimary);
+    const auto titleBarColor = currentTheme.GetColor(theme::kMenuBarBg);
 
-    // 判断当前主题是否为深色：背景亮度低于 0.5 认为是深色
-    bool isDark = (bg.r + bg.g + bg.b) / 3.0f < 0.5f;
+    const BOOL useDarkMode =
+        ((background.r + background.g + background.b) / 3.0f < 0.5f) ? TRUE : FALSE;
+    DwmSetWindowAttribute(m_hWnd, 20, &useDarkMode, sizeof(useDarkMode));
 
-    // DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Windows 10 1809+)
-    // 值为 TRUE 时标题栏使用深色模式（按钮图标变白、悬停对比度正确）
-    BOOL darkValue = isDark ? TRUE : FALSE;
-    DwmSetWindowAttribute(m_hWnd, 20, &darkValue, sizeof(darkValue));
+    const COLORREF borderColor = m_extendFrame
+        ? ToColorRef(titleBarColor)
+        : static_cast<COLORREF>(0xFFFFFFFFu);
+    DwmSetWindowAttribute(m_hWnd, 34, &borderColor, sizeof(borderColor));
 
-    // 不再设置 DWMWA_CAPTION_COLOR (35) 和 DWMWA_TEXT_COLOR (36)
-    // 自定义标题栏颜色会导致 DWM 按钮悬停色与图标色对比度不足
-
-    // DWM 对上述属性变更不会自动触发标题栏重绘。
-    // 通过发送 WM_NCACTIVATE 模拟激活/失活，强制 DWM 重新渲染标题栏。
     HWND active = ::GetActiveWindow();
     bool isActive = (active == m_hWnd);
     if (isActive) {
@@ -804,8 +814,9 @@ void Window::SetExtendFrameIntoClientArea(bool enable) {
         style |= WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
         SetWindowLong(m_hWnd, GWL_STYLE, style);
 
-        // Extend DWM frame into client area for glass/shadow effect
-        MARGINS margins = { -1, -1, -1, -1 };
+        // Keep the minimal DWM frame so the window still has shadow/rounded corners
+        // without turning the entire client area into a glass frame surface.
+        MARGINS margins = { 1, 1, 1, 1 };
         DwmExtendFrameIntoClientArea(m_hWnd, &margins);
 
         // Force window to recalculate frame
@@ -815,6 +826,8 @@ void Window::SetExtendFrameIntoClientArea(bool enable) {
         MARGINS margins = { 0, 0, 0, 0 };
         DwmExtendFrameIntoClientArea(m_hWnd, &margins);
     }
+
+    UpdateTitleBarTheme();
 }
 
 // ============================================================================
@@ -835,6 +848,29 @@ LRESULT CALLBACK Window::StaticWndProc(HWND hWnd, UINT msg, WPARAM wP, LPARAM lP
 
 LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
     switch (msg) {
+        case WM_NCCALCSIZE: {
+            if (!m_extendFrame) {
+                break;
+            }
+
+            if (wP) {
+                auto* calcSize = reinterpret_cast<NCCALCSIZE_PARAMS*>(lP);
+                if (calcSize && ::IsZoomed(m_hWnd)) {
+                    const int frameX =
+                        ::GetSystemMetrics(SM_CXSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+                    const int frameY =
+                        ::GetSystemMetrics(SM_CYSIZEFRAME) + ::GetSystemMetrics(SM_CXPADDEDBORDER);
+
+                    calcSize->rgrc[0].left += frameX;
+                    calcSize->rgrc[0].right -= frameX;
+                    calcSize->rgrc[0].top += frameY;
+                    calcSize->rgrc[0].bottom -= frameY;
+                }
+            }
+
+            return 0;
+        }
+
         // ========== 渲染 ==========
         case WM_PAINT: {
             PAINTSTRUCT ps;

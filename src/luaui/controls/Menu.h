@@ -184,6 +184,9 @@ public:
     // 最大高度（超出时显示滚动条）
     float GetMaxHeight() const { return m_maxHeight; }
     void SetMaxHeight(float height) { m_maxHeight = height; }
+    
+    // 边框宽度
+    float GetBorderWidth() const { return m_borderWidth; }
 
 protected:
     void InitializeComponents() override;
