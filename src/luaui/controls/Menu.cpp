@@ -735,7 +735,16 @@ void MenuBar::OpenMenu(int index) {
 
     float x = barX + m_padding;
     for (int i = 0; i < index; ++i) {
-        x += static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
+        // 计算文字宽度（区分中英文字符）
+        float textWidth = 0;
+        for (wchar_t ch : m_menus[i].header) {
+            if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                textWidth += m_fontSize;
+            } else {
+                textWidth += m_fontSize * 0.5f;
+            }
+        }
+        x += textWidth + m_padding * 2;
     }
 
     // 先测量Menu的大小
@@ -825,7 +834,16 @@ int MenuBar::HitTestMenu(float x, float y) {
 
     float currentX = barRect.x + m_padding;
     for (size_t i = 0; i < m_menus.size(); ++i) {
-        float menuWidth = static_cast<float>(m_menus[i].header.length()) * m_fontSize * 0.6f + m_padding * 2;
+        // 计算文字宽度（区分中英文字符）
+        float textWidth = 0;
+        for (wchar_t ch : m_menus[i].header) {
+            if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                textWidth += m_fontSize;
+            } else {
+                textWidth += m_fontSize * 0.5f;
+            }
+        }
+        float menuWidth = textWidth + m_padding * 2;
         if (x >= currentX && x <= currentX + menuWidth) {
             return static_cast<int>(i);
         }
@@ -884,14 +902,27 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
     
     for (size_t i = 0; i < m_menus.size(); ++i) {
         const auto& entry = m_menus[i];
-        float menuWidth = static_cast<float>(entry.header.length()) * m_fontSize * 0.6f + m_padding * 2;
+        
+        // 计算文字宽度（区分中英文字符）
+        float textWidth = 0;
+        for (wchar_t ch : entry.header) {
+            if (ch >= 0x4E00 && ch <= 0x9FFF) {
+                // 中文字符
+                textWidth += m_fontSize;
+            } else {
+                // 英文/其他字符
+                textWidth += m_fontSize * 0.5f;
+            }
+        }
+        float menuWidth = textWidth + m_padding * 2;
         
         // 确保不超出可用空间
         if (x + menuWidth > localRect.width - btnAreaWidth - m_padding) {
             break;
         }
         
-        rendering::Rect menuRect(x, 0, menuWidth, localRect.height);
+        // 菜单项背景向下扩展1像素以与MenuBar整体背景对齐
+        rendering::Rect menuRect(x, 0, menuWidth, localRect.height + 1.0f);
         
         // 绘制背景
         if (entry.isOpen) {
@@ -906,12 +937,14 @@ void MenuBar::OnRenderChildren(rendering::IRenderContext* context) {
             }
         }
         
-        // 绘制文本
+        // 绘制文本（水平居中）
         auto textBrush = context->CreateSolidColorBrush(m_textColor);
         if (textBrush && textFormat) {
-            float textY = (localRect.height - m_fontSize) / 2;
+            // 文字水平居中
+            float textX = x + (menuWidth - textWidth) / 2;
+            float textY = (localRect.height + 1.0f - m_fontSize) / 2;
             context->DrawTextString(entry.header, textFormat.get(),
-                                    rendering::Point(x + m_padding, textY), textBrush.get());
+                                    rendering::Point(textX, textY), textBrush.get());
         }
         
         x += menuWidth;
@@ -1090,6 +1123,23 @@ void MenuBar::OnMouseMove(MouseEventArgs& args) {
     }
 
     args.Handled = true;
+}
+
+void MenuBar::OnMouseLeave() {
+    // 清除所有菜单项的悬停状态
+    for (auto& entry : m_menus) {
+        entry.isHovered = false;
+    }
+    
+    // 清除窗口按钮悬停状态
+    m_hoveredBtn = WindowButton::None;
+    
+    // 关闭所有打开的菜单
+    CloseAllMenus();
+    
+    if (auto* render = GetRender()) {
+        render->Invalidate();
+    }
 }
 
 void MenuBar::OnMouseDown(MouseEventArgs& args) {

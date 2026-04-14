@@ -275,6 +275,7 @@ protected:
     void OnMouseDown(MouseEventArgs& args) override;
     void OnMouseUp(MouseEventArgs& args) override;
     void OnMouseDoubleClick(MouseEventArgs& args) override;
+    void OnMouseLeave() override;
     void OnKeyDown(KeyEventArgs& args) override;
 
 private:
