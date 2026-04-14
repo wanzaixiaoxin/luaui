@@ -916,6 +916,26 @@ LRESULT Window::WndProc(UINT msg, WPARAM wP, LPARAM lP) {
             if (hit == HTCLIENT) {
                 POINT pt = { GET_X_LPARAM(lP), GET_Y_LPARAM(lP) };
                 ScreenToClient(m_hWnd, &pt);
+
+                // 边框缩放区域检测
+                const int borderWidth = 5; // 边框宽度为5像素
+                bool onLeft   = pt.x < borderWidth;
+                bool onRight  = pt.x >= static_cast<LONG>(m_width) - borderWidth;
+                bool onTop    = pt.y < borderWidth;
+                bool onBottom = pt.y >= static_cast<LONG>(m_height) - borderWidth;
+
+                // 检测角落（优先级最高）
+                if (onTop && onLeft)     return HTTOPLEFT;
+                if (onTop && onRight)    return HTTOPRIGHT;
+                if (onBottom && onLeft)  return HTBOTTOMLEFT;
+                if (onBottom && onRight) return HTBOTTOMRIGHT;
+
+                // 检测边框
+                if (onLeft)   return HTLEFT;
+                if (onRight)  return HTRIGHT;
+                if (onTop)    return HTTOP;
+                if (onBottom) return HTBOTTOM;
+
                 // 顶部标题栏区域（y < 32）需要区分拖拽和交互
                 if (pt.y >= 0 && pt.y < 32) {
                     // 先用框架 HitTest 检查是否点到了可交互控件
