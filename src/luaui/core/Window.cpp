@@ -531,8 +531,35 @@ void Window::HandleMouseMove(float x, float y) {
         m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
 
     if (m_lastMouseOver && m_lastMouseOver != control) {
-        if (auto* inputComp = m_lastMouseOver->GetInput()) {
-            inputComp->RaiseMouseLeave();
+        // 检查是否是从父菜单移动到子菜单,或者从子菜单移动到父菜单
+        bool isMenuTransition = false;
+        
+        // 检查 m_lastMouseOver 是否是 Menu,且 control 是否是其子菜单
+        if (m_lastMouseOver->GetTypeName() == "Menu") {
+            if (control && control->GetTypeName() == "Menu") {
+                // 检查 control 是否是 m_lastMouseOver 的子菜单
+                // 通过检查弹出层列表中的顺序来判断
+                for (auto it = m_popups.rbegin(); it != m_popups.rend(); ++it) {
+                    if (auto popup = it->lock()) {
+                        if (popup.get() == control) {
+                            // control 在弹出层列表中,可能是子菜单
+                            isMenuTransition = true;
+                            break;
+                        }
+                        if (popup.get() == m_lastMouseOver) {
+                            // 先找到了父菜单,说明 control 不是其子菜单
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 如果不是菜单过渡,才触发 MouseLeave
+        if (!isMenuTransition) {
+            if (auto* inputComp = m_lastMouseOver->GetInput()) {
+                inputComp->RaiseMouseLeave();
+            }
         }
     }
 
@@ -570,6 +597,48 @@ void Window::HandleMouseDown(float x, float y, int button) {
     utils::Logger::InfoF("[Window] MouseDown: %s at (%.1f,%.1f) captured=%s",
         control ? control->GetTypeName().c_str() : "null", x, y,
         m_capturedControl ? m_capturedControl->GetTypeName().c_str() : "null");
+    
+    // 检查是否点击在菜单外部,如果是则关闭所有菜单
+    if (control) {
+        bool isMenuRelated = false;
+        Control* current = control;
+        
+        // 向上遍历父控件链,检查是否是 Menu 或 MenuBar
+        while (current) {
+            const std::string& typeName = current->GetTypeName();
+            if (typeName == "Menu" || typeName == "MenuBar" || typeName == "MenuItem") {
+                isMenuRelated = true;
+                break;
+            }
+            auto parent = current->GetParent();
+            current = parent ? static_cast<Control*>(parent.get()) : nullptr;
+        }
+        
+        // 如果点击的不是菜单相关控件,关闭所有弹出菜单
+        if (!isMenuRelated) {
+            for (auto& weak : m_popups) {
+                if (auto popup = weak.lock()) {
+                    if (popup->GetIsVisible() && popup->GetTypeName() == "Menu") {
+                        // 调用 Menu::Close() 关闭菜单
+                        if (auto* menu = dynamic_cast<controls::Menu*>(popup.get())) {
+                            menu->Close();
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // 点击空白区域,关闭所有弹出菜单
+        for (auto& weak : m_popups) {
+            if (auto popup = weak.lock()) {
+                if (popup->GetIsVisible() && popup->GetTypeName() == "Menu") {
+                    if (auto* menu = dynamic_cast<controls::Menu*>(popup.get())) {
+                        menu->Close();
+                    }
+                }
+            }
+        }
+    }
     
     if (control) {
         m_capturedControl = control;

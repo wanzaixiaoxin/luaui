@@ -362,13 +362,12 @@ void Menu::Close() {
 void Menu::OnItemHovered(MenuItem* item) {
     if (m_hoveredItem != item) {
         m_hoveredItem = item;
-        
+
         // 如果悬停在新项上，且有子菜单，显示子菜单
         if (item && item->GetHasSubmenu()) {
             ShowSubmenu(item);
         } else if (m_openSubmenuItem && m_openSubmenuItem != item) {
             // 如果移出子菜单项，关闭子菜单
-            // 延迟关闭逻辑可以在这里添加
             HideSubmenu();
         }
     }
@@ -1135,7 +1134,7 @@ void MenuBar::OnMouseLeave() {
     m_hoveredBtn = WindowButton::None;
     
     // 关闭所有打开的菜单
-    CloseAllMenus();
+    // CloseAllMenus();
     
     if (auto* render = GetRender()) {
         render->Invalidate();
