@@ -28,15 +28,6 @@ extern "C" {
 namespace luaui {
 namespace lua {
 
-// ==================== Helper Functions ====================
-
-static std::string WStringToString(const std::wstring& wstr) {
-    return WToUtf8(wstr);
-}
-
-static std::wstring StringToWString(const std::string& str) {
-    return Utf8ToW(str);
-}
 
 // ==================== LuaBinding ====================
 
@@ -99,7 +90,7 @@ void LuaBinding::RegisterButton(lua_State* L) {
             lua_touserdata(L, 1)
         );
         const char* text = luaL_checkstring(L, 2);
-        (*ptr)->SetText(StringToWString(text));
+        (*ptr)->SetText(Utf8ToW(text));
         return 0;
     });
     lua_setfield(L, -2, "setText");
@@ -109,7 +100,7 @@ void LuaBinding::RegisterButton(lua_State* L) {
         auto* ptr = static_cast<std::shared_ptr<luaui::controls::Button>*>(
             lua_touserdata(L, 1)
         );
-        lua_pushstring(L, WStringToString((*ptr)->GetText()).c_str());
+        lua_pushstring(L, WToUtf8((*ptr)->GetText()).c_str());
         return 1;
     });
     lua_setfield(L, -2, "getText");
@@ -233,7 +224,7 @@ void LuaBinding::RegisterTextBlock(lua_State* L) {
             lua_touserdata(L, 1)
         );
         const char* text = luaL_checkstring(L, 2);
-        (*ptr)->SetText(StringToWString(text));
+        (*ptr)->SetText(Utf8ToW(text));
         return 0;
     });
     lua_setfield(L, -2, "setText");
@@ -242,7 +233,7 @@ void LuaBinding::RegisterTextBlock(lua_State* L) {
         auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBlock>*>(
             lua_touserdata(L, 1)
         );
-        lua_pushstring(L, WStringToString((*ptr)->GetText()).c_str());
+        lua_pushstring(L, WToUtf8((*ptr)->GetText()).c_str());
         return 1;
     });
     lua_setfield(L, -2, "getText");
@@ -288,7 +279,7 @@ void LuaBinding::RegisterCheckBox(lua_State* L) {
             lua_touserdata(L, 1)
         );
         const char* text = luaL_checkstring(L, 2);
-        (*ptr)->SetText(StringToWString(text));
+        (*ptr)->SetText(Utf8ToW(text));
         return 0;
     });
     lua_setfield(L, -2, "setText");
@@ -689,7 +680,7 @@ void LuaBinding::RegisterTextBox(lua_State* L) {
             lua_touserdata(L, 1)
         );
         const char* text = luaL_checkstring(L, 2);
-        (*ptr)->SetText(StringToWString(text));
+        (*ptr)->SetText(Utf8ToW(text));
         return 0;
     });
     lua_setfield(L, -2, "setText");
@@ -699,7 +690,7 @@ void LuaBinding::RegisterTextBox(lua_State* L) {
         auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
             lua_touserdata(L, 1)
         );
-        lua_pushstring(L, WStringToString((*ptr)->GetText()).c_str());
+        lua_pushstring(L, WToUtf8((*ptr)->GetText()).c_str());
         return 1;
     });
     lua_setfield(L, -2, "getText");
@@ -710,7 +701,7 @@ void LuaBinding::RegisterTextBox(lua_State* L) {
             lua_touserdata(L, 1)
         );
         const char* text = luaL_checkstring(L, 2);
-        (*ptr)->SetPlaceholder(StringToWString(text));
+        (*ptr)->SetPlaceholder(Utf8ToW(text));
         return 0;
     });
     lua_setfield(L, -2, "setPlaceholder");
@@ -720,7 +711,7 @@ void LuaBinding::RegisterTextBox(lua_State* L) {
         auto* ptr = static_cast<std::shared_ptr<luaui::controls::TextBox>*>(
             lua_touserdata(L, 1)
         );
-        lua_pushstring(L, WStringToString((*ptr)->GetPlaceholder()).c_str());
+        lua_pushstring(L, WToUtf8((*ptr)->GetPlaceholder()).c_str());
         return 1;
     });
     lua_setfield(L, -2, "getPlaceholder");

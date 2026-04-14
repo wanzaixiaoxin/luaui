@@ -47,7 +47,7 @@
 
     <!-- 主内容区 (最后一个子元素自动填充剩余空间) -->
     <ScrollViewer>
-    <StackPanel Orientation="Vertical" Margin="24" Spacing="12">
+    <StackPanel Orientation="Vertical" Margin="32,24,24,24" Spacing="12">
 
         <!-- 标题 + 主题切换 -->
         <Border Padding="16">

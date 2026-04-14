@@ -193,21 +193,85 @@ private:
                     }
                 }
             }
-            // 外边距 Margin (简化为统一值)
+            // 外边距 Margin (支持多种格式: "24" 或 "32,24" 或 "32,24,24,24")
             else if (name == "Margin") {
-                float margin;
-                if (TypeConverter::ToFloat(value, margin)) {
-                    if (auto* layout = control->GetLayout()) {
-                        layout->SetMargin(margin, margin, margin, margin);
+                if (auto* layout = control->GetLayout()) {
+                    std::wstring wvalue = Utf8ToW(value);
+                    
+                    // 分割逗号分隔的值
+                    std::vector<std::wstring> parts;
+                    std::wstringstream wss(wvalue);
+                    std::wstring part;
+                    while (std::getline(wss, part, L',')) {
+                        // 去除空格
+                        part.erase(0, part.find_first_not_of(L" \t"));
+                        part.erase(part.find_last_not_of(L" \t") + 1);
+                        parts.push_back(part);
+                    }
+                    
+                    if (parts.size() == 1) {
+                        // 单一数值: 四边相同
+                        float margin;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), margin)) {
+                            layout->SetMargin(margin, margin, margin, margin);
+                        }
+                    } else if (parts.size() == 2) {
+                        // 两个数值: 水平,垂直
+                        float horizontal, vertical;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), horizontal) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[1]), vertical)) {
+                            layout->SetMargin(horizontal, vertical, horizontal, vertical);
+                        }
+                    } else if (parts.size() == 4) {
+                        // 四个数值: 左,上,右,下
+                        float left, top, right, bottom;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), left) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[1]), top) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[2]), right) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[3]), bottom)) {
+                            layout->SetMargin(left, top, right, bottom);
+                        }
                     }
                 }
             }
-            // 内边距 Padding (简化为统一值)
+            // 内边距 Padding (支持多种格式: "24" 或 "32,24" 或 "32,24,24,24")
             else if (name == "Padding") {
-                float padding;
-                if (TypeConverter::ToFloat(value, padding)) {
-                    if (auto* layout = control->GetLayout()) {
-                        layout->SetPadding(padding, padding, padding, padding);
+                if (auto* layout = control->GetLayout()) {
+                    std::wstring wvalue = Utf8ToW(value);
+
+                    // 分割逗号分隔的值
+                    std::vector<std::wstring> parts;
+                    std::wstringstream wss(wvalue);
+                    std::wstring part;
+                    while (std::getline(wss, part, L',')) {
+                        // 去除空格
+                        part.erase(0, part.find_first_not_of(L" \t"));
+                        part.erase(part.find_last_not_of(L" \t") + 1);
+                        parts.push_back(part);
+                    }
+
+                    if (parts.size() == 1) {
+                        // 单一数值: 四边相同
+                        float padding;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), padding)) {
+                            layout->SetPadding(padding, padding, padding, padding);
+                        }
+                    } else if (parts.size() == 2) {
+                        // 两个数值: 水平,垂直
+                        float horizontal, vertical;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), horizontal) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[1]), vertical)) {
+                            layout->SetPadding(horizontal, vertical, horizontal, vertical);
+                        }
+                    } else if (parts.size() == 4) {
+                        // 四个数值: 左,上,右,下
+                        float left, top, right, bottom;
+                        if (TypeConverter::ToFloat(WToUtf8(parts[0]), left) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[1]), top) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[2]), right) &&
+                            TypeConverter::ToFloat(WToUtf8(parts[3]), bottom)) {
+                            layout->SetPadding(left, top, right, bottom);
+                        }
                     }
                 }
             }

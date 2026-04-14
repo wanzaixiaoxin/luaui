@@ -21,15 +21,27 @@ rendering::Size LayoutComponent::Measure(const LayoutConstraint& constraint) {
 }
 
 void LayoutComponent::Arrange(const rendering::Rect& finalRect) {
-    // 总是更新渲染矩形（位置可能改变）
+    // 应用 Margin：调整最终矩形
+    rendering::Rect contentRect(
+        finalRect.x + m_marginLeft,
+        finalRect.y + m_marginTop,
+        finalRect.width - m_marginLeft - m_marginRight,
+        finalRect.height - m_marginTop - m_marginBottom
+    );
+
+    // 确保大小不为负
+    if (contentRect.width < 0) contentRect.width = 0;
+    if (contentRect.height < 0) contentRect.height = 0;
+
+    // 更新渲染矩形（使用调整后的矩形）
     if (m_owner) {
         if (auto* render = m_owner->GetRender()) {
-            render->GetRenderRect() = finalRect;
+            render->GetRenderRect() = contentRect;
         }
     }
-    
+
     if (!IsArrangeValid()) {
-        ArrangeOverride(rendering::Size(finalRect.width, finalRect.height));
+        ArrangeOverride(rendering::Size(contentRect.width, contentRect.height));
         m_arrangeValid = true;
     }
 }
@@ -114,17 +126,30 @@ void LayoutComponent::InvalidateArrange() {
 }
 
 rendering::Size LayoutComponent::MeasureOverride(const rendering::Size& availableSize) {
+    // 从可用空间中减去 Margin
+    rendering::Size availableForContent(
+        availableSize.width - m_marginLeft - m_marginRight,
+        availableSize.height - m_marginTop - m_marginBottom
+    );
+
+    // 确保可用空间不为负
+    if (availableForContent.width < 0) availableForContent.width = 0;
+    if (availableForContent.height < 0) availableForContent.height = 0;
+
     // 默认实现：返回固定大小或约束大小
+    rendering::Size desiredSize(0, 0);
     if (m_width > 0 && m_height > 0) {
-        return rendering::Size(m_width, m_height);
+        desiredSize = rendering::Size(m_width, m_height);
+    } else if (m_owner) {
+        // 尝试调用 Control 的 OnMeasure 方法
+        desiredSize = m_owner->OnMeasure(availableForContent);
     }
-    
-    // 尝试调用 Control 的 OnMeasure 方法
-    if (m_owner) {
-        return m_owner->OnMeasure(availableSize);
-    }
-    
-    return rendering::Size(0, 0);
+
+    // 将 Margin 加回到期望大小
+    return rendering::Size(
+        desiredSize.width + m_marginLeft + m_marginRight,
+        desiredSize.height + m_marginTop + m_marginBottom
+    );
 }
 
 rendering::Size LayoutComponent::ArrangeOverride(const rendering::Size& finalSize) {
