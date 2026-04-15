@@ -13,7 +13,7 @@ int main() {
     std::cout << "========================================" << std::endl;
     std::cout << std::endl;
     std::cout << "Architecture: Lua + MVVM + XML" << std::endl;
-    std::cout << "- View: XML Layouts" << std::endl;
+    std::cout << "- View: XML Layouts (TabControl with TabItems)" << std::endl;
     std::cout << "- ViewModel: Lua Scripts" << std::endl;
     std::cout << "- Binding: Two-way MVVM" << std::endl;
     std::cout << std::endl;
@@ -33,6 +33,6 @@ int main() {
     std::cout << "Starting visual test runner..." << std::endl;
     std::cout << std::endl;
     
-    // 运行测试运行器
+    // 运行测试运行器（Tab切换式）
     return host.RunTestRunner();
 }

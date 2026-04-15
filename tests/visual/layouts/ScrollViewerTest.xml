@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ScrollViewer Layout Test -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="16">
+    
+    <!-- Title -->
+    <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- ScrollViewer Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Scroll View Demo" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <ScrollViewer Width="350" Height="200">
+                    <StackPanel Orientation="Vertical" Spacing="8" Margin="8">
+                        <Border Height="80" Background="#FF5733" CornerRadius="4">
+                            <TextBlock Text="Content Block 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Height="80" Background="#33FF57" CornerRadius="4">
+                            <TextBlock Text="Content Block 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Height="80" Background="#3357FF" CornerRadius="4">
+                            <TextBlock Text="Content Block 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Height="80" Background="#FF33F5" CornerRadius="4">
+                            <TextBlock Text="Content Block 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Height="80" Background="#1976D2" CornerRadius="4">
+                            <TextBlock Text="Content Block 5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Info -->
+    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
+        <TextBlock Text="ScrollViewer allows content larger than the viewport to be scrolled. Use mouse wheel or drag the scrollbar to scroll." FontSize="12" Foreground="#757575" TextWrapping="Wrap"/>
+    </Border>
+    
+</StackPanel>

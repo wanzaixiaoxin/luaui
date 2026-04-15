@@ -306,12 +306,11 @@ std::shared_ptr<luaui::Control> MvvmXmlLoader::Load(const std::string& filePath)
             pending.expression = expression;
             m_pendingBindings.push_back(pending);
             
-            /*
-            utils::Logger::DebugF("[MVVM] Queued binding: %s.%s -> %s",
+            utils::Logger::InfoF("[MVVM] Queued binding: %s.%s -> %s (ptr=%p)",
                 control->GetTypeName().c_str(),
                 deferred.propertyName.c_str(),
-                expression.path.c_str());
-            */
+                expression.path.c_str(),
+                control.get());
         }
     }
     
@@ -382,10 +381,8 @@ void MvvmXmlLoader::ExtractBindings(const tinyxml2::XMLElement* element, const s
         const char* attrValue = attr->Value();
         
         if (attrValue && IsBindingExpression(attrValue)) {
-            /*
-            utils::Logger::DebugF("[MVVM] Found binding: %s.%s = %s", 
-                controlName.c_str(), attrName, attrValue);
-            */
+            utils::Logger::InfoF("[MVVM] Found binding: %s.%s = %s (tag=%s)", 
+                controlName.c_str(), attrName, attrValue, element->Name());
             // 存储绑定信息，等待控件加载完成后解析
             PendingBindingInfo info;
             info.elementName = controlName;
@@ -519,6 +516,9 @@ static bool IsBindingValidForControl(const PendingBindingInfo& bindingInfo,
         bool isComboBox = std::dynamic_pointer_cast<luaui::controls::ComboBox>(control) != nullptr;
         bool isDataGrid = std::dynamic_pointer_cast<luaui::controls::DataGrid>(control) != nullptr;
         return isListBox || isComboBox || isDataGrid;
+    } else if (propertyName == "Visibility") {
+        // Visibility 可以绑定到任何控件
+        return true;
     }
     
     // 未知属性，允许绑定尝试
@@ -550,12 +550,14 @@ void MvvmXmlLoader::ApplyBindingsToControl(const std::shared_ptr<luaui::Control>
     // 查找匹配此控件的绑定信息
     // 策略：
     // 1. 如果控件有名称，按名称匹配
-    // 2. 如果控件没有名称，按类型匹配并使用索引确保顺序
+    // 2. 如果控件没有名称，按类型匹配（找第一个匹配的）
     
-    for (auto it = m_pendingBindingInfos.begin(); it != m_pendingBindingInfos.end(); ) {
+    // 收集所有匹配此控件的绑定
+    std::vector<std::vector<PendingBindingInfo>::iterator> matchedBindings;
+    
+    for (auto it = m_pendingBindingInfos.begin(); it != m_pendingBindingInfos.end(); ++it) {
         // 检查绑定表达式是否与控件类型严格匹配
         if (!IsBindingValidForControl(*it, control)) {
-            ++it;
             continue;
         }
         
@@ -572,37 +574,41 @@ void MvvmXmlLoader::ApplyBindingsToControl(const std::shared_ptr<luaui::Control>
         // 其他情况（一个有名一个没名）不匹配
         
         if (match) {
-            // 解析绑定表达式
-            auto expression = ParseBinding(it->expressionString);
-            if (expression.isValid()) {
-                utils::Logger::DebugF("[MVVM] Creating binding for %s.%s -> %s (index=%d)",
-                    controlType.c_str(),
-                    it->propertyName.c_str(),
-                    expression.path.c_str(),
-                    it->index);
-                
-                // 清空原始的绑定表达式文本，避免显示 {Binding XXX}
-                ClearBindingExpressionText(control, it->propertyName);
-                
-                // 如果已有 DataContext，立即创建绑定
-                if (m_dataContext) {
-                    CreateBinding(control, it->propertyName, expression);
-                } else {
-                    // 否则存储为待处理绑定
-                    PendingBinding pending;
-                    pending.control = control;
-                    pending.propertyName = it->propertyName;
-                    pending.expression = expression;
-                    m_pendingBindings.push_back(pending);
-                }
-            }
-            
-            // 移除已处理的绑定信息
-            it = m_pendingBindingInfos.erase(it);
-            return;  // 一个控件只处理一个绑定
-        } else {
-            ++it;
+            matchedBindings.push_back(it);
         }
+    }
+    
+    // 处理所有匹配的绑定
+    for (auto it : matchedBindings) {
+        // 解析绑定表达式
+        auto expression = ParseBinding(it->expressionString);
+        if (expression.isValid()) {
+            utils::Logger::InfoF("[MVVM] Creating binding for %s.%s -> %s (index=%d)",
+                controlType.c_str(),
+                it->propertyName.c_str(),
+                expression.path.c_str(),
+                it->index);
+            
+            // 清空原始的绑定表达式文本，避免显示 {Binding XXX}
+            ClearBindingExpressionText(control, it->propertyName);
+            
+            // 如果已有 DataContext，立即创建绑定
+            if (m_dataContext) {
+                CreateBinding(control, it->propertyName, expression);
+            } else {
+                // 否则存储为待处理绑定
+                PendingBinding pending;
+                pending.control = control;
+                pending.propertyName = it->propertyName;
+                pending.expression = expression;
+                m_pendingBindings.push_back(pending);
+            }
+        }
+    }
+    
+    // 移除已处理的绑定信息（从后往前删除，避免迭代器失效）
+    for (auto it = matchedBindings.rbegin(); it != matchedBindings.rend(); ++it) {
+        m_pendingBindingInfos.erase(*it);
     }
 }
 
@@ -650,13 +656,12 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
                                   const std::string& propertyName,
                                   const BindingExpression& expression) {
     if (!control || !m_dataContext) return;
-    /*
-    utils::Logger::DebugF("[MVVM] Creating binding: %s.%s -> %s (Mode=%d)",
+    
+    utils::Logger::InfoF("[MVVM] CreateBinding: %s.%s -> %s",
         control->GetTypeName().c_str(),
         propertyName.c_str(),
-        expression.path.c_str(),
-        static_cast<int>(expression.mode));
-    */
+        expression.path.c_str());
+    
     // 根据控件类型路由到具体绑定实现
     if (auto textBlock = std::dynamic_pointer_cast<luaui::controls::TextBlock>(control)) {
         if (propertyName == "Text") {
@@ -716,6 +721,11 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
         if (propertyName == "Command") {
             BindMenuItemCommand(menuItem, expression);
         }
+    }
+    
+    // Visibility binding for any control
+    if (propertyName == "Visibility") {
+        BindVisibility(control, expression);
     }
 }
 
@@ -1595,6 +1605,73 @@ void MvvmXmlLoader::BindButtonText(std::shared_ptr<luaui::controls::Button> butt
 
     dataContext->SubscribePropertyChanged(
         [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
+}
+
+// ============================================================================
+// Visibility 绑定 - OneWay（VM -> View）
+// ============================================================================
+void MvvmXmlLoader::BindVisibility(std::shared_ptr<luaui::Control> control,
+                                   const BindingExpression& expression) {
+    auto converter = expression.converter;
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    auto converterParameter = expression.converterParameter;
+    
+    utils::Logger::InfoF("[BindVisibility] Binding '%s' for control '%s' (ptr=%p)", 
+        boundPropertyName.c_str(), control->GetTypeName().c_str(), control.get());
+    
+    // 更新函数
+    auto updateView = [control, dataContext, boundPropertyName, converter, converterParameter]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        
+        if (!value.has_value()) {
+            utils::Logger::WarningF("[BindVisibility] GetPropertyValue('%s') returned empty", boundPropertyName.c_str());
+            return;
+        }
+        
+        // 应用转换器
+        if (converter) {
+            value = converter->Convert(value, converterParameter);
+        }
+        
+        // 设置可见性
+        try {
+            bool visible = true;
+            
+            if (value.type() == typeid(bool)) {
+                visible = std::any_cast<bool>(value);
+            } else if (value.type() == typeid(std::string)) {
+                std::string str = std::any_cast<std::string>(value);
+                // 支持 "Visible", "Collapsed", "Hidden"
+                if (str == "Visible") {
+                    visible = true;
+                } else if (str == "Collapsed" || str == "Hidden") {
+                    visible = false;
+                } else {
+                    // 尝试解析为布尔值
+                    visible = (str == "true" || str == "True" || str == "1");
+                }
+                utils::Logger::InfoF("[BindVisibility] String value '%s' -> visible=%d", str.c_str(), visible);
+            } else if (value.type() == typeid(int)) {
+                visible = std::any_cast<int>(value) != 0;
+            }
+            
+            control->SetIsVisible(visible);
+            utils::Logger::InfoF("[BindVisibility] SetIsVisible(%d) for control '%s'", visible, control->GetTypeName().c_str());
+        } catch (const std::bad_any_cast& e) {
+            utils::Logger::ErrorF("[BindVisibility] bad_any_cast: %s", e.what());
+        }
+    };
+    
+    updateView();
+    
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        utils::Logger::InfoF("[BindVisibility] PropertyChanged: '%s' (watching '%s')", args.propertyName.c_str(), boundPropertyName.c_str());
         if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
             updateView();
         }

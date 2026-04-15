@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Viewbox Layout Test -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="16">
+    
+    <!-- Title -->
+    <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- Viewbox Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Scaling Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{Binding StretchText}" FontSize="12" Foreground="#757575"/>
+            
+            <Border Background="White" Height="200" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <Viewbox Stretch="{Binding Stretch}">
+                    <Border Width="150" Height="100" Background="#1976D2" CornerRadius="8">
+                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Viewbox Content" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                            <TextBlock Text="150x100" Foreground="White" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                </Viewbox>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Controls -->
+    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="Viewbox Controls" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Stretch:" VerticalAlignment="Center"/>
+                <Button Content="None" Click="SetNoneCommand"/>
+                <Button Content="Fill" Click="SetFillCommand"/>
+                <Button Content="Uniform" Click="SetUniformCommand"/>
+                <Button Content="UniformToFill" Click="SetUniformToFillCommand"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+</StackPanel>

@@ -12,6 +12,9 @@
 #include "ListBox.h"       // ListBox and ListBoxItem
 #include "DataGrid.h"      // DataGrid
 #include "layouts/ScrollViewer.h"
+#include "layouts/Canvas.h"
+#include "layouts/WrapPanel.h"
+#include "layouts/Viewbox.h"
 #include "Menu.h"
 #include <fstream>
 #include "SideBar.h"
@@ -148,6 +151,15 @@ private:
 
         // DockPanel
         RegisterElement("DockPanel", []() { return std::make_shared<DockPanel>(); });
+        
+        // Canvas
+        RegisterElement("Canvas", []() { return std::make_shared<Canvas>(); });
+        
+        // WrapPanel
+        RegisterElement("WrapPanel", []() { return std::make_shared<WrapPanel>(); });
+        
+        // Viewbox
+        RegisterElement("Viewbox", []() { return std::make_shared<Viewbox>(); });
     }
     
     std::shared_ptr<luaui::Control> LoadElement(const tinyxml2::XMLElement* element) {
@@ -701,6 +713,19 @@ private:
             else if (name == "LastChildFill") {
                 if (auto dockPanel = std::dynamic_pointer_cast<controls::DockPanel>(control)) {
                     dockPanel->SetLastChildFill(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // Visibility attribute
+            else if (name == "Visibility") {
+                if (IsBindingExpression(value)) {
+                    // Defer to MvvmXmlLoader for binding
+                    utils::Logger::InfoF("[XML] Visibility binding found: %s on %s (ptr=%p)", 
+                        value.c_str(), control->GetTypeName().c_str(), control.get());
+                    RecordDeferredBinding(control, "Visibility", value);
+                } else {
+                    // Direct value: "Visible", "Collapsed", "Hidden"
+                    bool visible = (value == "Visible" || value == "true" || value == "True");
+                    control->SetIsVisible(visible);
                 }
             }
             // Click event: Click="SomeCommand" or Click="{Binding SomeCommand}"

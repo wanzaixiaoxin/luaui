@@ -23,6 +23,21 @@ ViewModel.Item3Text = "Item 3 - Blue"
 ViewModel.DynamicItems = {}
 ViewModel.ItemCounter = 0
 ViewModel.Orientation = "Vertical" -- "Vertical" or "Horizontal"
+ViewModel.MiddleItemVisible = true
+
+-- Toggle visibility
+function ViewModel:ToggleVisibilityCommand()
+    self.MiddleItemVisible = not self.MiddleItemVisible
+    Log.infof("[StackPanelTest] Middle item visibility: %s", tostring(self.MiddleItemVisible))
+end
+
+-- Clear all items
+function ViewModel:ClearAllCommand()
+    self.DynamicItems = {}
+    self.ItemCounter = 0
+    self.DynamicItems = self.DynamicItems -- Trigger update
+    Log.info("[StackPanelTest] Cleared all items")
+end
 
 -- Computed text for spacing
 function ViewModel:UpdateSpacingText()
@@ -83,6 +98,13 @@ ViewModel:DefineComputed("HorizontalSpacingText",
     {"HorizontalSpacing"},
     function(self)
         return string.format("%dpx", self.HorizontalSpacing)
+    end
+)
+
+ViewModel:DefineComputed("OrientationText",
+    {"Orientation"},
+    function(self)
+        return string.format("Current Orientation: %s", self.Orientation)
     end
 )
 

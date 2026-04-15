@@ -1,143 +1,139 @@
--- TestRunner ViewModel - 增量集合更新演示
+-- TestRunner ViewModel
+-- Visual test suite runner with real layout demonstrations
 
-Log.info("[TestRunnerViewModel] Initializing with ObservableCollection...")
+Log.info("[TestRunnerViewModel] Initializing...")
 
 local ViewModel = AutoViewModel.new()
 ViewModel = ViewModel:EnableAutoNotify()
 
--- =============================================================================
--- Properties - 使用 ObservableCollection 支持增量更新
--- =============================================================================
+-- Current test info
+ViewModel.CurrentTestName = "StackPanel"
+ViewModel.TestTitle = "StackPanel Layout"
+ViewModel.TestDescription = "Vertical and horizontal stacking with spacing"
 
--- 使用 ObservableCollection 替代普通 table
-ViewModel.Tests = ObservableCollection.new()
-ViewModel.FilteredTests = ObservableCollection.new()
+-- Visibility bindings (using "Visible" and "Collapsed" strings)
+ViewModel.StackPanelVisible = "Visible"
+ViewModel.GridVisible = "Collapsed"
+ViewModel.CanvasVisible = "Collapsed"
+ViewModel.DockPanelVisible = "Collapsed"
+ViewModel.WrapPanelVisible = "Collapsed"
+ViewModel.ScrollViewerVisible = "Collapsed"
+ViewModel.ViewboxVisible = "Collapsed"
 
-ViewModel.FilterText = ""
-ViewModel.ShowLayoutTests = true
-ViewModel.ShowControlTests = true
-ViewModel.ShowMvvmTests = true
-
--- Status
-ViewModel.TestCountText = "Loading tests..."
-ViewModel.StatusText = "Ready"
-
--- =============================================================================
--- Commands
--- =============================================================================
-
--- 添加测试 - 演示增量更新
-function ViewModel:AddTestCommand()
-    Log.info("[TestRunner] Adding new test dynamically (incremental update)")
-    
-    local newTest = {
-        Name = "Dynamic Test " .. os.time(),
-        Description = "Auto-generated test",
-        Category = "Controls"
-    }
-    
-    -- 增量添加 - 只触发单个 Add 通知
-    ViewModel.Tests:Add(newTest)
-    
-    self:UpdateStatus()
+-- Test Commands
+function ViewModel:ShowStackPanel()
+    self:BeginBatch()
+    self.StackPanelVisible = "Visible"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "StackPanel"
+    self.TestTitle = "StackPanel Layout"
+    self.TestDescription = "Vertical and horizontal stacking with spacing"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing StackPanel demo")
 end
 
--- 批量添加 - 演示批量更新
-function ViewModel:AddMultipleTestsCommand()
-    Log.info("[TestRunner] Adding multiple tests (batch update)")
-    
-    for i = 1, 5 do
-        local newTest = {
-            Name = "Batch Test " .. i,
-            Description = "Batch generated",
-            Category = "Layout"
-        }
-        ViewModel.Tests:Add(newTest)
-    end
-    
-    self:UpdateStatus()
+function ViewModel:ShowGrid()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Visible"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "Grid"
+    self.TestTitle = "Grid Layout"
+    self.TestDescription = "Row/column layout with star sizing and spanning"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing Grid demo")
 end
 
--- 移除最后一个测试
-function ViewModel:RemoveLastTestCommand()
-    local count = ViewModel.Tests:Count()
-    if count > 0 then
-        Log.infof("[TestRunner] Removing test at index %d", count)
-        ViewModel.Tests:RemoveAt(count)
-        self:UpdateStatus()
-    end
+function ViewModel:ShowCanvas()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Visible"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "Canvas"
+    self.TestTitle = "Canvas Layout"
+    self.TestDescription = "Absolute positioning with Canvas.Left/Top"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing Canvas demo")
 end
 
--- 清空所有测试
-function ViewModel:ClearTestsCommand()
-    Log.info("[TestRunner] Clearing all tests")
-    ViewModel.Tests:Clear()
-    self:UpdateStatus()
+function ViewModel:ShowDockPanel()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Visible"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "DockPanel"
+    self.TestTitle = "DockPanel Layout"
+    self.TestDescription = "Dock to edges with LastChildFill"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing DockPanel demo")
 end
 
--- 刷新列表
-function ViewModel:RefreshCommand()
-    Log.info("[TestRunner] Refreshing...")
-    self.StatusText = "Refreshing..."
-    
-    -- 模拟异步加载
-    self:InitializeTests()
-    
-    self.StatusText = "Refreshed at " .. os.date("%H:%M:%S")
+function ViewModel:ShowWrapPanel()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Visible"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "WrapPanel"
+    self.TestTitle = "WrapPanel Layout"
+    self.TestDescription = "Auto wrap when space runs out"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing WrapPanel demo")
 end
 
--- =============================================================================
--- Methods
--- =============================================================================
-
-function ViewModel:InitializeTests()
-    -- 清空现有数据
-    ViewModel.Tests:Clear()
-    
-    -- 批量添加初始测试数据
-    local initialTests = {
-        { Name = "StackPanel Layout", Description = "Vertical and horizontal stacking", Category = "Layout" },
-        { Name = "Grid Layout", Description = "2x2 grid with star sizing", Category = "Layout" },
-        { Name = "Canvas Positioning", Description = "Absolute positioning", Category = "Layout" },
-        { Name = "Button Controls", Description = "Various button styles", Category = "Controls" },
-        { Name = "CheckBox & RadioButton", Description = "Selection controls", Category = "Controls" },
-        { Name = "Slider & ProgressBar", Description = "Value controls", Category = "Controls" },
-        { Name = "TextBox Input", Description = "Text input with validation", Category = "Controls" },
-        { Name = "MVVM Binding", Description = "One-way, two-way binding", Category = "MVVM" },
-        { Name = "Converter Demo", Description = "Boolean to visibility", Category = "MVVM" },
-        { Name = "TreeView Control", Description = "Hierarchical data", Category = "Controls" },
-        { Name = "DataGrid Control", Description = "Tabular data", Category = "Controls" }
-    }
-    
-    for _, test in ipairs(initialTests) do
-        ViewModel.Tests:Add(test)
-    end
-    
-    self:UpdateStatus()
-    Log.infof("[TestRunnerViewModel] Loaded %d tests using ObservableCollection", ViewModel.Tests:Count())
+function ViewModel:ShowScrollViewer()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Visible"
+    self.ViewboxVisible = "Collapsed"
+    self.CurrentTestName = "ScrollViewer"
+    self.TestTitle = "ScrollViewer Layout"
+    self.TestDescription = "Scrollable content container"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing ScrollViewer demo")
 end
 
-function ViewModel:UpdateStatus()
-    self.TestCountText = string.format("%d tests available", ViewModel.Tests:Count())
-    self.StatusText = string.format("Total: %d tests | ObservableCollection with incremental updates", 
-        ViewModel.Tests:Count())
+function ViewModel:ShowViewbox()
+    self:BeginBatch()
+    self.StackPanelVisible = "Collapsed"
+    self.GridVisible = "Collapsed"
+    self.CanvasVisible = "Collapsed"
+    self.DockPanelVisible = "Collapsed"
+    self.WrapPanelVisible = "Collapsed"
+    self.ScrollViewerVisible = "Collapsed"
+    self.ViewboxVisible = "Visible"
+    self.CurrentTestName = "Viewbox"
+    self.TestTitle = "Viewbox Layout"
+    self.TestDescription = "Content scaling with Stretch modes"
+    self:EndBatch()
+    Log.info("[TestRunner] Showing Viewbox demo")
 end
-
--- =============================================================================
--- Property Change Handlers
--- =============================================================================
-
-function ViewModel:OnShowLayoutTestsChanged()
-    Log.info("[TestRunner] Filter changed, would apply filter here")
-end
-
--- =============================================================================
--- Initialization
--- =============================================================================
-
-ViewModel:InitializeTests()
 
 -- Register globally
 _G.TestRunnerViewModel = ViewModel
 
-Log.info("[TestRunnerViewModel] Ready with ObservableCollection support")
+Log.info("[TestRunnerViewModel] Ready - showing StackPanel demo by default")

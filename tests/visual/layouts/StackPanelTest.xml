@@ -58,11 +58,53 @@
         </StackPanel>
     </Border>
     
+    <!-- Dynamic Orientation Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Dynamic Orientation (Bound to ViewModel)" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{Binding OrientationText}" FontSize="12" Foreground="#757575"/>
+            
+            <StackPanel Orientation="{Binding Orientation}" Spacing="10" Height="150">
+                <Border Background="#FF5733" Width="80" Height="50" CornerRadius="4">
+                    <TextBlock Text="Item 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#33FF57" Width="80" Height="50" CornerRadius="4">
+                    <TextBlock Text="Item 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#3357FF" Width="80" Height="50" CornerRadius="4">
+                    <TextBlock Text="Item 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+    <!-- Visibility Test -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Visibility Test" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Background="#FF5733" Width="60" Height="40" CornerRadius="4">
+                    <TextBlock Text="Visible" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#33FF57" Width="60" Height="40" CornerRadius="4" IsVisible="{Binding MiddleItemVisible}">
+                    <TextBlock Text="Hidden" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#3357FF" Width="60" Height="40" CornerRadius="4">
+                    <TextBlock Text="Visible" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
+            
+            <Button Content="Toggle Middle Item" Click="ToggleVisibilityCommand"/>
+        </StackPanel>
+    </Border>
+    
     <!-- Controls -->
     <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
         <Button Content="Add Item" Click="AddItemCommand" Style="Primary"/>
         <Button Content="Remove Item" Click="RemoveItemCommand" Style="Danger"/>
         <Button Content="Toggle Orientation" Click="ToggleOrientationCommand" Style="Accent"/>
+        <Button Content="Clear All" Click="ClearAllCommand" Style="Danger"/>
     </StackPanel>
     
     <!-- Dynamic Items -->

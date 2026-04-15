@@ -49,7 +49,47 @@ std::vector<LuaMvvmTestInfo> LuaMvvmTestHost::GetAvailableTests() {
                      m_testScriptsPath + "/GridTestViewModel.lua",
                      "GridTestViewModel"});
     
-    // Add more tests here...
+    tests.push_back({"Canvas Layout",
+                     "Absolute positioning with Left/Top properties",
+                     "Layout",
+                     m_testLayoutsPath + "/CanvasTest.xml",
+                     m_testScriptsPath + "/CanvasTestViewModel.lua",
+                     "CanvasTestViewModel"});
+    
+    tests.push_back({"DockPanel Layout",
+                     "Docking to edges with LastChildFill",
+                     "Layout",
+                     m_testLayoutsPath + "/DockPanelTest.xml",
+                     m_testScriptsPath + "/DockPanelTestViewModel.lua",
+                     "DockPanelTestViewModel"});
+    
+    tests.push_back({"WrapPanel Layout",
+                     "Automatic wrapping when space runs out",
+                     "Layout",
+                     m_testLayoutsPath + "/WrapPanelTest.xml",
+                     m_testScriptsPath + "/WrapPanelTestViewModel.lua",
+                     "WrapPanelTestViewModel"});
+    
+    tests.push_back({"ScrollViewer Layout",
+                     "Scrolling for content larger than viewport",
+                     "Layout",
+                     m_testLayoutsPath + "/ScrollViewerTest.xml",
+                     m_testScriptsPath + "/ScrollViewerTestViewModel.lua",
+                     "ScrollViewerTestViewModel"});
+    
+    tests.push_back({"Viewbox Layout",
+                     "Content scaling with different Stretch modes",
+                     "Layout",
+                     m_testLayoutsPath + "/ViewboxTest.xml",
+                     m_testScriptsPath + "/ViewboxTestViewModel.lua",
+                     "ViewboxTestViewModel"});
+    
+    tests.push_back({"Virtualization",
+                     "Virtualizing panel for large data sets",
+                     "Layout",
+                     m_testLayoutsPath + "/VirtualizationTest.xml",
+                     m_testScriptsPath + "/VirtualizationTestViewModel.lua",
+                     "VirtualizationTestViewModel"});
     
     return tests;
 }

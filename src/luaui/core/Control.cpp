@@ -50,6 +50,17 @@ void Control::SetIsVisible(bool visible) {
         m_visible = visible;
         PropertyChanged.Invoke(this, "IsVisible");
         
+        // Visibility改变时需要重新布局
+        // 标记父控件需要重新测量和排列
+        if (auto parent = m_parent.lock()) {
+            if (auto parentControl = std::dynamic_pointer_cast<Control>(parent)) {
+                if (auto* parentLayout = parentControl->GetLayout()) {
+                    parentLayout->InvalidateMeasure();
+                    parentLayout->InvalidateArrange();
+                }
+            }
+        }
+        
         // 如果变为可见，标记需要重绘
         if (visible) {
             if (auto* render = GetRender()) {

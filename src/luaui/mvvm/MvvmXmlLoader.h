@@ -142,6 +142,10 @@ private:
                         const BindingExpression& expression);
     void BindMenuItemCommand(std::shared_ptr<luaui::controls::MenuItem> menuItem,
                              const BindingExpression& expression);
+    
+    // Visibility binding for any control
+    void BindVisibility(std::shared_ptr<luaui::Control> control,
+                        const BindingExpression& expression);
 };
 
 // 创建 MVVM XML 加载器

@@ -219,7 +219,19 @@ public:
         }
 
         // Load XML
-        auto root = loader->Load(layoutPath);
+        std::shared_ptr<luaui::Control> root;
+        try {
+            root = loader->Load(layoutPath);
+        } catch (const std::exception& e) {
+            utils::Logger::ErrorF("[LuaMvvmHost] Exception loading layout: %s", e.what());
+            ShowError("Layout Error", e.what());
+            return false;
+        } catch (...) {
+            utils::Logger::Error("[LuaMvvmHost] Unknown exception loading layout");
+            ShowError("Layout Error", "Unknown exception");
+            return false;
+        }
+        
         if (!root) {
             utils::Logger::Error("[LuaMvvmHost] Failed to load layout");
             ShowError("Layout Error", "Failed to load XML layout");

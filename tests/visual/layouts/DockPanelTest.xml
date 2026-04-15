@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DockPanel Layout Test -->
+<StackPanel Orientation="Vertical" Margin="20" Spacing="16">
+    
+    <!-- Title -->
+    <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
+    <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
+    
+    <!-- DockPanel Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Dock Layout Demo" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" Height="250" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <DockPanel LastChildFill="{Binding LastChildFill}">
+                    <!-- Top -->
+                    <Border DockPanel.Dock="Top" Height="50" Background="#FF5733" Margin="2" CornerRadius="4">
+                        <TextBlock Text="Top Dock" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Bottom -->
+                    <Border DockPanel.Dock="Bottom" Height="50" Background="#33FF57" Margin="2" CornerRadius="4">
+                        <TextBlock Text="Bottom Dock" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Left -->
+                    <Border DockPanel.Dock="Left" Width="100" Background="#3357FF" Margin="2" CornerRadius="4">
+                        <TextBlock Text="Left" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Right -->
+                    <Border DockPanel.Dock="Right" Width="100" Background="#FF33F5" Margin="2" CornerRadius="4">
+                        <TextBlock Text="Right" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Center (Fill) -->
+                    <Border Background="#E3F2FD" Margin="2" CornerRadius="4">
+                        <TextBlock Text="Center Fill Area" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#1976D2"/>
+                    </Border>
+                </DockPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Controls -->
+    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
+        <StackPanel Orientation="Vertical" Spacing="12">
+            <TextBlock Text="DockPanel Controls" FontWeight="SemiBold" FontSize="14"/>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="LastChildFill:" VerticalAlignment="Center"/>
+                <CheckBox IsChecked="{Binding LastChildFill, Mode=TwoWay}"/>
+                <TextBlock Text="{Binding LastChildFillText}" VerticalAlignment="Center" Foreground="#757575"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+    
+</StackPanel>
