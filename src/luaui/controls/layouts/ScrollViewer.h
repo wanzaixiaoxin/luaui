@@ -56,6 +56,9 @@ private:
 
     /** Whether vertical scrollbar is needed */
     bool NeedVScroll() const;
+    
+    /** Whether horizontal scrollbar is needed */
+    bool NeedHScroll() const;
 
     /** Test if global coords hit the thumb */
     bool HitTestThumb(float gx, float gy);

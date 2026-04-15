@@ -83,10 +83,19 @@ rendering::Size Viewbox::OnArrangeChildren(const rendering::Size& finalSize) {
             float x = contentRect.x + (finalSize.width - scaledWidth) / 2;
             float y = contentRect.y + (finalSize.height - scaledHeight) / 2;
             
-            layoutable->Arrange(rendering::Rect(x, y, scaledWidth, scaledHeight));
+            // 应用缩放变换到子控件
+            // 缩放中心是子控件的左上角
+            if (auto* childRender = child->AsRenderable()) {
+                rendering::Transform scaleTransform = rendering::Transform::Scale(
+                    scaleX, scaleY, 
+                    0, 0  // 缩放中心为子控件左上角
+                );
+                childRender->SetRenderTransform(scaleTransform);
+            }
             
-            // TODO: 应用缩放变换到子控件
-            // child->SetRenderTransform(...);
+            // 排列子控件到缩放后的位置
+            // 子控件大小保持原始大小，通过Transform进行缩放
+            layoutable->Arrange(rendering::Rect(x, y, m_childSize.width, m_childSize.height));
         }
     }
     

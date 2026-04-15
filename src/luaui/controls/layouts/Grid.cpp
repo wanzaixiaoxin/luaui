@@ -148,23 +148,23 @@ rendering::Size Grid::OnArrangeChildren(const rendering::Size& finalSize) {
 }
 
 void Grid::CalculateSizes(const rendering::Size& availableSize) {
-    // 简化实现：计算行列大小
-    // Auto - 根据内容
+    // 完整实现：计算行列大小
+    // Auto - 根据内容（子控件最大尺寸）
     // Pixel - 固定像素
     // Star - 按比例分配剩余空间
     
-    float totalStarWidth = 0;
-    float totalStarHeight = 0;
+    // 初始化所有大小为0
+    std::fill(m_columnWidths.begin(), m_columnWidths.end(), 0.0f);
+    std::fill(m_rowHeights.begin(), m_rowHeights.end(), 0.0f);
+    
+    // ========== 第一步：计算Pixel固定大小 ==========
     float fixedWidth = 0;
     float fixedHeight = 0;
     
-    // 第一遍：计算固定大小和 Star 权重
     for (size_t i = 0; i < m_columns.size(); ++i) {
         if (m_columns[i].IsPixel()) {
             m_columnWidths[i] = m_columns[i].value;
             fixedWidth += m_columnWidths[i];
-        } else if (m_columns[i].IsStar()) {
-            totalStarWidth += m_columns[i].value;
         }
     }
     
@@ -172,24 +172,132 @@ void Grid::CalculateSizes(const rendering::Size& availableSize) {
         if (m_rows[i].IsPixel()) {
             m_rowHeights[i] = m_rows[i].value;
             fixedHeight += m_rowHeights[i];
-        } else if (m_rows[i].IsStar()) {
+        }
+    }
+    
+    // ========== 第二步：计算Auto大小 ==========
+    // 对于每个Auto列，找到该列中所有子控件的最大宽度
+    // 对于每个Auto行，找到该行中所有子控件的最大高度
+    
+    for (auto& child : m_children) {
+        if (!child->GetIsVisible()) continue;
+        
+        int col = GetColumn(child);
+        int row = GetRow(child);
+        int colSpan = GetColumnSpan(child);
+        int rowSpan = GetRowSpan(child);
+        
+        if (auto* layoutable = child->AsLayoutable()) {
+            auto desired = layoutable->GetDesiredSize();
+            
+            // 处理Auto列
+            // 如果子控件跨多列，且所有列都是Auto，则平均分配
+            // 如果子控件跨多列，且部分是Auto，则只分配给Auto列
+            if (colSpan == 1 && col >= 0 && col < (int)m_columns.size()) {
+                if (m_columns[col].IsAuto()) {
+                    m_columnWidths[col] = std::max(m_columnWidths[col], desired.width);
+                }
+            } else if (colSpan > 1) {
+                // 跨列情况：计算Auto列的数量
+                int autoColCount = 0;
+                for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
+                    if (m_columns[c].IsAuto()) autoColCount++;
+                }
+                if (autoColCount > 0) {
+                    // 计算已分配的固定宽度
+                    float allocatedWidth = 0;
+                    for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
+                        if (m_columns[c].IsPixel()) {
+                            allocatedWidth += m_columnWidths[c];
+                        }
+                    }
+                    // 剩余宽度平均分配给Auto列
+                    float remainingWidth = std::max(0.0f, desired.width - allocatedWidth);
+                    float widthPerAutoCol = remainingWidth / autoColCount;
+                    for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
+                        if (m_columns[c].IsAuto()) {
+                            m_columnWidths[c] = std::max(m_columnWidths[c], widthPerAutoCol);
+                        }
+                    }
+                }
+            }
+            
+            // 处理Auto行（逻辑同列）
+            if (rowSpan == 1 && row >= 0 && row < (int)m_rows.size()) {
+                if (m_rows[row].IsAuto()) {
+                    m_rowHeights[row] = std::max(m_rowHeights[row], desired.height);
+                }
+            } else if (rowSpan > 1) {
+                int autoRowCount = 0;
+                for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
+                    if (m_rows[r].IsAuto()) autoRowCount++;
+                }
+                if (autoRowCount > 0) {
+                    float allocatedHeight = 0;
+                    for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
+                        if (m_rows[r].IsPixel()) {
+                            allocatedHeight += m_rowHeights[r];
+                        }
+                    }
+                    float remainingHeight = std::max(0.0f, desired.height - allocatedHeight);
+                    float heightPerAutoRow = remainingHeight / autoRowCount;
+                    for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
+                        if (m_rows[r].IsAuto()) {
+                            m_rowHeights[r] = std::max(m_rowHeights[r], heightPerAutoRow);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // 累加Auto大小
+    float autoWidth = 0;
+    float autoHeight = 0;
+    for (size_t i = 0; i < m_columns.size(); ++i) {
+        if (m_columns[i].IsAuto()) {
+            autoWidth += m_columnWidths[i];
+        }
+    }
+    for (size_t i = 0; i < m_rows.size(); ++i) {
+        if (m_rows[i].IsAuto()) {
+            autoHeight += m_rowHeights[i];
+        }
+    }
+    
+    // ========== 第三步：计算Star大小 ==========
+    float totalStarWidth = 0;
+    float totalStarHeight = 0;
+    
+    for (size_t i = 0; i < m_columns.size(); ++i) {
+        if (m_columns[i].IsStar()) {
+            totalStarWidth += m_columns[i].value;
+        }
+    }
+    for (size_t i = 0; i < m_rows.size(); ++i) {
+        if (m_rows[i].IsStar()) {
             totalStarHeight += m_rows[i].value;
         }
     }
     
-    // 第二遍：计算 Star 大小
-    float remainingWidth = std::max(0.0f, availableSize.width - fixedWidth);
-    float remainingHeight = std::max(0.0f, availableSize.height - fixedHeight);
+    // 剩余空间 = 可用空间 - 固定大小 - Auto大小
+    float remainingWidth = std::max(0.0f, availableSize.width - fixedWidth - autoWidth);
+    float remainingHeight = std::max(0.0f, availableSize.height - fixedHeight - autoHeight);
     
-    for (size_t i = 0; i < m_columns.size(); ++i) {
-        if (m_columns[i].IsStar()) {
-            m_columnWidths[i] = (m_columns[i].value / totalStarWidth) * remainingWidth;
+    // 分配Star大小
+    if (totalStarWidth > 0) {
+        for (size_t i = 0; i < m_columns.size(); ++i) {
+            if (m_columns[i].IsStar()) {
+                m_columnWidths[i] = (m_columns[i].value / totalStarWidth) * remainingWidth;
+            }
         }
     }
     
-    for (size_t i = 0; i < m_rows.size(); ++i) {
-        if (m_rows[i].IsStar()) {
-            m_rowHeights[i] = (m_rows[i].value / totalStarHeight) * remainingHeight;
+    if (totalStarHeight > 0) {
+        for (size_t i = 0; i < m_rows.size(); ++i) {
+            if (m_rows[i].IsStar()) {
+                m_rowHeights[i] = (m_rows[i].value / totalStarHeight) * remainingHeight;
+            }
         }
     }
 }

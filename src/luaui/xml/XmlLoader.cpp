@@ -392,7 +392,7 @@ private:
                     img->SetSourcePath(wpath);
                 }
             }
-            // Stretch (Image)
+            // Stretch (Image, Viewbox)
             else if (name == "Stretch") {
                 if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
                     if (value == "None") {
@@ -402,27 +402,63 @@ private:
                     } else if (value == "UniformToFill") {
                         img->SetStretch(controls::Stretch::UniformToFill);
                     } else {
-                        // 默认 Uniform
+                        // Default Uniform
                         img->SetStretch(controls::Stretch::Uniform);
+                    }
+                } else if (auto viewbox = std::dynamic_pointer_cast<controls::Viewbox>(control)) {
+                    if (value == "None") {
+                        viewbox->SetStretch(controls::Stretch::None);
+                    } else if (value == "Fill") {
+                        viewbox->SetStretch(controls::Stretch::Fill);
+                    } else if (value == "UniformToFill") {
+                        viewbox->SetStretch(controls::Stretch::UniformToFill);
+                    } else {
+                        // Default Uniform
+                        viewbox->SetStretch(controls::Stretch::Uniform);
                     }
                 }
             }
-            // Spacing (StackPanel)
+            // Spacing (StackPanel, WrapPanel)
             else if (name == "Spacing") {
                 float spacing;
                 if (TypeConverter::ToFloat(value, spacing)) {
                     if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
                         stack->SetSpacing(spacing);
+                    } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                        wrapPanel->SetSpacing(spacing);
                     }
                 }
             }
-            // Orientation (StackPanel)
+            // Orientation (StackPanel, WrapPanel)
             else if (name == "Orientation") {
                 if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
                     if (value == "Horizontal") {
                         stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
                     } else if (value == "Vertical") {
                         stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
+                    }
+                } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                    if (value == "Horizontal") {
+                        wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Horizontal);
+                    } else if (value == "Vertical") {
+                        wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Vertical);
+                    }
+                }
+            }
+            // ItemWidth/ItemHeight (WrapPanel)
+            else if (name == "ItemWidth") {
+                float width;
+                if (TypeConverter::ToFloat(value, width)) {
+                    if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                        wrapPanel->SetItemWidth(width);
+                    }
+                }
+            }
+            else if (name == "ItemHeight") {
+                float height;
+                if (TypeConverter::ToFloat(value, height)) {
+                    if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                        wrapPanel->SetItemHeight(height);
                     }
                 }
             }
@@ -726,6 +762,76 @@ private:
                     // Direct value: "Visible", "Collapsed", "Hidden"
                     bool visible = (value == "Visible" || value == "true" || value == "True");
                     control->SetIsVisible(visible);
+                }
+            }
+            // ScrollViewer ScrollBarVisibility
+            else if (name == "HorizontalScrollBarVisibility") {
+                if (auto scrollViewer = std::dynamic_pointer_cast<controls::ScrollViewer>(control)) {
+                    if (value == "Visible") {
+                        scrollViewer->SetHorizontalScrollBarVisibility(controls::ScrollBarVisibility::Visible);
+                    } else if (value == "Hidden") {
+                        scrollViewer->SetHorizontalScrollBarVisibility(controls::ScrollBarVisibility::Hidden);
+                    } else if (value == "Disabled") {
+                        scrollViewer->SetHorizontalScrollBarVisibility(controls::ScrollBarVisibility::Disabled);
+                    } else {
+                        scrollViewer->SetHorizontalScrollBarVisibility(controls::ScrollBarVisibility::Auto);
+                    }
+                }
+            }
+            else if (name == "VerticalScrollBarVisibility") {
+                if (auto scrollViewer = std::dynamic_pointer_cast<controls::ScrollViewer>(control)) {
+                    if (value == "Visible") {
+                        scrollViewer->SetVerticalScrollBarVisibility(controls::ScrollBarVisibility::Visible);
+                    } else if (value == "Hidden") {
+                        scrollViewer->SetVerticalScrollBarVisibility(controls::ScrollBarVisibility::Hidden);
+                    } else if (value == "Disabled") {
+                        scrollViewer->SetVerticalScrollBarVisibility(controls::ScrollBarVisibility::Disabled);
+                    } else {
+                        scrollViewer->SetVerticalScrollBarVisibility(controls::ScrollBarVisibility::Auto);
+                    }
+                }
+            }
+            // Canvas attached properties
+            else if (name == "Canvas.Left") {
+                float left;
+                if (TypeConverter::ToFloat(value, left)) {
+                    controls::Canvas::SetLeft(control, left);
+                }
+            }
+            else if (name == "Canvas.Top") {
+                float top;
+                if (TypeConverter::ToFloat(value, top)) {
+                    controls::Canvas::SetTop(control, top);
+                }
+            }
+            else if (name == "Canvas.Right") {
+                float right;
+                if (TypeConverter::ToFloat(value, right)) {
+                    controls::Canvas::SetRight(control, right);
+                }
+            }
+            else if (name == "Canvas.Bottom") {
+                float bottom;
+                if (TypeConverter::ToFloat(value, bottom)) {
+                    controls::Canvas::SetBottom(control, bottom);
+                }
+            }
+            else if (name == "Canvas.ZIndex") {
+                try {
+                    int zIndex = std::stoi(value);
+                    controls::Canvas::SetZIndex(control, zIndex);
+                } catch (...) {}
+            }
+            // DockPanel attached property
+            else if (name == "DockPanel.Dock") {
+                if (value == "Left") {
+                    controls::DockPanel::SetDock(control, controls::Dock::Left);
+                } else if (value == "Top") {
+                    controls::DockPanel::SetDock(control, controls::Dock::Top);
+                } else if (value == "Right") {
+                    controls::DockPanel::SetDock(control, controls::Dock::Right);
+                } else if (value == "Bottom") {
+                    controls::DockPanel::SetDock(control, controls::Dock::Bottom);
                 }
             }
             // Click event: Click="SomeCommand" or Click="{Binding SomeCommand}"

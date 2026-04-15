@@ -109,7 +109,33 @@ void ScrollViewer::GlobalToLocal(float gx, float gy, float& lx, float& ly) {
 }
 
 bool ScrollViewer::NeedVScroll() const {
-    return m_extentHeight > m_viewportHeight && m_viewportHeight > 0;
+    // Check ScrollBarVisibility to decide if scrollbar should be shown
+    switch (m_verticalScrollBarVisibility) {
+        case ScrollBarVisibility::Disabled:
+            return false;
+        case ScrollBarVisibility::Hidden:
+            return false;
+        case ScrollBarVisibility::Visible:
+            return true;
+        case ScrollBarVisibility::Auto:
+        default:
+            return m_extentHeight > m_viewportHeight && m_viewportHeight > 0;
+    }
+}
+
+bool ScrollViewer::NeedHScroll() const {
+    // Check ScrollBarVisibility to decide if horizontal scrollbar should be shown
+    switch (m_horizontalScrollBarVisibility) {
+        case ScrollBarVisibility::Disabled:
+            return false;
+        case ScrollBarVisibility::Hidden:
+            return false;
+        case ScrollBarVisibility::Visible:
+            return true;
+        case ScrollBarVisibility::Auto:
+        default:
+            return m_extentWidth > m_viewportWidth && m_viewportWidth > 0;
+    }
 }
 
 void ScrollViewer::CalcThumb(float& y, float& h) {

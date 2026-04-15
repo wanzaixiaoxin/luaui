@@ -21,9 +21,6 @@ rendering::Size StackPanel::OnMeasureChildren(const rendering::Size& availableSi
         if (!child->GetIsVisible()) continue;
         
         if (auto* layoutable = child->AsLayoutable()) {
-            // 强制重新测量子控件
-            layoutable->InvalidateMeasure();
-            
             interfaces::LayoutConstraint constraint;
             constraint.available = availableSize;
             auto measured = layoutable->Measure(constraint);
@@ -66,14 +63,14 @@ rendering::Size StackPanel::OnArrangeChildren(const rendering::Size& finalSize) 
             
             rendering::Rect childRect;
             if (isHorizontal) {
-                // Horizontal: each child gets its desired width, full height
+                // Horizontal: each child gets its desired width, full available height
                 childRect = rendering::Rect(position, 0,
                                             desired.width, finalSize.height);
                 position += desired.width + m_spacing;
             } else {
-                // Vertical: each child gets its desired width or full width, whichever is smaller
-                float childWidth = std::min(desired.width, finalSize.width);
-                childRect = rendering::Rect(0, position, childWidth, desired.height);
+                // Vertical: each child gets its desired height, full available width
+                childRect = rendering::Rect(0, position,
+                                            finalSize.width, desired.height);
                 position += desired.height + m_spacing;
             }
             

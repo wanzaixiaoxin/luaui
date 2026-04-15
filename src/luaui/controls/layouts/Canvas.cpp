@@ -1,69 +1,79 @@
 #include "layouts/Canvas.h"
+#include "Control.h"
+#include "IRenderContext.h"
 #include "Interfaces/IControl.h"
 #include "Interfaces/ILayoutable.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
 #include <algorithm>
+#include <vector>
 
 namespace luaui {
 namespace controls {
 
-// 静态成员定义
-std::unordered_map<ControlID, rendering::Point> Canvas::s_positions;
+// Static member definition
+std::unordered_map<ControlID, Canvas::PositionInfo> Canvas::s_positionInfo;
 
 Canvas::Canvas() {}
 
 void Canvas::SetLeft(const std::shared_ptr<IControl>& control, float left) {
     if (!control) return;
-    s_positions[control->GetID()].x = left;
+    s_positionInfo[control->GetID()].left = left;
 }
 
 void Canvas::SetTop(const std::shared_ptr<IControl>& control, float top) {
     if (!control) return;
-    s_positions[control->GetID()].y = top;
+    s_positionInfo[control->GetID()].top = top;
 }
 
 void Canvas::SetRight(const std::shared_ptr<IControl>& control, float right) {
-    (void)control;
-    (void)right;
-    // Canvas 不直接支持 Right，可以通过计算实现
-    // 简化：忽略此属性
+    if (!control) return;
+    s_positionInfo[control->GetID()].right = right;
 }
 
 void Canvas::SetBottom(const std::shared_ptr<IControl>& control, float bottom) {
-    (void)control;
-    (void)bottom;
-    // Canvas 不直接支持 Bottom，可以通过计算实现
-    // 简化：忽略此属性
+    if (!control) return;
+    s_positionInfo[control->GetID()].bottom = bottom;
+}
+
+void Canvas::SetZIndex(const std::shared_ptr<IControl>& control, int zIndex) {
+    if (!control) return;
+    s_positionInfo[control->GetID()].zIndex = zIndex;
 }
 
 float Canvas::GetLeft(const std::shared_ptr<IControl>& control) {
     if (!control) return 0;
-    auto it = s_positions.find(control->GetID());
-    return (it != s_positions.end()) ? it->second.x : 0;
+    auto it = s_positionInfo.find(control->GetID());
+    return (it != s_positionInfo.end()) ? it->second.left : 0;
 }
 
 float Canvas::GetTop(const std::shared_ptr<IControl>& control) {
     if (!control) return 0;
-    auto it = s_positions.find(control->GetID());
-    return (it != s_positions.end()) ? it->second.y : 0;
+    auto it = s_positionInfo.find(control->GetID());
+    return (it != s_positionInfo.end()) ? it->second.top : 0;
 }
 
 float Canvas::GetRight(const std::shared_ptr<IControl>& control) {
-    (void)control;
-    // 简化实现
-    return 0;
+    if (!control) return -1;
+    auto it = s_positionInfo.find(control->GetID());
+    return (it != s_positionInfo.end()) ? it->second.right : -1;
 }
 
 float Canvas::GetBottom(const std::shared_ptr<IControl>& control) {
-    (void)control;
-    // 简化实现
-    return 0;
+    if (!control) return -1;
+    auto it = s_positionInfo.find(control->GetID());
+    return (it != s_positionInfo.end()) ? it->second.bottom : -1;
+}
+
+int Canvas::GetZIndex(const std::shared_ptr<IControl>& control) {
+    if (!control) return 0;
+    auto it = s_positionInfo.find(control->GetID());
+    return (it != s_positionInfo.end()) ? it->second.zIndex : 0;
 }
 
 rendering::Size Canvas::OnMeasureChildren(const rendering::Size& availableSize) {
     (void)availableSize;
-    // Canvas 给子控件无限空间进行测量
+    // Canvas gives children infinite space for measurement
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -74,7 +84,7 @@ rendering::Size Canvas::OnMeasureChildren(const rendering::Size& availableSize) 
         }
     }
     
-    // 计算最大边界
+    // Calculate maximum bounds
     float maxWidth = 0;
     float maxHeight = 0;
     
@@ -109,18 +119,57 @@ rendering::Size Canvas::OnArrangeChildren(const rendering::Size& finalSize) {
         if (auto* layoutable = child->AsLayoutable()) {
             float left = GetLeft(child);
             float top = GetTop(child);
+            float right = GetRight(child);
+            float bottom = GetBottom(child);
             auto desired = layoutable->GetDesiredSize();
             
-            layoutable->Arrange(rendering::Rect(
-                contentRect.x + left,
-                contentRect.y + top,
-                desired.width,
-                desired.height
-            ));
+            // Calculate position based on Left/Top or Right/Bottom
+            float x, y;
+            
+            if (right >= 0) {
+                // Right is set: position from right edge
+                x = contentRect.x + finalSize.width - right - desired.width;
+            } else {
+                // Use Left
+                x = contentRect.x + left;
+            }
+            
+            if (bottom >= 0) {
+                // Bottom is set: position from bottom edge
+                y = contentRect.y + finalSize.height - bottom - desired.height;
+            } else {
+                // Use Top
+                y = contentRect.y + top;
+            }
+            
+            layoutable->Arrange(rendering::Rect(x, y, desired.width, desired.height));
         }
     }
     
     return finalSize;
+}
+
+void Canvas::OnRenderChildren(rendering::IRenderContext* context) {
+    if (!context) return;
+    
+    // Sort children by ZIndex for rendering
+    std::vector<std::pair<int, std::shared_ptr<IControl>>> sortedChildren;
+    for (auto& child : m_children) {
+        if (!child->GetIsVisible()) continue;
+        sortedChildren.emplace_back(GetZIndex(child), child);
+    }
+    
+    // Sort by ZIndex (lower values render first)
+    std::sort(sortedChildren.begin(), sortedChildren.end(),
+        [](const auto& a, const auto& b) { return a.first < b.first; });
+    
+    // Render in ZIndex order
+    for (auto& [zIndex, child] : sortedChildren) {
+        auto* ctrl = static_cast<Control*>(child.get());
+        if (auto* r = ctrl->AsRenderable()) {
+            r->Render(context);
+        }
+    }
 }
 
 } // namespace controls

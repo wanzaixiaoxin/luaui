@@ -25,27 +25,62 @@ Dock DockPanel::GetDock(const std::shared_ptr<IControl>& control) {
 }
 
 rendering::Size DockPanel::OnMeasureChildren(const rendering::Size& availableSize) {
-    // 简化实现：测量所有子控件并累加
-    float totalWidth = 0;
-    float totalHeight = 0;
+    // Correct implementation: measure children with proper constraints based on Dock direction
+    float remainingWidth = availableSize.width;
+    float remainingHeight = availableSize.height;
     
-    for (auto& child : m_children) {
+    for (size_t i = 0; i < m_children.size(); ++i) {
+        auto& child = m_children[i];
         if (!child->GetIsVisible()) continue;
         
         if (auto* layoutable = child->AsLayoutable()) {
+            Dock dock = GetDock(child);
+            bool isLastChild = (i == m_children.size() - 1);
+            
             interfaces::LayoutConstraint constraint;
-            constraint.available = availableSize;
+            
+            if (isLastChild && m_lastChildFill) {
+                // Last child fills remaining space
+                constraint.available = rendering::Size(remainingWidth, remainingHeight);
+            } else {
+                // Constrain based on dock direction
+                switch (dock) {
+                    case Dock::Left:
+                    case Dock::Right:
+                        // Left/Right docked children get full remaining height
+                        constraint.available = rendering::Size(remainingWidth, remainingHeight);
+                        break;
+                    case Dock::Top:
+                    case Dock::Bottom:
+                        // Top/Bottom docked children get full remaining width
+                        constraint.available = rendering::Size(remainingWidth, remainingHeight);
+                        break;
+                }
+            }
+            
             layoutable->Measure(constraint);
             auto desired = layoutable->GetDesiredSize();
             
-            totalWidth += desired.width;
-            totalHeight += desired.height;
+            // Update remaining space
+            if (!(isLastChild && m_lastChildFill)) {
+                switch (dock) {
+                    case Dock::Left:
+                    case Dock::Right:
+                        remainingWidth -= desired.width;
+                        break;
+                    case Dock::Top:
+                    case Dock::Bottom:
+                        remainingHeight -= desired.height;
+                        break;
+                }
+            }
         }
     }
     
+    // Return the size we actually need
     return rendering::Size(
-        std::min(totalWidth, availableSize.width),
-        std::min(totalHeight, availableSize.height)
+        availableSize.width - std::max(0.0f, remainingWidth),
+        availableSize.height - std::max(0.0f, remainingHeight)
     );
 }
 

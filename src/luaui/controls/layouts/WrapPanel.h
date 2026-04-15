@@ -6,7 +6,7 @@ namespace luaui {
 namespace controls {
 
 /**
- * @brief WrapPanel - 自动换行面板（新架构）
+ * @brief WrapPanel - auto-wrapping panel
  */
 class WrapPanel : public Panel {
 public:
@@ -16,16 +16,20 @@ public:
     
     std::string GetTypeName() const override { return "WrapPanel"; }
     
-    // 方向属性
+    // Orientation property
     Orientation GetOrientation() const { return m_orientation; }
-    void SetOrientation(Orientation orient) { m_orientation = orient; }
+    void SetOrientation(Orientation orient);
     
-    // ItemWidth/ItemHeight 用于统一子项大小
+    // ItemWidth/ItemHeight for uniform item sizing
     float GetItemWidth() const { return m_itemWidth; }
-    void SetItemWidth(float width) { m_itemWidth = width; }
+    void SetItemWidth(float width);
     
     float GetItemHeight() const { return m_itemHeight; }
-    void SetItemHeight(float height) { m_itemHeight = height; }
+    void SetItemHeight(float height);
+    
+    // Spacing between items
+    float GetSpacing() const { return m_spacing; }
+    void SetSpacing(float spacing);
 
 protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;
@@ -33,8 +37,9 @@ protected:
 
 private:
     Orientation m_orientation = Orientation::Horizontal;
-    float m_itemWidth = 0;   // 0 表示使用子项期望宽度
-    float m_itemHeight = 0;  // 0 表示使用子项期望高度
+    float m_itemWidth = 0;   // 0 means use child's desired width
+    float m_itemHeight = 0;  // 0 means use child's desired height
+    float m_spacing = 0;     // Spacing between items
 };
 
 } // namespace controls
