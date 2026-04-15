@@ -52,9 +52,9 @@ function AutoViewModel:EnableAutoNotify()
         __newindex = function(t, k, v)
             local oldValue = rawget(selfRef._data, k)
             if oldValue ~= v then
-                Log.debug("[__newindex] Setting '" .. tostring(k) .. "': " .. tostring(oldValue) .. " -> " .. tostring(v))
+                -- Log.debug("[__newindex] Setting '" .. tostring(k) .. "': " .. tostring(oldValue) .. " -> " .. tostring(v))
                 rawset(selfRef._data, k, v)
-                Log.debug("[__newindex] Notifying computed change for '" .. tostring(k) .. "'")
+                -- Log.debug("[__newindex] Notifying computed change for '" .. tostring(k) .. "'")
                 selfRef:_notifyComputedChange(k)
                 if selfRef._batchMode then
                     selfRef._pendingNotifications[k] = true
@@ -62,7 +62,7 @@ function AutoViewModel:EnableAutoNotify()
                     selfRef:_notifyChange(k)
                 end
             else
-                Log.debug("[__newindex] Value unchanged for '" .. tostring(k) .. "': " .. tostring(v))
+                -- Log.debug("[__newindex] Value unchanged for '" .. tostring(k) .. "': " .. tostring(v))
             end
         end
     }
@@ -77,12 +77,12 @@ function AutoViewModel:_notifyChange(propertyName)
 end
 
 function AutoViewModel:_notifyComputedChange(changedProperty)
-    Log.debug("[_notifyComputedChange] Property changed: " .. tostring(changedProperty))
+    -- Log.debug("[_notifyComputedChange] Property changed: " .. tostring(changedProperty))
     for name, computed in pairs(self._computed) do
         for _, dep in ipairs(computed.deps) do
             if dep == changedProperty then
                 local newValue = computed.fn(self)
-                Log.debug("[_notifyComputedChange] Recalculating '" .. name .. "': " .. tostring(newValue))
+                -- Log.debug("[_notifyComputedChange] Recalculating '" .. name .. "': " .. tostring(newValue))
                 rawset(self._data, name, newValue)
                 if self._batchMode then
                     self._pendingNotifications[name] = true

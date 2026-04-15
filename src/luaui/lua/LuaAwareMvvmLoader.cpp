@@ -541,7 +541,7 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
         return;
     }
     
-    utils::Logger::InfoF("[LuaAwareMvvmLoader] Looking for ViewModel: '%s'", m_viewModelName.c_str());
+    //utils::Logger::InfoF("[LuaAwareMvvmLoader] Looking for ViewModel: '%s'", m_viewModelName.c_str());
     
     // 获取 ViewModel
     lua_getglobal(m_L, m_viewModelName.c_str());
@@ -552,7 +552,7 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
         return;
     }
     
-    utils::Logger::Info("[LuaAwareMvvmLoader] ViewModel table found, discovering commands...");
+    //utils::Logger::Info("[LuaAwareMvvmLoader] ViewModel table found, discovering commands...");
     
     // 策略：通过名称直接查询已知命令模式
     // 因为 ViewModel 可能使用代理模式（__index 为函数），无法遍历
@@ -584,9 +584,9 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
         if (lua_type(m_L, -2) == LUA_TSTRING) {
             const char* key = lua_tostring(m_L, -2);
             if (lua_isfunction(m_L, -1)) {
-                utils::Logger::DebugF("[LuaAwareMvvmLoader] Direct table function: '%s'", key);
+                //utils::Logger::DebugF("[LuaAwareMvvmLoader] Direct table function: '%s'", key);
                 if (strstr(key, "Command") || strstr(key, "Handler")) {
-                    utils::Logger::InfoF("[LuaAwareMvvmLoader] Registering command: '%s'", key);
+                    //utils::Logger::InfoF("[LuaAwareMvvmLoader] Registering command: '%s'", key);
                     RegisterLuaCommand(key);
                     commandCount++;
                 }
@@ -605,7 +605,7 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
         lua_pop(m_L, 1);
         
         if (isFunction) {
-            utils::Logger::InfoF("[LuaAwareMvvmLoader] Found command by lookup: '%s'", cmdName);
+            //utils::Logger::InfoF("[LuaAwareMvvmLoader] Found command by lookup: '%s'", cmdName);
             RegisterLuaCommand(cmdName);
             commandCount++;
         }
@@ -615,14 +615,14 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
     if (lua_getmetatable(m_L, -1)) {
         lua_getfield(m_L, -1, "__index");
         if (lua_istable(m_L, -1)) {
-            utils::Logger::Info("[LuaAwareMvvmLoader] Scanning __index table...");
+            //utils::Logger::Info("[LuaAwareMvvmLoader] Scanning __index table...");
             lua_pushnil(m_L);
             while (lua_next(m_L, -2) != 0) {
                 if (lua_type(m_L, -2) == LUA_TSTRING) {
                     const char* key = lua_tostring(m_L, -2);
                     if (lua_isfunction(m_L, -1)) {
                         if (strstr(key, "Command") || strstr(key, "Handler")) {
-                            utils::Logger::InfoF("[LuaAwareMvvmLoader] Found in __index: '%s'", key);
+                            //utils::Logger::InfoF("[LuaAwareMvvmLoader] Found in __index: '%s'", key);
                             RegisterLuaCommand(key);
                             commandCount++;
                         }
@@ -636,7 +636,7 @@ void LuaAwareMvvmLoader::AutoBindCommands() {
     
     lua_pop(m_L, 1);  // Pop ViewModel
     
-    utils::Logger::InfoF("[LuaAwareMvvmLoader] Command binding completed: %d commands registered", commandCount);
+    //utils::Logger::InfoF("[LuaAwareMvvmLoader] Command binding completed: %d commands registered", commandCount);
 }
 
 void LuaAwareMvvmLoader::RegisterLuaCommand(const std::string& commandName) {
@@ -645,10 +645,10 @@ void LuaAwareMvvmLoader::RegisterLuaCommand(const std::string& commandName) {
         return;
     }
     
-    utils::Logger::DebugF("[LuaAwareMvvmLoader] Registering click handler for command: '%s'", commandName.c_str());
+    //utils::Logger::DebugF("[LuaAwareMvvmLoader] Registering click handler for command: '%s'", commandName.c_str());
     
     m_baseLoader->RegisterClickHandler(commandName, [this, commandName]() {
-        utils::Logger::DebugF("[LuaAwareMvvmLoader] Command '%s' triggered, calling Lua function...", commandName.c_str());
+        //utils::Logger::DebugF("[LuaAwareMvvmLoader] Command '%s' triggered, calling Lua function...", commandName.c_str());
         if (m_notifier) {
             bool result = m_notifier->CallFunction(commandName);
             if (!result) {

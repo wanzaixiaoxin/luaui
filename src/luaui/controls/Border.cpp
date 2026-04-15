@@ -3,6 +3,7 @@
 #include "Interfaces/IControl.h"
 #include "Theme.h"
 #include "ThemeKeys.h"
+#include "Logger.h"
 
 namespace luaui {
 namespace controls {
@@ -141,28 +142,43 @@ rendering::Size Border::OnMeasureChildren(const rendering::Size& availableSize) 
     if (!m_content) {
         return rendering::Size(m_borderThickness * 2, m_borderThickness * 2);
     }
-    
+
     auto* childLayout = static_cast<Control*>(m_content.get())->AsLayoutable();
     if (!childLayout) {
         return rendering::Size(m_borderThickness * 2, m_borderThickness * 2);
     }
-    
-    // 减去边框空间
+
+    // 获取 Padding
+    float paddingLeft = 0, paddingTop = 0, paddingRight = 0, paddingBottom = 0;
+    if (auto* layout = GetLayout()) {
+        paddingLeft = layout->GetPaddingLeft();
+        paddingTop = layout->GetPaddingTop();
+        paddingRight = layout->GetPaddingRight();
+        paddingBottom = layout->GetPaddingBottom();
+    }
+
+    // 减去边框和 Padding 空间
     rendering::Size childAvailable(
-        std::max(0.0f, availableSize.width - m_borderThickness * 2),
-        std::max(0.0f, availableSize.height - m_borderThickness * 2)
+        std::max(0.0f, availableSize.width - m_borderThickness * 2 - paddingLeft - paddingRight),
+        std::max(0.0f, availableSize.height - m_borderThickness * 2 - paddingTop - paddingBottom)
     );
-    
+
     interfaces::LayoutConstraint constraint;
     constraint.available = childAvailable;
-    
+
     auto childSize = childLayout->Measure(constraint);
-    
-    // 加上边框空间
-    return rendering::Size(
-        childSize.width + m_borderThickness * 2,
-        childSize.height + m_borderThickness * 2
-    );
+
+    // 计算最终大小
+    float finalWidth = childSize.width + m_borderThickness * 2 + paddingLeft + paddingRight;
+    float finalHeight = childSize.height + m_borderThickness * 2 + paddingTop + paddingBottom;
+
+    // 如果子元素使用了全部可用宽度,说明它想要填充父容器
+    // 此时 Border 也应该使用可用宽度,而不是子元素的宽度
+    if (childSize.width >= childAvailable.width - 1.0f && childAvailable.width < 99990.0f) {
+        finalWidth = availableSize.width;
+    }
+
+    return rendering::Size(finalWidth, finalHeight);
 }
 
 rendering::Size Border::OnArrangeChildren(const rendering::Size& finalSize) {
@@ -174,15 +190,24 @@ rendering::Size Border::OnArrangeChildren(const rendering::Size& finalSize) {
     if (!childLayout) {
         return finalSize;
     }
-    
-    // 为子控件分配空间（减去边框）
+
+    // 获取 Padding
+    float paddingLeft = 0, paddingTop = 0, paddingRight = 0, paddingBottom = 0;
+    if (auto* layout = GetLayout()) {
+        paddingLeft = layout->GetPaddingLeft();
+        paddingTop = layout->GetPaddingTop();
+        paddingRight = layout->GetPaddingRight();
+        paddingBottom = layout->GetPaddingBottom();
+    }
+
+    // 为子控件分配空间（减去边框和 Padding）
     childLayout->Arrange(rendering::Rect(
-        m_borderThickness,
-        m_borderThickness,
-        finalSize.width - m_borderThickness * 2,
-        finalSize.height - m_borderThickness * 2
+        m_borderThickness + paddingLeft,
+        m_borderThickness + paddingTop,
+        finalSize.width - m_borderThickness * 2 - paddingLeft - paddingRight,
+        finalSize.height - m_borderThickness * 2 - paddingTop - paddingBottom
     ));
-    
+
     return finalSize;
 }
 

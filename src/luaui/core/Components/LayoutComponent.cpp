@@ -145,6 +145,20 @@ rendering::Size LayoutComponent::MeasureOverride(const rendering::Size& availabl
         desiredSize = m_owner->OnMeasure(availableForContent);
     }
 
+    // 应用 MinWidth/MaxWidth 约束
+    if (m_minWidth > 0.0f) {
+        desiredSize.width = std::max(desiredSize.width, m_minWidth);
+    }
+    if (m_maxWidth > 0.0f && m_maxWidth < 99990.0f) {
+        desiredSize.width = std::min(desiredSize.width, m_maxWidth);
+    }
+    if (m_minHeight > 0.0f) {
+        desiredSize.height = std::max(desiredSize.height, m_minHeight);
+    }
+    if (m_maxHeight > 0.0f && m_maxHeight < 99990.0f) {
+        desiredSize.height = std::min(desiredSize.height, m_maxHeight);
+    }
+
     // 将 Margin 加回到期望大小
     return rendering::Size(
         desiredSize.width + m_marginLeft + m_marginRight,

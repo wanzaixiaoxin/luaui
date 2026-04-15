@@ -17,8 +17,6 @@ rendering::Size StackPanel::OnMeasureChildren(const rendering::Size& availableSi
     float totalHeight = 0;
     float maxCross = 0;
     
-
-    
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -60,9 +58,6 @@ rendering::Size StackPanel::OnArrangeChildren(const rendering::Size& finalSize) 
     bool isHorizontal = (m_orientation == Orientation::Horizontal);
     float position = 0;
     
-    luaui::utils::Logger::DebugF("[StackPanel] OnArrangeChildren: finalSize=%.0fx%.0f, children=%zu", 
-        finalSize.width, finalSize.height, m_children.size());
-    
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
         
@@ -76,14 +71,11 @@ rendering::Size StackPanel::OnArrangeChildren(const rendering::Size& finalSize) 
                                             desired.width, finalSize.height);
                 position += desired.width + m_spacing;
             } else {
-                // Vertical: each child gets full width, its desired height
-                childRect = rendering::Rect(0, position,
-                                            finalSize.width, desired.height);
+                // Vertical: each child gets its desired width or full width, whichever is smaller
+                float childWidth = std::min(desired.width, finalSize.width);
+                childRect = rendering::Rect(0, position, childWidth, desired.height);
                 position += desired.height + m_spacing;
             }
-            
-            luaui::utils::Logger::DebugF("[StackPanel] Arranging child %s at (%.0f,%.0f) size %.0fx%.0f",
-                child->GetTypeName().c_str(), childRect.x, childRect.y, childRect.width, childRect.height);
             
             layoutable->Arrange(childRect);
         }

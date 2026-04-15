@@ -306,10 +306,12 @@ std::shared_ptr<luaui::Control> MvvmXmlLoader::Load(const std::string& filePath)
             pending.expression = expression;
             m_pendingBindings.push_back(pending);
             
+            /*
             utils::Logger::DebugF("[MVVM] Queued binding: %s.%s -> %s",
                 control->GetTypeName().c_str(),
                 deferred.propertyName.c_str(),
                 expression.path.c_str());
+            */
         }
     }
     
@@ -380,9 +382,10 @@ void MvvmXmlLoader::ExtractBindings(const tinyxml2::XMLElement* element, const s
         const char* attrValue = attr->Value();
         
         if (attrValue && IsBindingExpression(attrValue)) {
+            /*
             utils::Logger::DebugF("[MVVM] Found binding: %s.%s = %s", 
                 controlName.c_str(), attrName, attrValue);
-            
+            */
             // 存储绑定信息，等待控件加载完成后解析
             PendingBindingInfo info;
             info.elementName = controlName;
@@ -647,13 +650,13 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
                                   const std::string& propertyName,
                                   const BindingExpression& expression) {
     if (!control || !m_dataContext) return;
-    
+    /*
     utils::Logger::DebugF("[MVVM] Creating binding: %s.%s -> %s (Mode=%d)",
         control->GetTypeName().c_str(),
         propertyName.c_str(),
         expression.path.c_str(),
         static_cast<int>(expression.mode));
-    
+    */
     // 根据控件类型路由到具体绑定实现
     if (auto textBlock = std::dynamic_pointer_cast<luaui::controls::TextBlock>(control)) {
         if (propertyName == "Text") {
@@ -733,12 +736,12 @@ void MvvmXmlLoader::BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> te
         std::any value = dataContext->GetPropertyValue(boundPropertyName);
         
         if (!value.has_value()) {
-            utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') returned empty", boundPropertyName.c_str());
+            //utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') returned empty", boundPropertyName.c_str());
             return;
         }
         
-        utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') success, type=%s", 
-            boundPropertyName.c_str(), value.type().name());
+        //utils::Logger::DebugF("[MVVM] GetPropertyValue('%s') success, type=%s", 
+        //    boundPropertyName.c_str(), value.type().name());
         
         // 应用转换器
         if (converter) {
@@ -749,23 +752,23 @@ void MvvmXmlLoader::BindTextBlock(std::shared_ptr<luaui::controls::TextBlock> te
         try {
             if (value.type() == typeid(std::string)) {
                 std::string str = std::any_cast<std::string>(value);
-                utils::Logger::DebugF("[MVVM] Setting TextBlock text to: %s", str.c_str());
+                //utils::Logger::DebugF("[MVVM] Setting TextBlock text to: %s", str.c_str());
                 textBlock->SetText(Utf8ToW(str));
             } else if (value.type() == typeid(std::wstring)) {
                 std::wstring str = std::any_cast<std::wstring>(value);
-                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (wstring)");
+                //utils::Logger::DebugF("[MVVM] Setting TextBlock text to (wstring)");
                 textBlock->SetText(str);
             } else if (value.type() == typeid(double)) {
                 double val = std::any_cast<double>(value);
-                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (double): %f", val);
+                //utils::Logger::DebugF("[MVVM] Setting TextBlock text to (double): %f", val);
                 textBlock->SetText(std::to_wstring(val));
             } else if (value.type() == typeid(int)) {
                 int val = std::any_cast<int>(value);
-                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (int): %d", val);
+                //utils::Logger::DebugF("[MVVM] Setting TextBlock text to (int): %d", val);
                 textBlock->SetText(std::to_wstring(val));
             } else if (value.type() == typeid(bool)) {
                 bool val = std::any_cast<bool>(value);
-                utils::Logger::DebugF("[MVVM] Setting TextBlock text to (bool): %s", val ? "true" : "false");
+                //utils::Logger::DebugF("[MVVM] Setting TextBlock text to (bool): %s", val ? "true" : "false");
                 textBlock->SetText(val ? L"True" : L"False");
             } else {
                 utils::Logger::DebugF("[MVVM] Unknown value type: %s", value.type().name());
@@ -835,8 +838,8 @@ void MvvmXmlLoader::BindTextBox(std::shared_ptr<luaui::controls::TextBox> textBo
         textBox->TextChanged.Add([dataContext, boundPropertyName](luaui::controls::TextBox*, const std::wstring& text) {
             std::string str = WToUtf8(text);
             dataContext->SetPropertyValue(boundPropertyName, str);
-            utils::Logger::DebugF("[MVVM] TextBox changed: %s -> ViewModel.%s", 
-                str.c_str(), boundPropertyName.c_str());
+            //utils::Logger::DebugF("[MVVM] TextBox changed: %s -> ViewModel.%s", 
+            //    str.c_str(), boundPropertyName.c_str());
         });
     }
 }
@@ -937,8 +940,8 @@ void MvvmXmlLoader::BindListBox(std::shared_ptr<luaui::controls::ListBox> listBo
                                 const std::string& propertyName,
                                 const BindingExpression& expression) {
     (void)propertyName;
-    utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s (with incremental updates)",
-        expression.path.c_str());
+    //utils::Logger::InfoF("[MVVM] Binding ListBox.ItemsSource to %s (with incremental updates)",
+    //    expression.path.c_str());
 
     auto dataContext = m_dataContext;
     if (!dataContext) {
@@ -1177,7 +1180,7 @@ void MvvmXmlLoader::BindListBoxSelectedItem(
     auto dataContext = m_dataContext;
     auto propertyName = expression.path;
     
-    utils::Logger::InfoF("[MVVM] Binding ListBox.SelectedItem to %s", propertyName.c_str());
+    //utils::Logger::InfoF("[MVVM] Binding ListBox.SelectedItem to %s", propertyName.c_str());
     
     if (!dataContext) {
         utils::Logger::Error("[MVVM] No DataContext available for ListBox SelectedItem binding");
@@ -1225,7 +1228,7 @@ void MvvmXmlLoader::BindListBoxSelectedItem(
     // TwoWay: View -> ViewModel
     if (expression.mode == BindingMode::TwoWay) {
         listBox->SelectionChanged.Add([dataContext, propertyName](luaui::controls::ListBox*, int selectedIndex) {
-            utils::Logger::DebugF("[MVVM] ListBox.SelectionChanged: %s -> %d", propertyName.c_str(), selectedIndex);
+            //utils::Logger::DebugF("[MVVM] ListBox.SelectionChanged: %s -> %d", propertyName.c_str(), selectedIndex);
             dataContext->SetPropertyValue(propertyName, selectedIndex);
         });
     }
@@ -1246,7 +1249,7 @@ void MvvmXmlLoader::BindComboBox(std::shared_ptr<luaui::controls::ComboBox> comb
     auto luaDataContext = std::dynamic_pointer_cast<lua::LuaPropertyNotifier>(dataContext);
     
     if (propertyName == "ItemsSource") {
-        utils::Logger::InfoF("[MVVM] Binding ComboBox.ItemsSource to %s", expression.path.c_str());
+        //utils::Logger::InfoF("[MVVM] Binding ComboBox.ItemsSource to %s", expression.path.c_str());
         
         if (!luaDataContext) {
             // 非 Lua 上下文，尝试通用方式
@@ -1369,8 +1372,8 @@ void MvvmXmlLoader::BindCheckBox(std::shared_ptr<luaui::controls::CheckBox> chec
     auto boundPropertyName = expression.path;
     auto converterParameter = expression.converterParameter;
     
-    utils::Logger::InfoF("[MVVM] Binding CheckBox.IsChecked to %s, mode=%d", 
-        boundPropertyName.c_str(), static_cast<int>(expression.mode));
+    //utils::Logger::InfoF("[MVVM] Binding CheckBox.IsChecked to %s, mode=%d", 
+    //    boundPropertyName.c_str(), static_cast<int>(expression.mode));
     
     // 更新函数：ViewModel -> View
     auto updateView = [checkBox, dataContext, boundPropertyName, converter, converterParameter]() {
@@ -1429,8 +1432,8 @@ void MvvmXmlLoader::BindRadioButton(std::shared_ptr<luaui::controls::RadioButton
     auto boundPropertyName = expression.path;
     auto converterParameter = expression.converterParameter;
     
-    utils::Logger::InfoF("[MVVM] Binding RadioButton.IsChecked to %s, mode=%d", 
-        boundPropertyName.c_str(), static_cast<int>(expression.mode));
+    //utils::Logger::InfoF("[MVVM] Binding RadioButton.IsChecked to %s, mode=%d", 
+    //    boundPropertyName.c_str(), static_cast<int>(expression.mode));
     
     // 更新函数：ViewModel -> View
     auto updateView = [radioButton, dataContext, boundPropertyName, converter, converterParameter]() {
@@ -1483,7 +1486,7 @@ void MvvmXmlLoader::BindButtonCommand(std::shared_ptr<luaui::controls::Button> b
     auto dataContext = m_dataContext;
     auto commandName = expression.path;
     
-    utils::Logger::InfoF("[MVVM] Binding Button.Command to %s", commandName.c_str());
+    //utils::Logger::InfoF("[MVVM] Binding Button.Command to %s", commandName.c_str());
     
     if (!dataContext) {
         utils::Logger::Error("[MVVM] No DataContext available for Button Command binding");
@@ -1513,7 +1516,7 @@ void MvvmXmlLoader::BindButtonCommand(std::shared_ptr<luaui::controls::Button> b
         return;
     }
     
-    utils::Logger::InfoF("[MVVM] Button command '%s' bound successfully", commandName.c_str());
+    //utils::Logger::InfoF("[MVVM] Button command '%s' bound successfully", commandName.c_str());
 }
 
 // ============================================================================
@@ -1524,7 +1527,7 @@ void MvvmXmlLoader::BindMenuItemCommand(std::shared_ptr<luaui::controls::MenuIte
     auto dataContext = m_dataContext;
     auto commandName = expression.path;
 
-    utils::Logger::InfoF("[MVVM] Binding MenuItem.Command to %s", commandName.c_str());
+    //utils::Logger::InfoF("[MVVM] Binding MenuItem.Command to %s", commandName.c_str());
 
     if (!dataContext) {
         utils::Logger::Error("[MVVM] No DataContext available for MenuItem Command binding");
@@ -1550,7 +1553,7 @@ void MvvmXmlLoader::BindMenuItemCommand(std::shared_ptr<luaui::controls::MenuIte
         return;
     }
 
-    utils::Logger::InfoF("[MVVM] MenuItem command '%s' bound successfully", commandName.c_str());
+    //utils::Logger::InfoF("[MVVM] MenuItem command '%s' bound successfully", commandName.c_str());
 }
 
 // ============================================================================

@@ -572,14 +572,19 @@ void TextBox::OnLostFocus() {
 }
 
 rendering::Size TextBox::OnMeasure(const rendering::Size& availableSize) {
-    (void)availableSize;
-
-    float width = 160.0f;
+    float width = 160.0f;  // 默认最小宽度
     float height = std::max(28.0f, m_fontSize * 1.8f);
 
     if (auto* layout = GetLayout()) {
         if (layout->GetWidth() > 0.0f) {
             width = layout->GetWidth();
+        } else {
+            // 如果没有设置固定宽度,使用可用宽度
+            width = availableSize.width;
+            // 但不超过 MaxWidth
+            if (layout->GetMaxWidth() > 0.0f) {
+                width = std::min(width, layout->GetMaxWidth());
+            }
         }
         if (layout->GetHeight() > 0.0f) {
             height = layout->GetHeight();

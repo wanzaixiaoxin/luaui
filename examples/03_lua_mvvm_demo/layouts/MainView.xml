@@ -35,22 +35,23 @@
     </StatusBar>
 
     <!-- 左侧导航栏 -->
-    <SideBar DockPanel.Dock="Left" Title="导航" Width="200" MinWidth="150" MaxWidth="300" Pinned="true">
-        <StackPanel Spacing="4" Margin="4">
-            <Button Content="首页" Width="180" Height="28"/>
-            <Button Content="计数器" Width="180" Height="28"/>
-            <Button Content="文本框测试" Width="180" Height="28"/>
-            <Button Content="按钮测试" Width="180" Height="28"/>
-            <Button Content="列表和表格" Width="180" Height="28"/>
+    <SideBar DockPanel.Dock="Left" Title="导航" MinWidth="80" MaxWidth="150" Width="120" Pinned="true">
+        <StackPanel Spacing="10" Margin="4">
+            <Button Content="首页" Width="100" Height="28"/>
+            <Button Content="计数器" Width="100" Height="28"/>
+            <Button Content="文本框测试" Width="100" Height="28"/>
+            <Button Content="按钮测试" Width="100" Height="28"/>
+            <Button Content="列表和表格" Width="100" Height="28"/>
         </StackPanel>
     </SideBar>
 
     <!-- 主内容区 (最后一个子元素自动填充剩余空间) -->
     <ScrollViewer>
-    <StackPanel Orientation="Vertical" Margin="32,24,24,24" Spacing="12">
+    <StackPanel Orientation="Vertical" Margin="10,0,10,10" Spacing="12" MaxWidth="600">
+>
 
         <!-- 标题 + 主题切换 -->
-        <Border Padding="16">
+        <Border Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="8">
                 <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold"/>
                 <TextBlock Text="{Binding Description}" FontSize="13"/>
@@ -65,7 +66,7 @@
         </Border>
 
         <!-- 计数器区域 -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="Counter Demo" FontWeight="SemiBold" FontSize="16"/>
 
@@ -85,15 +86,15 @@
         <!-- ================================================================== -->
         <!-- TextBox 完整测试区域 -->
         <!-- ================================================================== -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="TextBox 完整测试" FontWeight="SemiBold" FontSize="16"/>
                 <TextBlock Text="覆盖 TwoWay 绑定、双输入同步、MaxLength、Password、ReadOnly、程序化更新和长文本光标滚动。" FontSize="12" Foreground="#757575"/>
 
                 <TextBlock Text="1. TwoWay 绑定 + 双 TextBox 同步" FontSize="13" Foreground="#666666"/>
-                <TextBox Name="LiveTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                <TextBox Name="LiveTextBox" Height="32" MaxWidth="600" Text="{Binding LiveText, Mode=TwoWay}"
                          Placeholder="在此输入测试 TwoWay 绑定、选区、撤销重做和剪贴板。"/>
-                <TextBox Name="MirrorTextBox" Width="520" Height="32" Text="{Binding LiveText, Mode=TwoWay}"
+                <TextBox Name="MirrorTextBox" Height="32" MaxWidth="600" Text="{Binding LiveText, Mode=TwoWay}"
                          Placeholder="绑定到同一个 LiveText 属性，编辑任一文本框即可同步。"/>
                 <TextBlock Text="{Binding LiveTextSummary}" FontSize="12" Foreground="#1976D2"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -104,7 +105,7 @@
                 </StackPanel>
 
                 <TextBlock Text="2. MaxLength 限制 (12)" FontSize="13" Foreground="#666666"/>
-                <TextBox Name="LimitedTextBox" Width="320" Height="32" Text="{Binding LimitedText, Mode=TwoWay}"
+                <TextBox Name="LimitedTextBox" Height="32" MaxWidth="400" Text="{Binding LimitedText, Mode=TwoWay}"
                          MaxLength="12" Placeholder="MaxLength = 12，输入和粘贴都会被截断。"/>
                 <TextBlock Text="{Binding LimitedTextSummary}" FontSize="12" Foreground="#E65100"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -113,7 +114,7 @@
                 </StackPanel>
 
                 <TextBlock Text="3. Password 模式" FontSize="13" Foreground="#666666"/>
-                <TextBox Name="PasswordTextBox" Width="320" Height="32" Text="{Binding PasswordText, Mode=TwoWay}"
+                <TextBox Name="PasswordTextBox" Height="32" MaxWidth="400" Text="{Binding PasswordText, Mode=TwoWay}"
                          IsPassword="True" MaxLength="24" Placeholder="密码模式已启用。"/>
                 <TextBlock Text="{Binding PasswordSummary}" FontSize="12" Foreground="#8E24AA"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -122,7 +123,7 @@
                 </StackPanel>
 
                 <TextBlock Text="4. ReadOnly 文本框" FontSize="13" Foreground="#666666"/>
-                <TextBox Name="ReadOnlyTextBox" Width="520" Height="32" Text="{Binding ReadOnlyText}"
+                <TextBox Name="ReadOnlyTextBox" Height="32" MaxWidth="600" Text="{Binding ReadOnlyText}"
                          IsReadOnly="True" Placeholder="此字段为只读，仅可通过 Lua 代码修改。"/>
                 <TextBlock Text="{Binding ReadOnlySummary}" FontSize="12" Foreground="#546E7A"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -131,7 +132,7 @@
                 </StackPanel>
 
                 <TextBlock Text="5. 长文本滚动 / Home End / Ctrl 导航" FontSize="13" Foreground="#666666"/>
-                <TextBox Name="ScrollTextBox" Width="520" Height="32" Text="{Binding ScrollText, Mode=TwoWay}"
+                <TextBox Name="ScrollTextBox" Height="32" MaxWidth="600" Text="{Binding ScrollText, Mode=TwoWay}"
                          Placeholder="加载长文本样例，测试 Home/End 和 Ctrl+Arrow。"/>
                 <TextBlock Text="{Binding ScrollTextSummary}" FontSize="12" Foreground="#2E7D32"/>
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -152,7 +153,7 @@
         <!-- ================================================================== -->
         <!-- Button 新功能测试区域 -->
         <!-- ================================================================== -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="Button 新功能测试" FontWeight="SemiBold" FontSize="16"/>
 
@@ -226,7 +227,7 @@
         </Border>
 
         <!-- 功能开关 -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="Feature Toggle" FontWeight="SemiBold" FontSize="16"/>
 
@@ -239,7 +240,7 @@
         </Border>
 
         <!-- 列表控件 -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="Items Collection (ListBox Demo)" FontWeight="SemiBold" FontSize="16"/>
                 <TextBlock Text="{Binding ItemCount}" FontSize="12" Foreground="#757575"/>
@@ -261,7 +262,7 @@
         </Border>
 
         <!-- 数据表格 -->
-        <Border Background="#F5F5F5" Padding="16">
+        <Border Background="#F5F5F5" Padding="16" Width="800">
             <StackPanel Orientation="Vertical" Spacing="12">
                 <TextBlock Text="Items Collection (DataGrid Demo)" FontWeight="SemiBold" FontSize="16"/>
                 <TextBlock Text="相同的 Lua 集合渲染为表格，添加、删除和清空操作会重建表格。" FontSize="12" Foreground="#757575"/>

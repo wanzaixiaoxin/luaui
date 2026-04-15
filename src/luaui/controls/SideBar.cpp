@@ -5,6 +5,7 @@
 #include "IRenderContext.h"
 #include "Theme.h"
 #include "ThemeKeys.h"
+#include "Logger.h"
 
 namespace luaui {
 namespace controls {
@@ -29,7 +30,19 @@ void SideBar::SetTitle(const std::wstring& title) {
 }
 
 void SideBar::SetSideBarWidth(float width) {
-    width = std::clamp(width, m_minWidth, m_maxWidth);
+    // 使用 LayoutComponent 的 MinWidth/MaxWidth
+    float minWidth = m_minWidth;
+    float maxWidth = m_maxWidth;
+    if (auto* layout = GetLayout()) {
+        if (layout->GetMinWidth() > 0.0f) {
+            minWidth = layout->GetMinWidth();
+        }
+        if (layout->GetMaxWidth() > 0.0f && layout->GetMaxWidth() < 99990.0f) {
+            maxWidth = layout->GetMaxWidth();
+        }
+    }
+    
+    width = std::clamp(width, minWidth, maxWidth);
     if (m_width != width) {
         m_width = width;
         if (!m_isCollapsed) {

@@ -13,6 +13,7 @@
 #include "DataGrid.h"      // DataGrid
 #include "layouts/ScrollViewer.h"
 #include "Menu.h"
+#include <fstream>
 #include "SideBar.h"
 #include "StatusBar.h"
 #include "layouts/DockPanel.h"
@@ -38,9 +39,20 @@ public:
         // 清空之前的延迟绑定
         m_deferredBindings.clear();
         
+        // 读取文件内容(使用二进制模式,避免编码转换)
+        std::ifstream file(filePath, std::ios::binary);
+        if (!file.is_open()) {
+            throw XmlLayoutException("Failed to open XML file: " + filePath);
+        }
+        
+        std::string content((std::istreambuf_iterator<char>(file)), 
+                           std::istreambuf_iterator<char>());
+        file.close();
+        
+        // 解析 XML
         tinyxml2::XMLDocument doc;
-        if (doc.LoadFile(filePath.c_str()) != tinyxml2::XML_SUCCESS) {
-            throw XmlLayoutException("Failed to load XML file: " + filePath);
+        if (doc.Parse(content.c_str()) != tinyxml2::XML_SUCCESS) {
+            throw XmlLayoutException("Failed to parse XML file: " + filePath);
         }
         return LoadElement(doc.RootElement());
     }
@@ -190,6 +202,42 @@ private:
                 if (TypeConverter::ToFloat(value, height)) {
                     if (auto* layout = control->GetLayout()) {
                         layout->SetHeight(height);
+                    }
+                }
+            }
+            // MinWidth
+            else if (name == "MinWidth") {
+                float minWidth;
+                if (TypeConverter::ToFloat(value, minWidth)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetMinWidth(minWidth);
+                    }
+                }
+            }
+            // MaxWidth
+            else if (name == "MaxWidth") {
+                float maxWidth;
+                if (TypeConverter::ToFloat(value, maxWidth)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetMaxWidth(maxWidth);
+                    }
+                }
+            }
+            // MinHeight
+            else if (name == "MinHeight") {
+                float minHeight;
+                if (TypeConverter::ToFloat(value, minHeight)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetMinHeight(minHeight);
+                    }
+                }
+            }
+            // MaxHeight
+            else if (name == "MaxHeight") {
+                float maxHeight;
+                if (TypeConverter::ToFloat(value, maxHeight)) {
+                    if (auto* layout = control->GetLayout()) {
+                        layout->SetMaxHeight(maxHeight);
                     }
                 }
             }
@@ -414,7 +462,6 @@ private:
                     }
                 } else {
                     std::wstring wtext = Utf8ToW(value);
-                    luaui::utils::Logger::DebugF("[XML] Button Content attribute: '%s' -> wstring length=%zu", value.c_str(), wtext.length());
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetText(wtext);
                     }
@@ -621,24 +668,6 @@ private:
                     sideBar->SetIsPinned(value == "True" || value == "true" || value == "1");
                 }
             }
-            // MinWidth (SideBar)
-            else if (name == "MinWidth") {
-                float w;
-                if (TypeConverter::ToFloat(value, w)) {
-                    if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
-                        sideBar->SetMinWidth(w);
-                    }
-                }
-            }
-            // MaxWidth (SideBar)
-            else if (name == "MaxWidth") {
-                float w;
-                if (TypeConverter::ToFloat(value, w)) {
-                    if (auto sideBar = std::dynamic_pointer_cast<controls::SideBar>(control)) {
-                        sideBar->SetMaxWidth(w);
-                    }
-                }
-            }
             // ShowSizingGrip (StatusBar)
             else if (name == "ShowSizingGrip") {
                 if (auto statusBar = std::dynamic_pointer_cast<controls::StatusBar>(control)) {
@@ -679,11 +708,11 @@ private:
                 auto it = m_clickHandlers.find(value);
                 if (it != m_clickHandlers.end()) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                        luaui::utils::Logger::InfoF("[XML] Binding Click event for button '%s' to handler '%s'", 
-                            control->GetName().c_str(), value.c_str());
+                        //luaui::utils::Logger::InfoF("[XML] Binding Click event for button '%s' to handler '%s'", 
+                        //    control->GetName().c_str(), value.c_str());
                         std::string handlerName = value;
                         btn->Click.Add([handler = it->second, handlerName](luaui::Control*) { 
-                            luaui::utils::Logger::DebugF("[XML] Button clicked, invoking handler '%s'", handlerName.c_str());
+                            //luaui::utils::Logger::DebugF("[XML] Button clicked, invoking handler '%s'", handlerName.c_str());
                             handler(); 
                         });
                     } else {
@@ -845,9 +874,10 @@ private:
         binding.propertyName = propertyName;
         binding.bindingExpression = expression;
         m_deferredBindings.push_back(binding);
-        
+        /*
         utils::Logger::DebugF("[XML] Recorded deferred binding: %s.%s = %s",
             control->GetTypeName().c_str(), propertyName.c_str(), expression.c_str());
+        */
     }
     
     // 应用所有延迟绑定（由外部调用，如 MvvmXmlLoader）

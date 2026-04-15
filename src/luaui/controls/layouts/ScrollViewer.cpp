@@ -61,7 +61,8 @@ rendering::Size ScrollViewer::OnMeasureChildren(const rendering::Size& available
         auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
             interfaces::LayoutConstraint constraint;
-            constraint.available = rendering::Size(99999, 99999);
+            // 水平方向允许无限大(可以滚动),垂直方向使用实际可用大小
+            constraint.available = rendering::Size(99999, availableSize.height);
             layoutable->Measure(constraint);
             auto desired = layoutable->GetDesiredSize();
             m_extentWidth = desired.width;
@@ -79,9 +80,12 @@ rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize
         if (!m_children[i]->GetIsVisible()) continue;
         auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
-            float x = -m_horizontalOffset;
-            float y = -m_verticalOffset;
-            layoutable->Arrange(rendering::Rect(x, y, m_extentWidth, m_extentHeight));
+            layoutable->Arrange(rendering::Rect(
+                -m_horizontalOffset,
+                -m_verticalOffset,
+                (m_extentWidth > finalSize.width) ? m_extentWidth : finalSize.width,
+                (m_extentHeight > finalSize.height) ? m_extentHeight : finalSize.height
+            ));
         }
     }
     return finalSize;
