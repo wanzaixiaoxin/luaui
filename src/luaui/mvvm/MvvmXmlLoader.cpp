@@ -10,6 +10,7 @@
 #include "Controls.h"
 #include "Button.h"
 #include "ComboBox.h"
+#include "Panel.h"  // StackPanel, WrapPanel
 
 // Lua binding for collection support
 #include "../lua/LuaObservableCollection.h"
@@ -726,6 +727,25 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
     // Visibility binding for any control
     if (propertyName == "Visibility") {
         BindVisibility(control, expression);
+    }
+    
+    // StackPanel Spacing binding
+    if (auto stackPanel = std::dynamic_pointer_cast<luaui::controls::StackPanel>(control)) {
+        if (propertyName == "Spacing") {
+            utils::Logger::InfoF("[MVVM] Creating StackPanel.Spacing binding for path: %s", expression.path.c_str());
+            BindStackPanelSpacing(stackPanel, expression);
+        } else if (propertyName == "Orientation") {
+            BindStackPanelOrientation(stackPanel, expression);
+        }
+    }
+    
+    // WrapPanel Spacing binding
+    if (auto wrapPanel = std::dynamic_pointer_cast<luaui::controls::WrapPanel>(control)) {
+        if (propertyName == "Spacing") {
+            BindWrapPanelSpacing(wrapPanel, expression);
+        } else if (propertyName == "Orientation") {
+            BindWrapPanelOrientation(wrapPanel, expression);
+        }
     }
 }
 
@@ -1672,6 +1692,146 @@ void MvvmXmlLoader::BindVisibility(std::shared_ptr<luaui::Control> control,
     dataContext->SubscribePropertyChanged(
         [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
         utils::Logger::InfoF("[BindVisibility] PropertyChanged: '%s' (watching '%s')", args.propertyName.c_str(), boundPropertyName.c_str());
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
+}
+
+// ============================================================================
+// StackPanel Spacing 绑定 - OneWay
+// ============================================================================
+void MvvmXmlLoader::BindStackPanelSpacing(std::shared_ptr<luaui::controls::StackPanel> stackPanel,
+                                          const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    
+    utils::Logger::InfoF("[BindStackPanelSpacing] Binding '%s' (ptr=%p)", 
+        boundPropertyName.c_str(), stackPanel.get());
+    
+    auto updateView = [stackPanel, dataContext, boundPropertyName]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) {
+            utils::Logger::WarningF("[BindStackPanelSpacing] GetPropertyValue('%s') returned empty", boundPropertyName.c_str());
+            return;
+        }
+        
+        try {
+            float spacing = 0;
+            if (value.type() == typeid(double)) {
+                spacing = static_cast<float>(std::any_cast<double>(value));
+            } else if (value.type() == typeid(int)) {
+                spacing = static_cast<float>(std::any_cast<int>(value));
+            } else if (value.type() == typeid(float)) {
+                spacing = std::any_cast<float>(value);
+            }
+            stackPanel->SetSpacing(spacing);
+            utils::Logger::InfoF("[BindStackPanelSpacing] SetSpacing(%.1f) for '%s'", spacing, boundPropertyName.c_str());
+        } catch (...) {}
+    };
+    
+    updateView();
+    
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        utils::Logger::DebugF("[BindStackPanelSpacing] PropertyChanged: '%s' (watching '%s')", args.propertyName.c_str(), boundPropertyName.c_str());
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
+}
+
+void MvvmXmlLoader::BindStackPanelOrientation(std::shared_ptr<luaui::controls::StackPanel> stackPanel,
+                                              const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    
+    auto updateView = [stackPanel, dataContext, boundPropertyName]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+        
+        try {
+            if (value.type() == typeid(std::string)) {
+                std::string str = std::any_cast<std::string>(value);
+                if (str == "Horizontal") {
+                    stackPanel->SetOrientation(luaui::controls::StackPanel::Orientation::Horizontal);
+                } else if (str == "Vertical") {
+                    stackPanel->SetOrientation(luaui::controls::StackPanel::Orientation::Vertical);
+                }
+            }
+        } catch (...) {}
+    };
+    
+    updateView();
+    
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
+}
+
+// ============================================================================
+// WrapPanel Spacing 绑定 - OneWay
+// ============================================================================
+void MvvmXmlLoader::BindWrapPanelSpacing(std::shared_ptr<luaui::controls::WrapPanel> wrapPanel,
+                                         const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    
+    auto updateView = [wrapPanel, dataContext, boundPropertyName]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+        
+        try {
+            float spacing = 0;
+            if (value.type() == typeid(double)) {
+                spacing = static_cast<float>(std::any_cast<double>(value));
+            } else if (value.type() == typeid(int)) {
+                spacing = static_cast<float>(std::any_cast<int>(value));
+            } else if (value.type() == typeid(float)) {
+                spacing = std::any_cast<float>(value);
+            }
+            wrapPanel->SetSpacing(spacing);
+        } catch (...) {}
+    };
+    
+    updateView();
+    
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
+        if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+            updateView();
+        }
+    });
+}
+
+void MvvmXmlLoader::BindWrapPanelOrientation(std::shared_ptr<luaui::controls::WrapPanel> wrapPanel,
+                                             const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+    
+    auto updateView = [wrapPanel, dataContext, boundPropertyName]() {
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) return;
+        
+        try {
+            if (value.type() == typeid(std::string)) {
+                std::string str = std::any_cast<std::string>(value);
+                if (str == "Horizontal") {
+                    wrapPanel->SetOrientation(luaui::controls::WrapPanel::Orientation::Horizontal);
+                } else if (str == "Vertical") {
+                    wrapPanel->SetOrientation(luaui::controls::WrapPanel::Orientation::Vertical);
+                }
+            }
+        } catch (...) {}
+    };
+    
+    updateView();
+    
+    dataContext->SubscribePropertyChanged(
+        [updateView, boundPropertyName](const PropertyChangedEventArgs& args) {
         if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
             updateView();
         }

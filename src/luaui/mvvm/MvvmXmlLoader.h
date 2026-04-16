@@ -146,6 +146,18 @@ private:
     // Visibility binding for any control
     void BindVisibility(std::shared_ptr<luaui::Control> control,
                         const BindingExpression& expression);
+    
+    // StackPanel bindings
+    void BindStackPanelSpacing(std::shared_ptr<luaui::controls::StackPanel> stackPanel,
+                               const BindingExpression& expression);
+    void BindStackPanelOrientation(std::shared_ptr<luaui::controls::StackPanel> stackPanel,
+                                   const BindingExpression& expression);
+    
+    // WrapPanel bindings
+    void BindWrapPanelSpacing(std::shared_ptr<luaui::controls::WrapPanel> wrapPanel,
+                              const BindingExpression& expression);
+    void BindWrapPanelOrientation(std::shared_ptr<luaui::controls::WrapPanel> wrapPanel,
+                                  const BindingExpression& expression);
 };
 
 // 创建 MVVM XML 加载器

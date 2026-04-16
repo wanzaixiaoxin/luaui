@@ -174,7 +174,7 @@ void Panel::OnRenderChildren(rendering::IRenderContext* context) {
     // 渲染所有子控件
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) {
-            luaui::utils::Logger::Debug("[Panel] OnRenderChildren: Child invisible, skipping");
+            // luaui::utils::Logger::Debug("[Panel] OnRenderChildren: Child invisible, skipping");
             continue;
         }
         
@@ -204,6 +204,28 @@ rendering::Size Panel::OnArrangeChildren(const rendering::Size& finalSize) {
         }
     }
     return finalSize;
+}
+
+// ============================================================================
+// StackPanel
+// ============================================================================
+
+void StackPanel::SetSpacing(float spacing) {
+    if (m_spacing != spacing) {
+        m_spacing = spacing;
+        if (auto* layout = GetLayout()) {
+            layout->InvalidateMeasure();
+        }
+    }
+}
+
+void StackPanel::SetOrientation(Orientation orient) {
+    if (m_orientation != orient) {
+        m_orientation = orient;
+        if (auto* layout = GetLayout()) {
+            layout->InvalidateMeasure();
+        }
+    }
 }
 
 } // namespace controls

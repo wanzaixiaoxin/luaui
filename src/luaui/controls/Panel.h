@@ -94,10 +94,10 @@ public:
     std::string GetTypeName() const override { return "StackPanel"; }
     
     Orientation GetOrientation() const { return m_orientation; }
-    void SetOrientation(Orientation orient) { m_orientation = orient; }
+    void SetOrientation(Orientation orient);
     
     float GetSpacing() const { return m_spacing; }
-    void SetSpacing(float spacing) { m_spacing = spacing; }
+    void SetSpacing(float spacing);
 
 protected:
     rendering::Size OnMeasureChildren(const rendering::Size& availableSize) override;

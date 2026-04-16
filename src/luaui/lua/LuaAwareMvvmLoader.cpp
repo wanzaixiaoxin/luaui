@@ -40,6 +40,9 @@ LuaPropertyNotifier::~LuaPropertyNotifier() {
 }
 
 void LuaPropertyNotifier::NotifyPropertyChanged(const std::string& propertyName) {
+    utils::Logger::InfoF("[LuaPropertyNotifier] NotifyPropertyChanged: '%s' (handlers=%zu)", 
+        propertyName.c_str(), m_handlers.size());
+    
     mvvm::PropertyChangedEventArgs args;
     args.propertyName = propertyName;
     
@@ -143,11 +146,13 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
     
     // 检查是否找到值
     if (!lua_isnil(m_L, -1)) {
-        // 直接找到了
-        if (lua_isstring(m_L, -1)) {
-            result = std::string(lua_tostring(m_L, -1));
-        } else if (lua_isnumber(m_L, -1)) {
+        // 直接找到了 - 优先检查数字类型（因为lua_isstring对数字也返回true）
+        if (lua_isnumber(m_L, -1)) {
             result = lua_tonumber(m_L, -1);
+            utils::Logger::DebugF("[Lua] GetPropertyValue '%s' = number %.1f", name.c_str(), std::any_cast<double>(result));
+        } else if (lua_isstring(m_L, -1)) {
+            result = std::string(lua_tostring(m_L, -1));
+            utils::Logger::DebugF("[Lua] GetPropertyValue '%s' = string '%s'", name.c_str(), std::any_cast<std::string>(result).c_str());
         } else if (lua_isboolean(m_L, -1)) {
             result = static_cast<bool>(lua_toboolean(m_L, -1));
         }
@@ -197,10 +202,10 @@ std::any LuaPropertyNotifier::GetPropertyValue(const std::string& name) const {
                 return result;
             }
             
-            if (lua_isstring(m_L, -1)) {
-                result = std::string(lua_tostring(m_L, -1));
-            } else if (lua_isnumber(m_L, -1)) {
+            if (lua_isnumber(m_L, -1)) {
                 result = lua_tonumber(m_L, -1);
+            } else if (lua_isstring(m_L, -1)) {
+                result = std::string(lua_tostring(m_L, -1));
             } else if (lua_isboolean(m_L, -1)) {
                 result = static_cast<bool>(lua_toboolean(m_L, -1));
             }

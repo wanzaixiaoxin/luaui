@@ -420,28 +420,36 @@ private:
             }
             // Spacing (StackPanel, WrapPanel)
             else if (name == "Spacing") {
-                float spacing;
-                if (TypeConverter::ToFloat(value, spacing)) {
-                    if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
-                        stack->SetSpacing(spacing);
-                    } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
-                        wrapPanel->SetSpacing(spacing);
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "Spacing", value);
+                } else {
+                    float spacing;
+                    if (TypeConverter::ToFloat(value, spacing)) {
+                        if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
+                            stack->SetSpacing(spacing);
+                        } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                            wrapPanel->SetSpacing(spacing);
+                        }
                     }
                 }
             }
             // Orientation (StackPanel, WrapPanel)
             else if (name == "Orientation") {
-                if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
-                    if (value == "Horizontal") {
-                        stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
-                    } else if (value == "Vertical") {
-                        stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
-                    }
-                } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
-                    if (value == "Horizontal") {
-                        wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Horizontal);
-                    } else if (value == "Vertical") {
-                        wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Vertical);
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "Orientation", value);
+                } else {
+                    if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
+                        if (value == "Horizontal") {
+                            stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
+                        } else if (value == "Vertical") {
+                            stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
+                        }
+                    } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                        if (value == "Horizontal") {
+                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Horizontal);
+                        } else if (value == "Vertical") {
+                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Vertical);
+                        }
                     }
                 }
             }
