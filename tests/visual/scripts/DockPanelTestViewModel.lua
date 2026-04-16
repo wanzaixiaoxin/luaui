@@ -1,5 +1,5 @@
--- DockPanel Test ViewModel
--- Demonstrates DockPanel docking layout
+-- DockPanel Test ViewModel - Enhanced
+-- Demonstrates DockPanel with multiple same direction, dock order, and LastChildFill
 
 Log.info("[DockPanelTestViewModel] Initializing...")
 
@@ -8,7 +8,7 @@ ViewModel = ViewModel:EnableAutoNotify()
 
 -- Test metadata
 ViewModel.TestTitle = "DockPanel Layout Test"
-ViewModel.TestDescription = "Demonstrates docking to edges (Top, Bottom, Left, Right) with LastChildFill property"
+ViewModel.TestDescription = "Docking to edges with multiple same direction, dock order, and LastChildFill toggle"
 
 -- Properties
 ViewModel.LastChildFill = true
@@ -17,7 +17,11 @@ ViewModel.LastChildFill = true
 ViewModel:DefineComputed("LastChildFillText",
     {"LastChildFill"},
     function(self)
-        return self.LastChildFill and "Last child fills remaining space" or "Last child uses its own size"
+        if self.LastChildFill then
+            return "LastChildFill: true - Center fills remaining space"
+        else
+            return "LastChildFill: false - Center uses its own size"
+        end
     end
 )
 

@@ -1,5 +1,5 @@
--- WrapPanel Test ViewModel
--- Demonstrates WrapPanel auto-wrap layout
+-- WrapPanel Test ViewModel - Enhanced
+-- Demonstrates WrapPanel with Spacing, ItemWidth/ItemHeight, and different sizes
 
 Log.info("[WrapPanelTestViewModel] Initializing...")
 
@@ -8,27 +8,32 @@ ViewModel = ViewModel:EnableAutoNotify()
 
 -- Test metadata
 ViewModel.TestTitle = "WrapPanel Layout Test"
-ViewModel.TestDescription = "Demonstrates automatic wrapping when items exceed available space"
+ViewModel.TestDescription = "Auto-wrap layout with Spacing, ItemWidth/ItemHeight, and varying item sizes"
 
 -- Properties
-ViewModel.Orientation = "Horizontal"
+ViewModel.Spacing = 8
 
 -- Commands
-function ViewModel:SetHorizontalCommand()
-    self.Orientation = "Horizontal"
-    Log.info("[WrapPanelTest] Set orientation to Horizontal")
+function ViewModel:NoSpacingCommand()
+    self.Spacing = 0
+    Log.info("[WrapPanelTest] Set spacing to 0")
 end
 
-function ViewModel:SetVerticalCommand()
-    self.Orientation = "Vertical"
-    Log.info("[WrapPanelTest] Set orientation to Vertical")
+function ViewModel:DefaultSpacingCommand()
+    self.Spacing = 8
+    Log.info("[WrapPanelTest] Set spacing to 8")
+end
+
+function ViewModel:LargeSpacingCommand()
+    self.Spacing = 20
+    Log.info("[WrapPanelTest] Set spacing to 20")
 end
 
 -- Computed properties
-ViewModel:DefineComputed("OrientationText",
-    {"Orientation"},
+ViewModel:DefineComputed("SpacingText",
+    {"Spacing"},
     function(self)
-        return string.format("Current Orientation: %s (items wrap when space runs out)", self.Orientation)
+        return string.format("Spacing: %dpx", self.Spacing)
     end
 )
 

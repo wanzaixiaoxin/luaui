@@ -1,36 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- WrapPanel Layout Test -->
+<!-- WrapPanel Layout Test - Enhanced -->
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
     <!-- Title -->
     <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
     <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
     
-    <!-- WrapPanel Demo -->
-    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+    <!-- Spacing Demo -->
+    <Border Background="#E3F2FD" Padding="16" CornerRadius="8">
         <StackPanel Orientation="Vertical" Spacing="8">
-            <TextBlock Text="Auto Wrap Demo" FontWeight="SemiBold" FontSize="14"/>
-            <TextBlock Text="{Binding OrientationText}" FontSize="12" Foreground="#757575"/>
+            <TextBlock Text="Spacing Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="{Binding SpacingText}" FontSize="12" Foreground="#757575"/>
+            
+            <Border Background="White" Height="150" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <WrapPanel Orientation="Horizontal" Spacing="{Binding Spacing}">
+                    <Border Width="60" Height="50" Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="50" Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="50" Background="#1E88E5" CornerRadius="4">
+                        <TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="50" Background="#8E24AA" CornerRadius="4">
+                        <TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="50" Background="#FF7043" CornerRadius="4">
+                        <TextBlock Text="5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="50" Background="#26A69A" CornerRadius="4">
+                        <TextBlock Text="6" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </WrapPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- ItemWidth/ItemHeight Demo -->
+    <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Uniform Item Size Demo (ItemWidth=80, ItemHeight=60)" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" Height="160" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <WrapPanel Orientation="Horizontal" ItemWidth="80" ItemHeight="60" Spacing="8">
+                    <Border Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#1E88E5" CornerRadius="4">
+                        <TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#8E24AA" CornerRadius="4">
+                        <TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#FF7043" CornerRadius="4">
+                        <TextBlock Text="5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#26A69A" CornerRadius="4">
+                        <TextBlock Text="6" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </WrapPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Different Sizes Demo -->
+    <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Different Item Sizes Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Items with varying widths and heights" FontSize="11" Foreground="#757575"/>
             
             <Border Background="White" Height="200" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
-                <WrapPanel Orientation="{Binding Orientation}">
-                    <Border Width="80" Height="60" Background="#FF5733" Margin="4" CornerRadius="4">
-                        <TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                <WrapPanel Orientation="Horizontal" Spacing="8">
+                    <Border Width="60" Height="40" Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="S" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <Border Width="80" Height="60" Background="#33FF57" Margin="4" CornerRadius="4">
-                        <TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    <Border Width="100" Height="60" Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="M" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <Border Width="80" Height="60" Background="#3357FF" Margin="4" CornerRadius="4">
-                        <TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    <Border Width="140" Height="80" Background="#1E88E5" CornerRadius="4">
+                        <TextBlock Text="L" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <Border Width="80" Height="60" Background="#FF33F5" Margin="4" CornerRadius="4">
-                        <TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    <Border Width="80" Height="50" Background="#8E24AA" CornerRadius="4">
+                        <TextBlock Text="M" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <Border Width="80" Height="60" Background="#1976D2" Margin="4" CornerRadius="4">
-                        <TextBlock Text="5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    <Border Width="50" Height="50" Background="#FF7043" CornerRadius="4">
+                        <TextBlock Text="S" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <Border Width="80" Height="60" Background="#F5FF33" Margin="4" CornerRadius="4">
-                        <TextBlock Text="6" Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
+                    <Border Width="120" Height="70" Background="#26A69A" CornerRadius="4">
+                        <TextBlock Text="L" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </WrapPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Vertical Orientation Demo -->
+    <Border Background="#FCE4EC" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Vertical Orientation Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Items wrap to new columns" FontSize="11" Foreground="#757575"/>
+            
+            <Border Background="White" Height="180" Width="350" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <WrapPanel Orientation="Vertical" Spacing="8">
+                    <Border Width="60" Height="40" Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="40" Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="40" Background="#1E88E5" CornerRadius="4">
+                        <TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="40" Background="#8E24AA" CornerRadius="4">
+                        <TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="40" Background="#FF7043" CornerRadius="4">
+                        <TextBlock Text="5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Width="60" Height="40" Background="#26A69A" CornerRadius="4">
+                        <TextBlock Text="6" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                 </WrapPanel>
             </Border>
@@ -40,12 +132,18 @@
     <!-- Controls -->
     <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
         <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="WrapPanel Controls" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Controls" FontWeight="SemiBold" FontSize="14"/>
             
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock Text="Orientation:" VerticalAlignment="Center"/>
-                <Button Content="Horizontal" Click="SetHorizontalCommand"/>
-                <Button Content="Vertical" Click="SetVerticalCommand"/>
+                <TextBlock Text="Spacing:" VerticalAlignment="Center"/>
+                <Slider Value="{Binding Spacing, Mode=TwoWay}" Minimum="0" Maximum="30" Width="150"/>
+                <TextBlock Text="{Binding SpacingText}" VerticalAlignment="Center" Width="60"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="No Spacing" Click="NoSpacingCommand"/>
+                <Button Content="Default (8px)" Click="DefaultSpacingCommand"/>
+                <Button Content="Large (20px)" Click="LargeSpacingCommand"/>
             </StackPanel>
         </StackPanel>
     </Border>

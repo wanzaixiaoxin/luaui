@@ -1,5 +1,5 @@
--- Canvas Test ViewModel
--- Demonstrates Canvas absolute positioning
+-- Canvas Test ViewModel - Enhanced
+-- Demonstrates Canvas with ZIndex, Right/Bottom, and negative coordinates
 
 Log.info("[CanvasTestViewModel] Initializing...")
 
@@ -8,17 +8,24 @@ ViewModel = ViewModel:EnableAutoNotify()
 
 -- Test metadata
 ViewModel.TestTitle = "Canvas Layout Test"
-ViewModel.TestDescription = "Demonstrates absolute positioning with Canvas.Left and Canvas.Top properties"
+ViewModel.TestDescription = "Absolute positioning with ZIndex, Right/Bottom, and negative coordinates"
 
 -- Control 1 position
-ViewModel.Control1X = 50
-ViewModel.Control1Y = 30
+ViewModel.Control1X = 100
+ViewModel.Control1Y = 70
 
 -- Reset position
 function ViewModel:ResetCommand()
-    self.Control1X = 50
-    self.Control1Y = 30
-    Log.info("[CanvasTest] Reset position to (50, 30)")
+    self.Control1X = 100
+    self.Control1Y = 70
+    Log.info("[CanvasTest] Reset position to (100, 70)")
+end
+
+-- Center position
+function ViewModel:CenterCommand()
+    self.Control1X = 150
+    self.Control1Y = 70
+    Log.info("[CanvasTest] Center position at (150, 70)")
 end
 
 -- Computed properties

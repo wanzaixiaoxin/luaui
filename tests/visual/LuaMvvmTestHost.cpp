@@ -84,13 +84,6 @@ std::vector<LuaMvvmTestInfo> LuaMvvmTestHost::GetAvailableTests() {
                      m_testScriptsPath + "/ViewboxTestViewModel.lua",
                      "ViewboxTestViewModel"});
     
-    tests.push_back({"Virtualization",
-                     "Virtualizing panel for large data sets",
-                     "Layout",
-                     m_testLayoutsPath + "/VirtualizationTest.xml",
-                     m_testScriptsPath + "/VirtualizationTestViewModel.lua",
-                     "VirtualizationTestViewModel"});
-    
     return tests;
 }
 

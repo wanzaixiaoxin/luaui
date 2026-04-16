@@ -1,33 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ScrollViewer Layout Test -->
+<!-- ScrollViewer Layout Test - Enhanced -->
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
     <!-- Title -->
     <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
     <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
     
-    <!-- ScrollViewer Demo -->
+    <!-- Control Panel -->
+    <Border Background="#E3F2FD" Padding="12" CornerRadius="6">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="ScrollBar Visibility:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <Button Content="Auto" Command="{Binding SetAutoCommand}" Padding="8,4"/>
+            <Button Content="Visible" Command="{Binding SetVisibleCommand}" Padding="8,4"/>
+            <Button Content="Hidden" Command="{Binding SetHiddenCommand}" Padding="8,4"/>
+            <Button Content="Disabled" Command="{Binding SetDisabledCommand}" Padding="8,4"/>
+        </StackPanel>
+    </Border>
+    
+    <!-- ScrollBar Visibility Display -->
+    <TextBlock Text="{Binding VisibilityStatus}" FontSize="12" Foreground="#757575"/>
+    
+    <!-- Vertical Scroll Demo -->
     <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
         <StackPanel Orientation="Vertical" Spacing="8">
-            <TextBlock Text="Scroll View Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Vertical Scroll" FontWeight="SemiBold" FontSize="14"/>
             
             <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
-                <ScrollViewer Width="350" Height="200">
+                <ScrollViewer Width="350" Height="200" VerticalScrollBarVisibility="{Binding VScrollVisibility}">
                     <StackPanel Orientation="Vertical" Spacing="8" Margin="8">
-                        <Border Height="80" Background="#FF5733" CornerRadius="4">
-                            <TextBlock Text="Content Block 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Height="80" Background="#E53935" CornerRadius="4">
+                            <TextBlock Text="Block 1 - Red" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Height="80" Background="#33FF57" CornerRadius="4">
-                            <TextBlock Text="Content Block 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Height="80" Background="#43A047" CornerRadius="4">
+                            <TextBlock Text="Block 2 - Green" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Height="80" Background="#3357FF" CornerRadius="4">
-                            <TextBlock Text="Content Block 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Height="80" Background="#1E88E5" CornerRadius="4">
+                            <TextBlock Text="Block 3 - Blue" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Height="80" Background="#FF33F5" CornerRadius="4">
-                            <TextBlock Text="Content Block 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Height="80" Background="#8E24AA" CornerRadius="4">
+                            <TextBlock Text="Block 4 - Purple" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
-                        <Border Height="80" Background="#1976D2" CornerRadius="4">
-                            <TextBlock Text="Content Block 5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Height="80" Background="#FF7043" CornerRadius="4">
+                            <TextBlock Text="Block 5 - Orange" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
@@ -35,9 +49,80 @@
         </StackPanel>
     </Border>
     
-    <!-- Info -->
-    <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
-        <TextBlock Text="ScrollViewer allows content larger than the viewport to be scrolled. Use mouse wheel or drag the scrollbar to scroll." FontSize="12" Foreground="#757575" TextWrapping="Wrap"/>
+    <!-- Horizontal Scroll Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Horizontal Scroll" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <ScrollViewer Width="350" Height="100" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="8">
+                        <Border Width="120" Height="80" Background="#E53935" CornerRadius="4">
+                            <TextBlock Text="Item 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="120" Height="80" Background="#43A047" CornerRadius="4">
+                            <TextBlock Text="Item 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="120" Height="80" Background="#1E88E5" CornerRadius="4">
+                            <TextBlock Text="Item 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="120" Height="80" Background="#8E24AA" CornerRadius="4">
+                            <TextBlock Text="Item 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <Border Width="120" Height="80" Background="#FF7043" CornerRadius="4">
+                            <TextBlock Text="Item 5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Both Scroll Demo -->
+    <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Both Directions Scroll" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <ScrollViewer Width="350" Height="150" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Orientation="Vertical" Spacing="4" Margin="4">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Border Width="100" Height="60" Background="#E53935" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#43A047" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#1E88E5" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#8E24AA" CornerRadius="4"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Border Width="100" Height="60" Background="#FF7043" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#26A69A" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#5C6BC0" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#EC407A" CornerRadius="4"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Border Width="100" Height="60" Background="#AB47BC" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#FFA726" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#66BB6A" CornerRadius="4"/>
+                            <Border Width="100" Height="60" Background="#42A5F5" CornerRadius="4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Content Smaller Than Viewport -->
+    <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Content Smaller Than Viewport (No Scroll)" FontWeight="SemiBold" FontSize="14"/>
+            
+            <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <ScrollViewer Width="350" Height="100" VerticalScrollBarVisibility="Auto">
+                    <Border Height="50" Background="#4CAF50" CornerRadius="4" Margin="8">
+                        <TextBlock Text="Small Content - No Scrollbar Needed" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
     </Border>
     
 </StackPanel>

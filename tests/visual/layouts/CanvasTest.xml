@@ -1,40 +1,118 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Canvas Layout Test -->
+<!-- Canvas Layout Test - Enhanced -->
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
     <!-- Title -->
     <TextBlock Text="{Binding TestTitle}" FontSize="22" FontWeight="Bold" Foreground="#1976D2"/>
     <TextBlock Text="{Binding TestDescription}" FontSize="13" Foreground="#757575"/>
     
-    <!-- Canvas Demo -->
+    <!-- ZIndex Demo -->
+    <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="ZIndex Layer Order Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Red (ZIndex=0) -> Green (ZIndex=1) -> Blue (ZIndex=2)" FontSize="11" Foreground="#757575"/>
+            
+            <Border Background="White" Height="150" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <Canvas>
+                    <!-- Red - ZIndex 0 (bottom) -->
+                    <Border Canvas.Left="30" Canvas.Top="30" Width="120" Height="80" 
+                            Background="#E53935" CornerRadius="4" Canvas.ZIndex="0">
+                        <TextBlock Text="Red (Z=0)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Green - ZIndex 1 (middle) -->
+                    <Border Canvas.Left="60" Canvas.Top="50" Width="120" Height="80" 
+                            Background="#43A047" CornerRadius="4" Canvas.ZIndex="1">
+                        <TextBlock Text="Green (Z=1)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    
+                    <!-- Blue - ZIndex 2 (top) -->
+                    <Border Canvas.Left="90" Canvas.Top="70" Width="120" Height="80" 
+                            Background="#1E88E5" CornerRadius="4" Canvas.ZIndex="2">
+                        <TextBlock Text="Blue (Z=2)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Canvas>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Right/Bottom Positioning Demo -->
+    <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Right/Bottom Positioning Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Elements positioned from right/bottom edges" FontSize="11" Foreground="#757575"/>
+            
+            <Border Background="White" Height="180" Width="400" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <Canvas>
+                    <!-- Top-Left (Left/Top) -->
+                    <Border Canvas.Left="10" Canvas.Top="10" Width="80" Height="50" 
+                            Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="Left/Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                    
+                    <!-- Top-Right (Right/Top) -->
+                    <Border Canvas.Right="10" Canvas.Top="10" Width="80" Height="50" 
+                            Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="Right/Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                    
+                    <!-- Bottom-Left (Left/Bottom) -->
+                    <Border Canvas.Left="10" Canvas.Bottom="10" Width="80" Height="50" 
+                            Background="#1E88E5" CornerRadius="4">
+                        <TextBlock Text="Left/Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                    
+                    <!-- Bottom-Right (Right/Bottom) -->
+                    <Border Canvas.Right="10" Canvas.Bottom="10" Width="80" Height="50" 
+                            Background="#8E24AA" CornerRadius="4">
+                        <TextBlock Text="Right/Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                    
+                    <!-- Center -->
+                    <Border Canvas.Left="160" Canvas.Top="65" Width="80" Height="50" 
+                            Background="#FF7043" CornerRadius="4">
+                        <TextBlock Text="Center" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                </Canvas>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Negative Coordinates Demo -->
+    <Border Background="#FCE4EC" Padding="16" CornerRadius="8">
+        <StackPanel Orientation="Vertical" Spacing="8">
+            <TextBlock Text="Negative Coordinates Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Elements can be positioned outside visible area" FontSize="11" Foreground="#757575"/>
+            
+            <Border Background="White" Height="120" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                <Canvas>
+                    <!-- Partially visible (negative X) -->
+                    <Border Canvas.Left="-30" Canvas.Top="20" Width="100" Height="60" 
+                            Background="#E53935" CornerRadius="4">
+                        <TextBlock Text="Partially Hidden" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                    
+                    <!-- Fully visible -->
+                    <Border Canvas.Left="80" Canvas.Top="30" Width="100" Height="60" 
+                            Background="#43A047" CornerRadius="4">
+                        <TextBlock Text="Fully Visible" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                    </Border>
+                </Canvas>
+            </Border>
+        </StackPanel>
+    </Border>
+    
+    <!-- Dynamic Position Demo -->
     <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
         <StackPanel Orientation="Vertical" Spacing="8">
-            <TextBlock Text="Absolute Positioning Demo" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Dynamic Position Demo" FontWeight="SemiBold" FontSize="14"/>
             
-            <Border Background="White" Height="300" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+            <Border Background="White" Height="200" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
                 <Canvas>
-                    <!-- Control 1 -->
-                    <Border Canvas.Left="50" Canvas.Top="30" Width="100" Height="60" 
-                            Background="#FF5733" CornerRadius="4">
-                        <TextBlock Text="Control 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    
-                    <!-- Control 2 -->
-                    <Border Canvas.Left="200" Canvas.Top="80" Width="120" Height="80" 
-                            Background="#33FF57" CornerRadius="4">
-                        <TextBlock Text="Control 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    
-                    <!-- Control 3 -->
-                    <Border Canvas.Left="80" Canvas.Top="180" Width="90" Height="70" 
-                            Background="#3357FF" CornerRadius="4">
-                        <TextBlock Text="Control 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    
-                    <!-- Control 4 -->
-                    <Border Canvas.Left="250" Canvas.Top="200" Width="80" Height="50" 
-                            Background="#FF33F5" CornerRadius="4">
-                        <TextBlock Text="Control 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <!-- Movable Control -->
+                    <Border Canvas.Left="{Binding Control1X}" Canvas.Top="{Binding Control1Y}" Width="100" Height="60" 
+                            Background="#1976D2" CornerRadius="4">
+                        <TextBlock Text="Drag Me" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                 </Canvas>
             </Border>
@@ -44,22 +122,23 @@
     <!-- Position Controls -->
     <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
         <StackPanel Orientation="Vertical" Spacing="12">
-            <TextBlock Text="Move Control 1" FontWeight="SemiBold" FontSize="14"/>
+            <TextBlock Text="Position Controls" FontWeight="SemiBold" FontSize="14"/>
             
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="X:" VerticalAlignment="Center" Width="20"/>
-                <Slider Value="{Binding Control1X, Mode=TwoWay}" Minimum="0" Maximum="350" Width="150"/>
+                <Slider Value="{Binding Control1X, Mode=TwoWay}" Minimum="0" Maximum="300" Width="150"/>
                 <TextBlock Text="{Binding Control1XText}" VerticalAlignment="Center" Width="50"/>
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" Spacing="12">
                 <TextBlock Text="Y:" VerticalAlignment="Center" Width="20"/>
-                <Slider Value="{Binding Control1Y, Mode=TwoWay}" Minimum="0" Maximum="250" Width="150"/>
+                <Slider Value="{Binding Control1Y, Mode=TwoWay}" Minimum="0" Maximum="140" Width="150"/>
                 <TextBlock Text="{Binding Control1YText}" VerticalAlignment="Center" Width="50"/>
             </StackPanel>
             
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <Button Content="Reset Position" Click="ResetCommand" Style="Accent"/>
+                <Button Content="Reset" Click="ResetCommand" Style="Accent"/>
+                <Button Content="Center" Click="CenterCommand"/>
             </StackPanel>
         </StackPanel>
     </Border>

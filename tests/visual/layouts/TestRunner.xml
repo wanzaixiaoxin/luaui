@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- LuaUI Visual Test Suite - Test Runner with Real Layout Demos -->
+<!-- LuaUI Visual Test Suite - Test Runner with Enhanced Layout Demos -->
 <StackPanel Orientation="Vertical" Margin="0">
     
     <!-- Header -->
@@ -23,22 +23,31 @@
         </StackPanel>
     </Border>
     
-    <!-- Content Area - Shows the actual layout demo -->
-    <Border Background="White" Padding="16" MinHeight="400">
-        <StackPanel Orientation="Vertical" Spacing="12">
+    <!-- Content Area -->
+    <ScrollViewer>
+        <StackPanel Orientation="Vertical" Margin="16" Spacing="16">
             
-            <!-- Test Title -->
-            <TextBlock Text="{Binding TestTitle}" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
-            <TextBlock Text="{Binding TestDescription}" FontSize="11" Foreground="#757575"/>
-            
-            <!-- Demo Area - Container for all layout demos -->
-            <Border Background="#FAFAFA" Padding="12" CornerRadius="6" BorderBrush="#E0E0E0" BorderThickness="1" MinHeight="300">
-                <StackPanel Orientation="Vertical">
-                    
-                    <!-- StackPanel Demo -->
-                    <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding StackPanelVisible}">
-                        <TextBlock Text="Vertical StackPanel (Spacing=8)" FontWeight="SemiBold" FontSize="13"/>
-                        <StackPanel Orientation="Vertical" Spacing="8">
+            <!-- ==================== StackPanel Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding StackPanelVisible}">
+                <TextBlock Text="StackPanel Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Vertical and horizontal stacking with dynamic spacing" FontSize="11" Foreground="#757575"/>
+                
+                <!-- Controls -->
+                <Border Background="#E3F2FD" Padding="12" CornerRadius="6">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Spacing:" VerticalAlignment="Center"/>
+                        <Button Content="0" Click="SetSpacing0" Padding="8,4"/>
+                        <Button Content="8" Click="SetSpacing8" Padding="8,4"/>
+                        <Button Content="16" Click="SetSpacing16" Padding="8,4"/>
+                        <TextBlock Text="{Binding StackPanelSpacingText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Vertical StackPanel -->
+                <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Vertical StackPanel" FontWeight="SemiBold" FontSize="14"/>
+                        <StackPanel Orientation="Vertical" Spacing="{Binding StackPanelSpacing}">
                             <Border Background="#E53935" Height="50" CornerRadius="4">
                                 <TextBlock Text="Item 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
@@ -49,9 +58,14 @@
                                 <TextBlock Text="Item 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </StackPanel>
-                        
-                        <TextBlock Text="Horizontal StackPanel" FontWeight="SemiBold" FontSize="13" Margin="0,16,0,0"/>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                    </StackPanel>
+                </Border>
+                
+                <!-- Horizontal StackPanel -->
+                <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Horizontal StackPanel" FontWeight="SemiBold" FontSize="14"/>
+                        <StackPanel Orientation="Horizontal" Spacing="{Binding StackPanelSpacing}">
                             <Border Background="#E53935" Width="80" Height="50" CornerRadius="4">
                                 <TextBlock Text="A" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20"/>
                             </Border>
@@ -63,128 +77,405 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== Grid Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding GridVisible}">
+                <TextBlock Text="Grid Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Grid features: Star sizing, ColumnSpan/RowSpan, dynamic columns" FontSize="11" Foreground="#757575"/>
                 
-                <!-- Grid Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding GridVisible}">
-                    <TextBlock Text="Grid Layout Demo" FontWeight="SemiBold" FontSize="13"/>
-                    <TextBlock Text="(Grid with RowDefinitions/ColumnDefinitions not supported in XML)" FontSize="11" Foreground="#757575"/>
-                    <Border Background="#E3F2FD" Padding="16" CornerRadius="4">
-                        <StackPanel Orientation="Vertical" Spacing="8">
-                            <TextBlock Text="Grid features:" FontWeight="SemiBold"/>
-                            <TextBlock Text="• RowDefinitions / ColumnDefinitions"/>
-                            <TextBlock Text="• Height/Width: Auto, Pixel, Star"/>
-                            <TextBlock Text="• Grid.Row, Grid.Column attached properties"/>
-                            <TextBlock Text="• Grid.RowSpan, Grid.ColumnSpan for spanning"/>
+                <!-- Simple 2x2 Grid -->
+                <Border Background="#E3F2FD" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="2x2 Grid (Equal Star Sizing)" FontWeight="SemiBold" FontSize="14"/>
+                        <Grid Height="150">
+                            <Border Background="#E53935" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Cell 0,0" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border Background="#43A047" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Cell 0,1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border Background="#1E88E5" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Cell 1,0" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border Background="#8E24AA" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Cell 1,1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Dynamic Column Width -->
+                <Border Background="#E8EAF6" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="{Binding GridColWidthText}" FontWeight="SemiBold" FontSize="14"/>
+                        <Grid Height="60">
+                            <Border Background="#E53935" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Col 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Border Background="#43A047" CornerRadius="4" Margin="2">
+                                <TextBlock Text="Col 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="Col 1:" VerticalAlignment="Center"/>
+                            <Slider Value="{Binding GridCol1Ratio, Mode=TwoWay}" Minimum="0.5" Maximum="3" Width="100"/>
+                            <TextBlock Text="{Binding GridCol1RatioText}" VerticalAlignment="Center"/>
                         </StackPanel>
-                    </Border>
-                </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="Col 2:" VerticalAlignment="Center"/>
+                            <Slider Value="{Binding GridCol2Ratio, Mode=TwoWay}" Minimum="0.5" Maximum="3" Width="100"/>
+                            <TextBlock Text="{Binding GridCol2RatioText}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
                 
-                <!-- Canvas Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding CanvasVisible}">
-                    <TextBlock Text="Absolute Positioning with Canvas.Left/Top" FontWeight="SemiBold" FontSize="13"/>
-                    <Border Background="White" Height="250" CornerRadius="4" BorderBrush="#BDBDBD" BorderThickness="1">
-                        <Canvas>
-                            <Border Canvas.Left="30" Canvas.Top="20" Width="100" Height="60" Background="#E53935" CornerRadius="4">
-                                <TextBlock Text="(30,20)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Border>
-                            <Border Canvas.Left="180" Canvas.Top="60" Width="120" Height="80" Background="#43A047" CornerRadius="4">
-                                <TextBlock Text="(180,60)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Border>
-                            <Border Canvas.Left="60" Canvas.Top="150" Width="90" Height="70" Background="#1E88E5" CornerRadius="4">
-                                <TextBlock Text="(60,150)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Border>
-                            <Border Canvas.Left="200" Canvas.Top="170" Width="80" Height="50" Background="#8E24AA" CornerRadius="4">
-                                <TextBlock Text="(200,170)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                            </Border>
-                        </Canvas>
-                    </Border>
-                </StackPanel>
+                <!-- Grid Info -->
+                <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Grid Features (C++ implemented):" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="• RowDefinitions / ColumnDefinitions" FontSize="12" Foreground="#757575"/>
+                        <TextBlock Text="• Height/Width: Auto, Pixel, Star" FontSize="12" Foreground="#757575"/>
+                        <TextBlock Text="• Grid.Row, Grid.Column attached properties" FontSize="12" Foreground="#757575"/>
+                        <TextBlock Text="• Grid.RowSpan, Grid.ColumnSpan for spanning" FontSize="12" Foreground="#757575"/>
+                        <TextBlock Text="Note: XML parser requires enhancement for RowDefinition/ColumnDefinition elements" FontSize="11" Foreground="#E53935"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== Canvas Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding CanvasVisible}">
+                <TextBlock Text="Canvas Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="ZIndex, Right/Bottom positioning, negative coordinates" FontSize="11" Foreground="#757575"/>
                 
-                <!-- DockPanel Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding DockPanelVisible}">
-                    <TextBlock Text="Dock to Edges (Top, Bottom, Left, Right, Center)" FontWeight="SemiBold" FontSize="13"/>
-                    <Border Background="White" Height="220" CornerRadius="4" BorderBrush="#BDBDBD" BorderThickness="1">
-                        <DockPanel>
-                            <Border DockPanel.Dock="Top" Height="40" Background="#E53935" Margin="2" CornerRadius="4">
-                                <TextBlock Text="Top Dock" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <Border DockPanel.Dock="Bottom" Height="40" Background="#43A047" Margin="2" CornerRadius="4">
-                                <TextBlock Text="Bottom Dock" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <Border DockPanel.Dock="Left" Width="80" Background="#1E88E5" Margin="2" CornerRadius="4">
-                                <TextBlock Text="Left" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <Border DockPanel.Dock="Right" Width="80" Background="#8E24AA" Margin="2" CornerRadius="4">
-                                <TextBlock Text="Right" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <Border Background="#E3F2FD" Margin="2" CornerRadius="4">
-                                <TextBlock Text="Center (LastChildFill)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#1976D2"/>
-                            </Border>
-                        </DockPanel>
-                    </Border>
-                </StackPanel>
+                <!-- ZIndex Demo -->
+                <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="ZIndex Layer Order (Red=0, Green=1, Blue=2)" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="130" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <Canvas>
+                                <Border Canvas.Left="30" Canvas.Top="30" Width="100" Height="70" Background="#E53935" CornerRadius="4" Canvas.ZIndex="0">
+                                    <TextBlock Text="Red (Z=0)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Canvas.Left="50" Canvas.Top="45" Width="100" Height="70" Background="#43A047" CornerRadius="4" Canvas.ZIndex="1">
+                                    <TextBlock Text="Green (Z=1)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Canvas.Left="70" Canvas.Top="60" Width="100" Height="70" Background="#1E88E5" CornerRadius="4" Canvas.ZIndex="2">
+                                    <TextBlock Text="Blue (Z=2)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </Canvas>
+                        </Border>
+                    </StackPanel>
+                </Border>
                 
-                <!-- WrapPanel Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding WrapPanelVisible}">
-                    <TextBlock Text="Auto Wrap when space runs out" FontWeight="SemiBold" FontSize="13"/>
-                    <Border Background="White" Height="200" CornerRadius="4" BorderBrush="#BDBDBD" BorderThickness="1">
-                        <WrapPanel>
-                            <Border Width="70" Height="50" Background="#E53935" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#43A047" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#1E88E5" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#8E24AA" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#FF7043" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#26A69A" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#5C6BC0" Margin="4" CornerRadius="4"/>
-                            <Border Width="70" Height="50" Background="#FDD835" Margin="4" CornerRadius="4"/>
-                        </WrapPanel>
-                    </Border>
-                </StackPanel>
+                <!-- Right/Bottom Demo -->
+                <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Right/Bottom Positioning" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="150" Width="400" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <Canvas>
+                                <Border Canvas.Left="10" Canvas.Top="10" Width="70" Height="40" Background="#E53935" CornerRadius="4">
+                                    <TextBlock Text="Left/Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                                </Border>
+                                <Border Canvas.Right="10" Canvas.Top="10" Width="70" Height="40" Background="#43A047" CornerRadius="4">
+                                    <TextBlock Text="Right/Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                                </Border>
+                                <Border Canvas.Left="10" Canvas.Bottom="10" Width="70" Height="40" Background="#1E88E5" CornerRadius="4">
+                                    <TextBlock Text="Left/Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                                </Border>
+                                <Border Canvas.Right="10" Canvas.Bottom="10" Width="70" Height="40" Background="#8E24AA" CornerRadius="4">
+                                    <TextBlock Text="Right/Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                                </Border>
+                            </Canvas>
+                        </Border>
+                    </StackPanel>
+                </Border>
                 
-                <!-- ScrollViewer Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding ScrollViewerVisible}">
-                    <TextBlock Text="Scrollable Content (scroll with mouse wheel)" FontWeight="SemiBold" FontSize="13"/>
-                    <Border Background="White" CornerRadius="4" BorderBrush="#BDBDBD" BorderThickness="1">
-                        <ScrollViewer Width="350" Height="200">
-                            <StackPanel Orientation="Vertical" Spacing="8" Margin="8">
-                                <Border Height="60" Background="#E53935" CornerRadius="4">
-                                    <TextBlock Text="Item 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <!-- Dynamic Position -->
+                <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Dynamic Position" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="150" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <Canvas>
+                                <Border Canvas.Left="{Binding CanvasX}" Canvas.Top="{Binding CanvasY}" Width="80" Height="50" Background="#1976D2" CornerRadius="4">
+                                    <TextBlock Text="Move Me" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Border Height="60" Background="#43A047" CornerRadius="4">
-                                    <TextBlock Text="Item 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Canvas>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="X:" VerticalAlignment="Center"/>
+                            <Slider Value="{Binding CanvasX, Mode=TwoWay}" Minimum="0" Maximum="280" Width="100"/>
+                            <TextBlock Text="{Binding CanvasXText}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="Y:" VerticalAlignment="Center"/>
+                            <Slider Value="{Binding CanvasY, Mode=TwoWay}" Minimum="0" Maximum="100" Width="100"/>
+                            <TextBlock Text="{Binding CanvasYText}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== DockPanel Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding DockPanelVisible}">
+                <TextBlock Text="DockPanel Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Multiple same direction, dock order, LastChildFill" FontSize="11" Foreground="#757575"/>
+                
+                <!-- Standard Dock -->
+                <Border Background="#E3F2FD" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Standard Four-Side Dock" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="160" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <DockPanel LastChildFill="true">
+                                <Border DockPanel.Dock="Top" Height="35" Background="#E53935" CornerRadius="4">
+                                    <TextBlock Text="Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Border Height="60" Background="#1E88E5" CornerRadius="4">
-                                    <TextBlock Text="Item 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border DockPanel.Dock="Bottom" Height="35" Background="#43A047" CornerRadius="4">
+                                    <TextBlock Text="Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Border Height="60" Background="#8E24AA" CornerRadius="4">
-                                    <TextBlock Text="Item 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border DockPanel.Dock="Left" Width="70" Background="#1E88E5" CornerRadius="4">
+                                    <TextBlock Text="Left" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Border Height="60" Background="#FF7043" CornerRadius="4">
-                                    <TextBlock Text="Item 5" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border DockPanel.Dock="Right" Width="70" Background="#8E24AA" CornerRadius="4">
+                                    <TextBlock Text="Right" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Border>
-                </StackPanel>
+                                <Border Background="#E8F5E9" CornerRadius="4">
+                                    <TextBlock Text="Center (Fill)" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#43A047"/>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Multiple Same Direction -->
+                <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Multiple Same Direction (Top x3)" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="160" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <DockPanel LastChildFill="true">
+                                <Border DockPanel.Dock="Top" Height="25" Background="#E53935" CornerRadius="4">
+                                    <TextBlock Text="Top 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                </Border>
+                                <Border DockPanel.Dock="Top" Height="25" Background="#FF7043" CornerRadius="4">
+                                    <TextBlock Text="Top 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                </Border>
+                                <Border DockPanel.Dock="Top" Height="25" Background="#FFA726" CornerRadius="4">
+                                    <TextBlock Text="Top 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                                </Border>
+                                <Border DockPanel.Dock="Left" Width="70" Background="#1E88E5" CornerRadius="4">
+                                    <TextBlock Text="Left" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Background="#F5F5F5" CornerRadius="4">
+                                    <TextBlock Text="Fill Area" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#757575"/>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                
+                <!-- LastChildFill Toggle -->
+                <Border Background="#FCE4EC" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="{Binding DockLastChildFillText}" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="140" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <DockPanel LastChildFill="{Binding DockLastChildFill}">
+                                <Border DockPanel.Dock="Top" Height="30" Background="#E53935" CornerRadius="4">
+                                    <TextBlock Text="Top" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border DockPanel.Dock="Bottom" Height="30" Background="#43A047" CornerRadius="4">
+                                    <TextBlock Text="Bottom" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border DockPanel.Dock="Left" Width="60" Background="#1E88E5" CornerRadius="4">
+                                    <TextBlock Text="Left" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border DockPanel.Dock="Right" Width="60" Background="#8E24AA" CornerRadius="4">
+                                    <TextBlock Text="Right" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Background="#FCE4EC" CornerRadius="4" BorderBrush="#E91E63" BorderThickness="2">
+                                    <TextBlock Text="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#E91E63"/>
+                                </Border>
+                            </DockPanel>
+                        </Border>
+                        <CheckBox IsChecked="{Binding DockLastChildFill, Mode=TwoWay}" Content="LastChildFill"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== WrapPanel Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding WrapPanelVisible}">
+                <TextBlock Text="WrapPanel Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Spacing, ItemWidth/ItemHeight, varying item sizes" FontSize="11" Foreground="#757575"/>
+                
+                <!-- Spacing Demo -->
+                <Border Background="#E3F2FD" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="{Binding WrapSpacingText}" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="120" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <WrapPanel Orientation="Horizontal" Spacing="{Binding WrapSpacing}">
+                                <Border Width="50" Height="40" Background="#E53935" CornerRadius="4"/>
+                                <Border Width="50" Height="40" Background="#43A047" CornerRadius="4"/>
+                                <Border Width="50" Height="40" Background="#1E88E5" CornerRadius="4"/>
+                                <Border Width="50" Height="40" Background="#8E24AA" CornerRadius="4"/>
+                                <Border Width="50" Height="40" Background="#FF7043" CornerRadius="4"/>
+                                <Border Width="50" Height="40" Background="#26A69A" CornerRadius="4"/>
+                            </WrapPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="0px" Click="WrapNoSpacingCommand" Padding="8,4"/>
+                            <Button Content="8px" Click="WrapDefaultSpacingCommand" Padding="8,4"/>
+                            <Button Content="20px" Click="WrapLargeSpacingCommand" Padding="8,4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                
+                <!-- ItemWidth/ItemHeight Demo -->
+                <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Uniform Size (ItemWidth=70, ItemHeight=50)" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="130" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <WrapPanel Orientation="Horizontal" ItemWidth="70" ItemHeight="50" Spacing="8">
+                                <Border Background="#E53935" CornerRadius="4"/>
+                                <Border Background="#43A047" CornerRadius="4"/>
+                                <Border Background="#1E88E5" CornerRadius="4"/>
+                                <Border Background="#8E24AA" CornerRadius="4"/>
+                                <Border Background="#FF7043" CornerRadius="4"/>
+                                <Border Background="#26A69A" CornerRadius="4"/>
+                            </WrapPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Different Sizes Demo -->
+                <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Different Item Sizes" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="160" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <WrapPanel Orientation="Horizontal" Spacing="8">
+                                <Border Width="50" Height="35" Background="#E53935" CornerRadius="4">
+                                    <TextBlock Text="S" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Width="90" Height="55" Background="#43A047" CornerRadius="4">
+                                    <TextBlock Text="M" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Width="120" Height="70" Background="#1E88E5" CornerRadius="4">
+                                    <TextBlock Text="L" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Width="70" Height="45" Background="#8E24AA" CornerRadius="4">
+                                    <TextBlock Text="M" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Border Width="45" Height="45" Background="#FF7043" CornerRadius="4">
+                                    <TextBlock Text="S" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </WrapPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== ScrollViewer Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding ScrollViewerVisible}">
+                <TextBlock Text="ScrollViewer Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Vertical/horizontal scroll, ScrollBarVisibility control" FontSize="11" Foreground="#757575"/>
+                
+                <!-- ScrollBar Visibility Controls -->
+                <Border Background="#E3F2FD" Padding="12" CornerRadius="6">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="ScrollBar Visibility:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <Button Content="Auto" Click="ScrollSetAutoCommand" Padding="8,4"/>
+                        <Button Content="Visible" Click="ScrollSetVisibleCommand" Padding="8,4"/>
+                        <Button Content="Hidden" Click="ScrollSetHiddenCommand" Padding="8,4"/>
+                        <Button Content="Disabled" Click="ScrollSetDisabledCommand" Padding="8,4"/>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{Binding ScrollVisibilityStatus}" FontSize="12" Foreground="#757575"/>
+                
+                <!-- Vertical Scroll -->
+                <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Vertical Scroll" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <ScrollViewer Width="320" Height="150" VerticalScrollBarVisibility="{Binding ScrollVVisibility}">
+                                <StackPanel Orientation="Vertical" Spacing="8" Margin="8">
+                                    <Border Height="60" Background="#E53935" CornerRadius="4">
+                                        <TextBlock Text="Block 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Height="60" Background="#43A047" CornerRadius="4">
+                                        <TextBlock Text="Block 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Height="60" Background="#1E88E5" CornerRadius="4">
+                                        <TextBlock Text="Block 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Height="60" Background="#8E24AA" CornerRadius="4">
+                                        <TextBlock Text="Block 4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                
+                <!-- Horizontal Scroll -->
+                <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Horizontal Scroll" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <ScrollViewer Width="320" Height="80" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="8">
+                                    <Border Width="100" Height="60" Background="#E53935" CornerRadius="4">
+                                        <TextBlock Text="1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Width="100" Height="60" Background="#43A047" CornerRadius="4">
+                                        <TextBlock Text="2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Width="100" Height="60" Background="#1E88E5" CornerRadius="4">
+                                        <TextBlock Text="3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Border Width="100" Height="60" Background="#8E24AA" CornerRadius="4">
+                                        <TextBlock Text="4" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            
+            <!-- ==================== Viewbox Demo ==================== -->
+            <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding ViewboxVisible}">
+                <TextBlock Text="Viewbox Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                <TextBlock Text="Content scaling with Stretch modes" FontSize="11" Foreground="#757575"/>
+                
+                <!-- Stretch Mode Controls -->
+                <Border Background="#E3F2FD" Padding="12" CornerRadius="6">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Stretch Mode:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <Button Content="None" Click="SetStretchNone" Padding="8,4"/>
+                        <Button Content="Fill" Click="SetStretchFill" Padding="8,4"/>
+                        <Button Content="Uniform" Click="SetStretchUniform" Padding="8,4"/>
+                        <Button Content="UniformToFill" Click="SetStretchUniformToFill" Padding="8,4"/>
+                    </StackPanel>
+                </Border>
                 
                 <!-- Viewbox Demo -->
-                <StackPanel Orientation="Vertical" Spacing="8" Visibility="{Binding ViewboxVisible}">
-                    <TextBlock Text="Content Scaling (Stretch=Uniform)" FontWeight="SemiBold" FontSize="13"/>
-                    <Border Background="White" Height="200" CornerRadius="4" BorderBrush="#BDBDBD" BorderThickness="1">
-                        <Viewbox Stretch="Uniform">
-                            <Border Width="150" Height="100" Background="#1976D2" CornerRadius="8">
-                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                    <TextBlock Text="Viewbox Content" Foreground="White" FontSize="14" FontWeight="Bold"/>
-                                    <TextBlock Text="150x100 scaled" Foreground="White" FontSize="11"/>
-                                </StackPanel>
-                            </Border>
-                        </Viewbox>
-                    </Border>
-                </StackPanel>
-                
+                <Border Background="#F5F5F5" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Content Scaling Demo" FontWeight="SemiBold" FontSize="14"/>
+                        <Border Background="White" Height="180" CornerRadius="4" BorderBrush="#E0E0E0" BorderThickness="1">
+                            <Viewbox Stretch="{Binding ViewboxStretch}">
+                                <Border Width="150" Height="100" Background="#1976D2" CornerRadius="8">
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                                        <TextBlock Text="Viewbox Content" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                        <TextBlock Text="150x100" Foreground="White" FontSize="11"/>
+                                    </StackPanel>
+                                </Border>
+                            </Viewbox>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-            </Border>
+            
         </StackPanel>
-    </Border>
+    </ScrollViewer>
     
 </StackPanel>
