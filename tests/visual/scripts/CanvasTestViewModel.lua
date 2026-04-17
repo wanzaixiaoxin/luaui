@@ -32,14 +32,14 @@ end
 ViewModel:DefineComputed("Control1XText",
     {"Control1X"},
     function(self)
-        return string.format("%dpx", self.Control1X)
+        return string.format("%.0fpx", self.Control1X)
     end
 )
 
 ViewModel:DefineComputed("Control1YText",
     {"Control1Y"},
     function(self)
-        return string.format("%dpx", self.Control1Y)
+        return string.format("%.0fpx", self.Control1Y)
     end
 )
 

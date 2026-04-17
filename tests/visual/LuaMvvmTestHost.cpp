@@ -107,22 +107,5 @@ int LuaMvvmTestHost::RunTest(const std::string& layoutFile,
     return host.Run();
 }
 
-int LuaMvvmTestHost::RunTestRunner() {
-    utils::Logger::Info("[LuaMvvmTestHost] Starting test runner");
-    
-    std::string scriptPath = m_testScriptsPath + "/TestRunnerViewModel.lua";
-    std::string layoutPath = m_testLayoutsPath + "/TestRunner.xml";
-    
-    // 使用 LuaMvvmHost 启动测试运行器
-    lua::LuaMvvmHost host;
-    
-    if (!host.Initialize(m_hInstance, scriptPath, layoutPath, "TestRunnerViewModel")) {
-        utils::Logger::Error("[LuaMvvmTestHost] Failed to initialize test runner");
-        return 1;
-    }
-    
-    return host.Run();
-}
-
 } // namespace test
 } // namespace luaui

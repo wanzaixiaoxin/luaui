@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 <!-- DockPanel Layout Test - Enhanced -->
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
@@ -130,3 +131,4 @@
     </Border>
     
 </StackPanel>
+</ScrollViewer>

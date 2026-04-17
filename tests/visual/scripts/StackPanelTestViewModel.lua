@@ -41,8 +41,8 @@ end
 
 -- Computed text for spacing
 function ViewModel:UpdateSpacingText()
-    self.VerticalSpacingText = string.format("%dpx", self.VerticalSpacing)
-    self.HorizontalSpacingText = string.format("%dpx", self.HorizontalSpacing)
+    self.VerticalSpacingText = string.format("%.0fpx", self.VerticalSpacing)
+    self.HorizontalSpacingText = string.format("%.0fpx", self.HorizontalSpacing)
 end
 
 -- Add a dynamic item
@@ -90,14 +90,14 @@ end
 ViewModel:DefineComputed("VerticalSpacingText", 
     {"VerticalSpacing"},
     function(self)
-        return string.format("%dpx", self.VerticalSpacing)
+        return string.format("%.0fpx", self.VerticalSpacing)
     end
 )
 
 ViewModel:DefineComputed("HorizontalSpacingText",
     {"HorizontalSpacing"},
     function(self)
-        return string.format("%dpx", self.HorizontalSpacing)
+        return string.format("%.0fpx", self.HorizontalSpacing)
     end
 )
 

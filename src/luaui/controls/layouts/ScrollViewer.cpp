@@ -63,18 +63,28 @@ rendering::Size ScrollViewer::OnMeasureChildren(const rendering::Size& available
             interfaces::LayoutConstraint constraint;
             bool canHScroll = m_horizontalScrollBarVisibility == ScrollBarVisibility::Auto ||
                               m_horizontalScrollBarVisibility == ScrollBarVisibility::Visible;
+            bool canVScroll = m_verticalScrollBarVisibility == ScrollBarVisibility::Auto ||
+                              m_verticalScrollBarVisibility == ScrollBarVisibility::Visible;
             constraint.available = rendering::Size(
                 canHScroll ? 99999 : availableSize.width,
-                availableSize.height
+                canVScroll ? 99999 : availableSize.height
             );
             layoutable->Measure(constraint);
             auto desired = layoutable->GetDesiredSize();
             m_extentWidth = desired.width;
             m_extentHeight = desired.height;
-            utils::Logger::InfoF("[ScrollViewer Measure] canHScroll=%d availW=%.1f childDesired=%.1fx%.1f extent=%.1fx%.1f",
-                canHScroll, availableSize.width, desired.width, desired.height, m_extentWidth, m_extentHeight);
         }
     }
+
+    // Re-clamp scroll offset when content size changes
+    float oldVOffset = m_verticalOffset;
+    float oldHOffset = m_horizontalOffset;
+    m_verticalOffset = ClampVerticalOffset(m_verticalOffset);
+    m_horizontalOffset = ClampHorizontalOffset(m_horizontalOffset);
+    if (m_verticalOffset != oldVOffset || m_horizontalOffset != oldHOffset) {
+        if (GetLayout()) GetLayout()->InvalidateArrange();
+    }
+
     return availableSize;
 }
 
@@ -91,11 +101,21 @@ rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize
             float arrangeWidth = canHScroll
                 ? ((m_extentWidth > finalSize.width) ? m_extentWidth : finalSize.width)
                 : finalSize.width;
+            float arrangeHeight = (m_extentHeight > finalSize.height) ? m_extentHeight : finalSize.height;
+
+            // Add the child's margin back to the arrange rect so that
+            // LayoutComponent::Arrange treats margin as scrollable content
+            // instead of trimming it from the viewport.
+            float ml = layoutable->GetMarginLeft();
+            float mt = layoutable->GetMarginTop();
+            float mr = layoutable->GetMarginRight();
+            float mb = layoutable->GetMarginBottom();
+
             layoutable->Arrange(rendering::Rect(
-                -m_horizontalOffset,
-                -m_verticalOffset,
-                arrangeWidth,
-                (m_extentHeight > finalSize.height) ? m_extentHeight : finalSize.height
+                -m_horizontalOffset - ml,
+                -m_verticalOffset - mt,
+                arrangeWidth + ml + mr,
+                arrangeHeight + mt + mb
             ));
         }
     }

@@ -108,44 +108,39 @@ rendering::Size Canvas::OnMeasureChildren(const rendering::Size& availableSize) 
 }
 
 rendering::Size Canvas::OnArrangeChildren(const rendering::Size& finalSize) {
-    auto* render = GetRender();
-    if (!render) return finalSize;
-    
-    auto contentRect = render->GetRenderRect();
-    
     for (auto& child : m_children) {
         if (!child->GetIsVisible()) continue;
-        
+
         if (auto* layoutable = child->AsLayoutable()) {
             float left = GetLeft(child);
             float top = GetTop(child);
             float right = GetRight(child);
             float bottom = GetBottom(child);
             auto desired = layoutable->GetDesiredSize();
-            
+
             // Calculate position based on Left/Top or Right/Bottom
             float x, y;
-            
+
             if (right >= 0) {
                 // Right is set: position from right edge
-                x = contentRect.x + finalSize.width - right - desired.width;
+                x = finalSize.width - right - desired.width;
             } else {
                 // Use Left
-                x = contentRect.x + left;
+                x = left;
             }
-            
+
             if (bottom >= 0) {
                 // Bottom is set: position from bottom edge
-                y = contentRect.y + finalSize.height - bottom - desired.height;
+                y = finalSize.height - bottom - desired.height;
             } else {
                 // Use Top
-                y = contentRect.y + top;
+                y = top;
             }
-            
+
             layoutable->Arrange(rendering::Rect(x, y, desired.width, desired.height));
         }
     }
-    
+
     return finalSize;
 }
 

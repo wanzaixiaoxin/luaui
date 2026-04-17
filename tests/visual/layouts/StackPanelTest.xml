@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 <!-- StackPanel Layout Test -->
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
@@ -110,17 +111,20 @@
     <!-- Dynamic Items -->
     <Border Background="#FAFAFA" Padding="16" CornerRadius="8" BorderBrush="#E0E0E0" BorderThickness="1">
         <StackPanel Orientation="Vertical" Spacing="8">
-            <TextBlock Text="Dynamic Items (Bound to ViewModel)" FontWeight="SemiBold" FontSize="14"/>
-            <ItemsControl ItemsSource="{Binding DynamicItems}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="{Binding Color}" Height="40" Margin="0,4" CornerRadius="4">
-                            <TextBlock Text="{Binding Label}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <TextBlock Text="Dynamic Items (ViewModel Demo)" FontWeight="SemiBold" FontSize="14"/>
+            <StackPanel Orientation="Vertical" Spacing="4">
+                <Border Background="#FF5733" Height="40" CornerRadius="4">
+                    <TextBlock Text="Dynamic Item 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#33FF57" Height="40" CornerRadius="4">
+                    <TextBlock Text="Dynamic Item 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <Border Background="#3357FF" Height="40" CornerRadius="4">
+                    <TextBlock Text="Dynamic Item 3" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </StackPanel>
         </StackPanel>
     </Border>
     
 </StackPanel>
+</ScrollViewer>

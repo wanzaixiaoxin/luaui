@@ -45,9 +45,6 @@ public:
     int RunTest(const std::string& layoutFile, const std::string& scriptFile, 
                 const std::string& viewModelName = "ViewModelInstance");
     
-    // 运行测试运行器
-    int RunTestRunner();
-
 private:
     HINSTANCE m_hInstance;
     std::string m_testLayoutsPath;

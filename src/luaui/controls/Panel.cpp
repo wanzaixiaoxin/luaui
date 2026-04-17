@@ -48,13 +48,18 @@ rendering::Size PanelLayoutComponent::MeasureOverride(const rendering::Size& ava
     if (w > 0) {
         // 有固定宽度，使用固定宽度，高度使用子控件高度或固定高度
         if (h > 0) {
-            return rendering::Size(w, h);
+            return rendering::Size(
+                availableSize.width >= 99990 ? std::max(w, childWidth) : w,
+                availableSize.height >= 99990 ? std::max(h, childHeight) : h
+            );
         } else {
-            return rendering::Size(w, childHeight > 0 ? childHeight : availableSize.height);
+            float finalW = availableSize.width >= 99990 ? std::max(w, childWidth) : w;
+            return rendering::Size(finalW, childHeight > 0 ? childHeight : availableSize.height);
         }
     } else if (h > 0) {
         // 只有固定高度，使用子控件宽度或可用宽度
-        return rendering::Size(childWidth > 0 ? childWidth : availableSize.width, h);
+        float finalH = availableSize.height >= 99990 ? std::max(h, childHeight) : h;
+        return rendering::Size(childWidth > 0 ? childWidth : availableSize.width, finalH);
     }
     
     // 没有固定大小，使用子控件测量结果

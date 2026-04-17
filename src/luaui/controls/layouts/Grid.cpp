@@ -3,7 +3,6 @@
 #include "Interfaces/ILayoutable.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
-#include "Logger.h"
 #include <algorithm>
 
 namespace luaui {
@@ -128,12 +127,6 @@ rendering::Size Grid::OnMeasureChildren(const rendering::Size& availableSize) {
         totalHeight += height;
     }
 
-    utils::Logger::InfoF("[Grid Measure] avail=%.1fx%.1f desired=%.1fx%.1f cols=%zu rows=%zu",
-        availableSize.width, availableSize.height, totalWidth, totalHeight, m_columnWidths.size(), m_rowHeights.size());
-    for (size_t i = 0; i < m_columnWidths.size(); ++i) {
-        utils::Logger::InfoF("[Grid Measure] col[%zu]=%.1f", i, m_columnWidths[i]);
-    }
-
     return rendering::Size(totalWidth, totalHeight);
 }
 
@@ -186,8 +179,6 @@ rendering::Size Grid::OnArrangeChildren(const rendering::Size& finalSize) {
             childHeight += m_rowHeights[r];
         }
 
-        utils::Logger::InfoF("[Grid Arrange] child=%s col=%d row=%d arrange=%.1fx%.1f@%.1f,%.1f",
-            child->GetTypeName().c_str(), col, row, childWidth, childHeight, childX, childY);
         layoutable->Arrange(rendering::Rect(childX, childY, childWidth, childHeight));
     }
 
