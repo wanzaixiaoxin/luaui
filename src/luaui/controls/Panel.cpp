@@ -44,29 +44,35 @@ rendering::Size PanelLayoutComponent::MeasureOverride(const rendering::Size& ava
     // 应用固定大小（如果有）
     float w = GetWidth();
     float h = GetHeight();
-    
+
+    float resultW = 0, resultH = 0;
+    bool hasResult = false;
+
     if (w > 0) {
-        // 有固定宽度，使用固定宽度，高度使用子控件高度或固定高度
+        resultW = availableSize.width >= 99990 ? std::max(w, childWidth) : w;
+        hasResult = true;
         if (h > 0) {
-            return rendering::Size(
-                availableSize.width >= 99990 ? std::max(w, childWidth) : w,
-                availableSize.height >= 99990 ? std::max(h, childHeight) : h
-            );
+            resultH = availableSize.height >= 99990 ? std::max(h, childHeight) : h;
         } else {
-            float finalW = availableSize.width >= 99990 ? std::max(w, childWidth) : w;
-            return rendering::Size(finalW, childHeight > 0 ? childHeight : availableSize.height);
+            resultH = childHeight > 0 ? childHeight : availableSize.height;
         }
     } else if (h > 0) {
-        // 只有固定高度，使用子控件宽度或可用宽度
-        float finalH = availableSize.height >= 99990 ? std::max(h, childHeight) : h;
-        return rendering::Size(childWidth > 0 ? childWidth : availableSize.width, finalH);
+        resultH = availableSize.height >= 99990 ? std::max(h, childHeight) : h;
+        hasResult = true;
+        resultW = childWidth > 0 ? childWidth : availableSize.width;
+    } else if (childWidth > 0 || childHeight > 0) {
+        resultW = childWidth;
+        resultH = childHeight;
+        hasResult = true;
     }
-    
-    // 没有固定大小，使用子控件测量结果
-    if (childWidth > 0 || childHeight > 0) {
-        return rendering::Size(childWidth, childHeight);
+
+    if (hasResult) {
+        return rendering::Size(
+            resultW + GetMarginLeft() + GetMarginRight(),
+            resultH + GetMarginTop() + GetMarginBottom()
+        );
     }
-    
+
     return availableSize; // 默认使用可用大小
 }
 
