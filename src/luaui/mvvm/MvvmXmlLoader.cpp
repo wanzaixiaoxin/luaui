@@ -19,6 +19,7 @@
 #include <tinyxml2.h>
 #include <sstream>
 #include <algorithm>
+#include <cstring>
 
 namespace luaui {
 namespace mvvm {
@@ -262,6 +263,61 @@ std::wstring GetLuaCellText(lua_State* L, int itemIndex, const DataGridColumnSpe
     std::wstring value = LuaValueToDisplayText(L, -1);
     lua_pop(L, 1);
     return value;
+}
+
+bool TryParseGridLengthValue(const std::string& text, luaui::controls::GridLength& out) {
+    std::string trimmed = luaui::utils::StringUtils::Trim(text);
+    if (trimmed.empty()) {
+        return false;
+    }
+
+    if (_stricmp(trimmed.c_str(), "Auto") == 0) {
+        out = luaui::controls::GridLength::Auto();
+        return true;
+    }
+
+    if (trimmed.back() == '*') {
+        std::string multiplier = luaui::utils::StringUtils::Trim(trimmed.substr(0, trimmed.size() - 1));
+        if (multiplier.empty()) {
+            out = luaui::controls::GridLength::Star();
+            return true;
+        }
+
+        try {
+            out = luaui::controls::GridLength::Star(std::stof(multiplier));
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+
+    try {
+        out = luaui::controls::GridLength::Pixel(std::stof(trimmed));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool TryParseIndexedGridProperty(const std::string& propertyName,
+                                 const std::string& prefix,
+                                 size_t& index) {
+    if (propertyName.rfind(prefix, 0) != 0) {
+        return false;
+    }
+
+    const size_t open = propertyName.find('[', prefix.size());
+    const size_t close = propertyName.find(']', open == std::string::npos ? prefix.size() : open + 1);
+    if (open == std::string::npos || close == std::string::npos || close <= open + 1) {
+        return false;
+    }
+
+    try {
+        index = static_cast<size_t>(std::stoul(propertyName.substr(open + 1, close - open - 1)));
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 } // namespace
@@ -745,6 +801,13 @@ void MvvmXmlLoader::CreateBinding(const std::shared_ptr<luaui::Control>& control
             BindWrapPanelSpacing(wrapPanel, expression);
         } else if (propertyName == "Orientation") {
             BindWrapPanelOrientation(wrapPanel, expression);
+        }
+    }
+
+    if (auto grid = std::dynamic_pointer_cast<luaui::controls::Grid>(control)) {
+        if (propertyName.rfind("Grid.ColumnDefinitionWidth[", 0) == 0 ||
+            propertyName.rfind("Grid.RowDefinitionHeight[", 0) == 0) {
+            BindGridDefinition(grid, propertyName, expression);
         }
     }
 }
@@ -1836,6 +1899,69 @@ void MvvmXmlLoader::BindWrapPanelOrientation(std::shared_ptr<luaui::controls::Wr
             updateView();
         }
     });
+}
+
+void MvvmXmlLoader::BindGridDefinition(std::shared_ptr<luaui::controls::Grid> grid,
+                                       const std::string& propertyName,
+                                       const BindingExpression& expression) {
+    auto dataContext = m_dataContext;
+    auto boundPropertyName = expression.path;
+
+    auto updateView = [grid, dataContext, boundPropertyName, propertyName]() {
+        if (!grid || !dataContext) return;
+
+        std::any value = dataContext->GetPropertyValue(boundPropertyName);
+        if (!value.has_value()) {
+            return;
+        }
+
+        std::string text;
+        try {
+            if (value.type() == typeid(std::string)) {
+                text = std::any_cast<std::string>(value);
+            } else if (value.type() == typeid(std::wstring)) {
+                const std::wstring& wide = std::any_cast<std::wstring>(value);
+                text.assign(wide.begin(), wide.end());
+            } else if (value.type() == typeid(double)) {
+                text = std::to_string(std::any_cast<double>(value));
+            } else if (value.type() == typeid(float)) {
+                text = std::to_string(std::any_cast<float>(value));
+            } else if (value.type() == typeid(int)) {
+                text = std::to_string(std::any_cast<int>(value));
+            } else {
+                return;
+            }
+        } catch (...) {
+            return;
+        }
+
+        luaui::controls::GridLength length;
+        if (!TryParseGridLengthValue(text, length)) {
+            return;
+        }
+
+        size_t definitionIndex = 0;
+        if (TryParseIndexedGridProperty(propertyName, "Grid.ColumnDefinitionWidth", definitionIndex)) {
+            if (definitionIndex < grid->GetColumnCount()) {
+                grid->SetColumnDefinition(definitionIndex, length);
+            }
+        } else if (TryParseIndexedGridProperty(propertyName, "Grid.RowDefinitionHeight", definitionIndex)) {
+            if (definitionIndex < grid->GetRowCount()) {
+                grid->SetRowDefinition(definitionIndex, length);
+            }
+        }
+    };
+
+    updateView();
+
+    if (expression.mode != BindingMode::OneTime) {
+        dataContext->SubscribePropertyChanged(
+            [boundPropertyName, updateView](const PropertyChangedEventArgs& args) {
+                if (args.propertyName == boundPropertyName || args.propertyName.empty()) {
+                    updateView();
+                }
+            });
+    }
 }
 
 // ============================================================================

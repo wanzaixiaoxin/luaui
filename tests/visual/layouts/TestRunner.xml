@@ -24,7 +24,7 @@
     </Border>
     
     <!-- Content Area -->
-    <ScrollViewer>
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel Orientation="Vertical" Margin="16" Spacing="16">
             
             <!-- ==================== StackPanel Demo ==================== -->
@@ -84,37 +84,78 @@
             <StackPanel Orientation="Vertical" Spacing="12" Visibility="{Binding GridVisible}">
                 <TextBlock Text="Grid Layout" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
                 <TextBlock Text="Grid features: Star sizing, ColumnSpan/RowSpan, dynamic columns" FontSize="11" Foreground="#757575"/>
-                
-                <!-- Simple 2x2 Grid -->
+
+                <!-- 2x2 Grid with Equal Star Sizing -->
                 <Border Background="#E3F2FD" Padding="16" CornerRadius="8">
                     <StackPanel Orientation="Vertical" Spacing="8">
                         <TextBlock Text="2x2 Grid (Equal Star Sizing)" FontWeight="SemiBold" FontSize="14"/>
                         <Grid Height="150">
-                            <Border Background="#E53935" CornerRadius="4" Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Grid.Column="0" Background="#E53935" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Cell 0,0" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border Background="#43A047" CornerRadius="4" Margin="2">
+                            <Border Grid.Row="0" Grid.Column="1" Background="#43A047" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Cell 0,1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border Background="#1E88E5" CornerRadius="4" Margin="2">
+                            <Border Grid.Row="1" Grid.Column="0" Background="#1E88E5" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Cell 1,0" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border Background="#8E24AA" CornerRadius="4" Margin="2">
+                            <Border Grid.Row="1" Grid.Column="1" Background="#8E24AA" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Cell 1,1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </StackPanel>
                 </Border>
-                
+
+                <!-- ColumnSpan Demo -->
+                <Border Background="#E8F5E9" Padding="16" CornerRadius="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="ColumnSpan &amp; RowSpan" FontWeight="SemiBold" FontSize="14"/>
+                        <Grid Height="120">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Background="#8E24AA" CornerRadius="4" Margin="2" Padding="8,4">
+                                <TextBlock Text="Header (ColumnSpan=3)" Foreground="White" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="0" Grid.RowSpan="2" Background="#E53935" CornerRadius="4" Margin="2">
+                                <TextBlock Text="RowSpan=2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Background="#43A047" CornerRadius="4" Margin="2"/>
+                            <Border Grid.Row="1" Grid.Column="2" Background="#1E88E5" CornerRadius="4" Margin="2"/>
+                            <Border Grid.Row="2" Grid.Column="1" Background="#FF7043" CornerRadius="4" Margin="2"/>
+                            <Border Grid.Row="2" Grid.Column="2" Background="#26A69A" CornerRadius="4" Margin="2"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <!-- Dynamic Column Width -->
                 <Border Background="#E8EAF6" Padding="16" CornerRadius="8">
                     <StackPanel Orientation="Vertical" Spacing="8">
                         <TextBlock Text="{Binding GridColWidthText}" FontWeight="SemiBold" FontSize="14"/>
                         <Grid Height="60">
-                            <Border Background="#E53935" CornerRadius="4" Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{Binding GridCol1Width}"/>
+                                <ColumnDefinition Width="{Binding GridCol2Width}"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Background="#E53935" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Col 1" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Border Background="#43A047" CornerRadius="4" Margin="2">
+                            <Border Grid.Column="1" Background="#43A047" CornerRadius="4" Margin="2">
                                 <TextBlock Text="Col 2" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
@@ -128,18 +169,6 @@
                             <Slider Value="{Binding GridCol2Ratio, Mode=TwoWay}" Minimum="0.5" Maximum="3" Width="100"/>
                             <TextBlock Text="{Binding GridCol2RatioText}" VerticalAlignment="Center"/>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
-                
-                <!-- Grid Info -->
-                <Border Background="#FFF3E0" Padding="16" CornerRadius="8">
-                    <StackPanel Orientation="Vertical" Spacing="8">
-                        <TextBlock Text="Grid Features (C++ implemented):" FontWeight="SemiBold" FontSize="14"/>
-                        <TextBlock Text="• RowDefinitions / ColumnDefinitions" FontSize="12" Foreground="#757575"/>
-                        <TextBlock Text="• Height/Width: Auto, Pixel, Star" FontSize="12" Foreground="#757575"/>
-                        <TextBlock Text="• Grid.Row, Grid.Column attached properties" FontSize="12" Foreground="#757575"/>
-                        <TextBlock Text="• Grid.RowSpan, Grid.ColumnSpan for spanning" FontSize="12" Foreground="#757575"/>
-                        <TextBlock Text="Note: XML parser requires enhancement for RowDefinition/ColumnDefinition elements" FontSize="11" Foreground="#E53935"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

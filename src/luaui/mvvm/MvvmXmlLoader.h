@@ -158,6 +158,9 @@ private:
                               const BindingExpression& expression);
     void BindWrapPanelOrientation(std::shared_ptr<luaui::controls::WrapPanel> wrapPanel,
                                   const BindingExpression& expression);
+    void BindGridDefinition(std::shared_ptr<luaui::controls::Grid> grid,
+                            const std::string& propertyName,
+                            const BindingExpression& expression);
 };
 
 // 创建 MVVM XML 加载器

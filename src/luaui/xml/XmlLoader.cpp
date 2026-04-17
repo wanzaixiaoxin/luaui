@@ -22,12 +22,92 @@
 #include "layouts/DockPanel.h"
 #include <algorithm>
 #include <cctype>
+#include <cstring>
+#include <sstream>
 
 namespace luaui {
 namespace xml {
 
 using namespace controls;
 using namespace rendering;
+
+namespace {
+
+std::string TrimString(std::string value) {
+    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
+        return std::isspace(ch) != 0;
+    });
+    auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
+        return std::isspace(ch) != 0;
+    }).base();
+    if (begin >= end) {
+        return {};
+    }
+    return std::string(begin, end);
+}
+
+bool TryParseCornerRadius(const std::string& value, rendering::CornerRadius& out) {
+    std::stringstream stream(value);
+    std::string part;
+    std::vector<float> values;
+    while (std::getline(stream, part, ',')) {
+        float parsed = 0.0f;
+        if (!TypeConverter::ToFloat(TrimString(part), parsed)) {
+            return false;
+        }
+        values.push_back(parsed);
+    }
+
+    if (values.empty()) {
+        return false;
+    }
+    if (values.size() == 1) {
+        out = rendering::CornerRadius(values[0]);
+        return true;
+    }
+    if (values.size() == 4) {
+        out = rendering::CornerRadius(values[0], values[1], values[2], values[3]);
+        return true;
+    }
+    return false;
+}
+
+bool TryParseGridLength(const std::string& value, controls::GridLength& out) {
+    std::string trimmed = TrimString(value);
+    if (trimmed.empty()) {
+        return false;
+    }
+
+    if (_stricmp(trimmed.c_str(), "Auto") == 0) {
+        out = controls::GridLength::Auto();
+        return true;
+    }
+
+    if (trimmed.back() == '*') {
+        std::string multiplier = TrimString(trimmed.substr(0, trimmed.size() - 1));
+        if (multiplier.empty()) {
+            out = controls::GridLength::Star();
+            return true;
+        }
+
+        float stars = 0.0f;
+        if (TypeConverter::ToFloat(multiplier, stars)) {
+            out = controls::GridLength::Star(stars);
+            return true;
+        }
+        return false;
+    }
+
+    float pixels = 0.0f;
+    if (TypeConverter::ToFloat(trimmed, pixels)) {
+        out = controls::GridLength::Pixel(pixels);
+        return true;
+    }
+
+    return false;
+}
+
+} // namespace
 
 // ============================================================================
 // XmlLoader 实现 - 支持 MVVM 数据绑定
@@ -348,10 +428,14 @@ private:
             }
             // 圆角 CornerRadius (Button)
             else if (name == "CornerRadius") {
-                float radius;
-                if (TypeConverter::ToFloat(value, radius)) {
+                rendering::CornerRadius radius;
+                if (TryParseCornerRadius(value, radius)) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
-                        btn->SetCornerRadius(rendering::CornerRadius(radius));
+                        btn->SetCornerRadius(radius);
+                    } else if (auto border = std::dynamic_pointer_cast<controls::Border>(control)) {
+                        // Border does not yet expose rounded rendering directly in the public API.
+                        // Ignore for now to keep XML compatible with visual tests.
+                        (void)border;
                     }
                 }
             }
@@ -361,6 +445,8 @@ private:
                 if (TypeConverter::ToColor(value, color)) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetBorderBrush(color);
+                    } else if (auto border = std::dynamic_pointer_cast<controls::Border>(control)) {
+                        border->SetBorderColor(color);
                     }
                 }
             }
@@ -370,6 +456,8 @@ private:
                 if (TypeConverter::ToFloat(value, thickness)) {
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetBorderThickness(thickness);
+                    } else if (auto border = std::dynamic_pointer_cast<controls::Border>(control)) {
+                        border->SetBorderThickness(thickness);
                     }
                 }
             }
@@ -380,12 +468,13 @@ private:
                     // For Button, use SetCustomBackground to preserve custom color
                     if (auto btn = std::dynamic_pointer_cast<controls::Button>(control)) {
                         btn->SetCustomBackground(color);
+                    } else if (auto border = std::dynamic_pointer_cast<controls::Border>(control)) {
+                        border->SetBackground(color);
                     } else if (auto* render = control->GetRender()) {
                         render->SetBackground(color);
                     }
                 }
             }
-            // SourcePath (Image)
             else if (name == "SourcePath") {
                 std::wstring wpath = Utf8ToW(value);
                 if (auto img = std::dynamic_pointer_cast<controls::Image>(control)) {
@@ -560,12 +649,16 @@ private:
             }
             // Value (Slider, ProgressBar)
             else if (name == "Value") {
-                float val;
-                if (TypeConverter::ToFloat(value, val)) {
-                    if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
-                        s->SetValue(val);
-                    } else if (auto p = std::dynamic_pointer_cast<controls::ProgressBar>(control)) {
-                        p->SetValue(val);
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "Value", value);
+                } else {
+                    float val;
+                    if (TypeConverter::ToFloat(value, val)) {
+                        if (auto s = std::dynamic_pointer_cast<controls::Slider>(control)) {
+                            s->SetValue(val);
+                        } else if (auto p = std::dynamic_pointer_cast<controls::ProgressBar>(control)) {
+                            p->SetValue(val);
+                        }
                     }
                 }
             }
@@ -886,6 +979,95 @@ private:
     
     void LoadChildren(const std::shared_ptr<luaui::Control>& parent,
                       const tinyxml2::XMLElement* element) {
+        if (auto grid = std::dynamic_pointer_cast<controls::Grid>(parent)) {
+            for (const tinyxml2::XMLElement* childElem = element->FirstChildElement();
+                 childElem; childElem = childElem->NextSiblingElement()) {
+                std::string tag = childElem->Name();
+
+                if (tag == "Grid.ColumnDefinitions") {
+                    grid->ClearColumns();
+                    size_t columnIndex = 0;
+                    for (const tinyxml2::XMLElement* columnElem = childElem->FirstChildElement("ColumnDefinition");
+                         columnElem; columnElem = columnElem->NextSiblingElement("ColumnDefinition")) {
+                        controls::GridLength length = controls::GridLength::Star();
+                        if (const char* widthAttr = columnElem->Attribute("Width")) {
+                            if (IsBindingExpression(widthAttr)) {
+                                RecordDeferredBinding(grid,
+                                    "Grid.ColumnDefinitionWidth[" + std::to_string(columnIndex) + "]",
+                                    widthAttr);
+                            } else {
+                                TryParseGridLength(widthAttr, length);
+                            }
+                        }
+                        grid->AddColumn(length);
+                        ++columnIndex;
+                    }
+                    continue;
+                }
+
+                if (tag == "Grid.RowDefinitions") {
+                    grid->ClearRows();
+                    size_t rowIndex = 0;
+                    for (const tinyxml2::XMLElement* rowElem = childElem->FirstChildElement("RowDefinition");
+                         rowElem; rowElem = rowElem->NextSiblingElement("RowDefinition")) {
+                        controls::GridLength length = controls::GridLength::Auto();
+                        if (const char* heightAttr = rowElem->Attribute("Height")) {
+                            if (IsBindingExpression(heightAttr)) {
+                                RecordDeferredBinding(grid,
+                                    "Grid.RowDefinitionHeight[" + std::to_string(rowIndex) + "]",
+                                    heightAttr);
+                            } else {
+                                TryParseGridLength(heightAttr, length);
+                            }
+                        }
+                        grid->AddRow(length);
+                        ++rowIndex;
+                    }
+                    continue;
+                }
+
+                auto child = LoadElement(childElem);
+                if (!child) continue;
+
+                grid->AddChild(child);
+
+                int column = 0;
+                int row = 0;
+                int columnSpan = 1;
+                int rowSpan = 1;
+
+                if (const char* attr = childElem->Attribute("Grid.Column")) {
+                    TypeConverter::ToInt(attr, column);
+                } else if (const char* attr = childElem->Attribute("Column")) {
+                    TypeConverter::ToInt(attr, column);
+                }
+
+                if (const char* attr = childElem->Attribute("Grid.Row")) {
+                    TypeConverter::ToInt(attr, row);
+                } else if (const char* attr = childElem->Attribute("Row")) {
+                    TypeConverter::ToInt(attr, row);
+                }
+
+                if (const char* attr = childElem->Attribute("Grid.ColumnSpan")) {
+                    TypeConverter::ToInt(attr, columnSpan);
+                } else if (const char* attr = childElem->Attribute("ColumnSpan")) {
+                    TypeConverter::ToInt(attr, columnSpan);
+                }
+
+                if (const char* attr = childElem->Attribute("Grid.RowSpan")) {
+                    TypeConverter::ToInt(attr, rowSpan);
+                } else if (const char* attr = childElem->Attribute("RowSpan")) {
+                    TypeConverter::ToInt(attr, rowSpan);
+                }
+
+                grid->SetColumn(child, column);
+                grid->SetRow(child, row);
+                grid->SetColumnSpan(child, std::max(1, columnSpan));
+                grid->SetRowSpan(child, std::max(1, rowSpan));
+            }
+            return;
+        }
+
         // 特殊处理 Border - 使用 SetChild 而不是 AddChild
         if (auto border = std::dynamic_pointer_cast<controls::Border>(parent)) {
             if (const tinyxml2::XMLElement* childElem = element->FirstChildElement()) {

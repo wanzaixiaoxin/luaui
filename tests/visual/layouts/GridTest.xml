@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Grid Layout Test - Enhanced -->
+<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 <StackPanel Orientation="Vertical" Margin="20" Spacing="16">
     
     <!-- Title -->
@@ -250,3 +251,4 @@
     </Border>
     
 </StackPanel>
+</ScrollViewer>

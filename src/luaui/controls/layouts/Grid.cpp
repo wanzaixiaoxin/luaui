@@ -3,6 +3,7 @@
 #include "Interfaces/ILayoutable.h"
 #include "Components/LayoutComponent.h"
 #include "Components/RenderComponent.h"
+#include "Logger.h"
 #include <algorithm>
 
 namespace luaui {
@@ -12,293 +13,449 @@ Grid::Grid() {}
 
 void Grid::AddColumn(const GridLength& width) {
     m_columns.push_back(width);
-    m_columnWidths.push_back(0);
+    m_columnWidths.push_back(0.0f);
+    InvalidateGridLayout();
+}
+
+void Grid::SetColumnDefinition(size_t index, const GridLength& width) {
+    if (index >= m_columns.size()) return;
+    m_columns[index] = width;
+    InvalidateGridLayout();
+}
+
+void Grid::ClearColumns() {
+    m_columns.clear();
+    m_columnWidths.clear();
+    InvalidateGridLayout();
 }
 
 void Grid::AddRow(const GridLength& height) {
     m_rows.push_back(height);
-    m_rowHeights.push_back(0);
+    m_rowHeights.push_back(0.0f);
+    InvalidateGridLayout();
 }
 
-void Grid::SetColumn(const std::shared_ptr<IControl>& control, int column) {
+void Grid::SetRowDefinition(size_t index, const GridLength& height) {
+    if (index >= m_rows.size()) return;
+    m_rows[index] = height;
+    InvalidateGridLayout();
+}
+
+void Grid::ClearRows() {
+    m_rows.clear();
+    m_rowHeights.clear();
+    InvalidateGridLayout();
+}
+
+void Grid::SetColumn(const std::shared_ptr<interfaces::IControl>& control, int column) {
     if (!control) return;
     m_cellInfo[control->GetID()].column = column;
+    InvalidateGridLayout();
 }
 
-void Grid::SetRow(const std::shared_ptr<IControl>& control, int row) {
+void Grid::SetRow(const std::shared_ptr<interfaces::IControl>& control, int row) {
     if (!control) return;
     m_cellInfo[control->GetID()].row = row;
+    InvalidateGridLayout();
 }
 
-void Grid::SetColumnSpan(const std::shared_ptr<IControl>& control, int span) {
+void Grid::SetColumnSpan(const std::shared_ptr<interfaces::IControl>& control, int span) {
     if (!control) return;
     m_cellInfo[control->GetID()].columnSpan = span;
+    InvalidateGridLayout();
 }
 
-void Grid::SetRowSpan(const std::shared_ptr<IControl>& control, int span) {
+void Grid::SetRowSpan(const std::shared_ptr<interfaces::IControl>& control, int span) {
     if (!control) return;
     m_cellInfo[control->GetID()].rowSpan = span;
+    InvalidateGridLayout();
 }
 
-int Grid::GetColumn(const std::shared_ptr<IControl>& control) const {
+int Grid::GetColumn(const std::shared_ptr<interfaces::IControl>& control) const {
     if (!control) return 0;
     auto it = m_cellInfo.find(control->GetID());
-    return (it != m_cellInfo.end()) ? it->second.column : 0;
+    return it != m_cellInfo.end() ? it->second.column : 0;
 }
 
-int Grid::GetRow(const std::shared_ptr<IControl>& control) const {
+int Grid::GetRow(const std::shared_ptr<interfaces::IControl>& control) const {
     if (!control) return 0;
     auto it = m_cellInfo.find(control->GetID());
-    return (it != m_cellInfo.end()) ? it->second.row : 0;
+    return it != m_cellInfo.end() ? it->second.row : 0;
 }
 
-int Grid::GetColumnSpan(const std::shared_ptr<IControl>& control) const {
+int Grid::GetColumnSpan(const std::shared_ptr<interfaces::IControl>& control) const {
     if (!control) return 1;
     auto it = m_cellInfo.find(control->GetID());
-    return (it != m_cellInfo.end()) ? it->second.columnSpan : 1;
+    return it != m_cellInfo.end() ? it->second.columnSpan : 1;
 }
 
-int Grid::GetRowSpan(const std::shared_ptr<IControl>& control) const {
+int Grid::GetRowSpan(const std::shared_ptr<interfaces::IControl>& control) const {
     if (!control) return 1;
     auto it = m_cellInfo.find(control->GetID());
-    return (it != m_cellInfo.end()) ? it->second.rowSpan : 1;
+    return it != m_cellInfo.end() ? it->second.rowSpan : 1;
 }
 
 rendering::Size Grid::OnMeasureChildren(const rendering::Size& availableSize) {
-    // 简化实现：如果没有行列定义，则测量所有子控件
-    if (m_columns.empty() && m_rows.empty()) {
+    if (m_columns.empty() && m_rows.empty() && m_cellInfo.empty()) {
         return Panel::OnMeasureChildren(availableSize);
     }
-    
-    // 先测量所有子控件
-    for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
-        
+
+    const size_t effectiveColumns = GetEffectiveColumnCount();
+    const size_t effectiveRows = GetEffectiveRowCount();
+
+    m_columnWidths.assign(effectiveColumns, 0.0f);
+    m_rowHeights.assign(effectiveRows, 0.0f);
+
+    for (const auto& child : m_children) {
+        if (!child || !child->GetIsVisible()) continue;
+
         if (auto* layoutable = child->AsLayoutable()) {
             interfaces::LayoutConstraint constraint;
             constraint.available = availableSize;
             layoutable->Measure(constraint);
         }
     }
-    
-    // 计算网格尺寸
+
     CalculateSizes(availableSize);
-    
-    float totalWidth = 0;
-    for (float w : m_columnWidths) totalWidth += w;
-    
-    float totalHeight = 0;
-    for (float h : m_rowHeights) totalHeight += h;
-    
+
+    float totalWidth = 0.0f;
+    for (float width : m_columnWidths) {
+        totalWidth += width;
+    }
+
+    float totalHeight = 0.0f;
+    for (float height : m_rowHeights) {
+        totalHeight += height;
+    }
+
+    utils::Logger::InfoF("[Grid Measure] avail=%.1fx%.1f desired=%.1fx%.1f cols=%zu rows=%zu",
+        availableSize.width, availableSize.height, totalWidth, totalHeight, m_columnWidths.size(), m_rowHeights.size());
+    for (size_t i = 0; i < m_columnWidths.size(); ++i) {
+        utils::Logger::InfoF("[Grid Measure] col[%zu]=%.1f", i, m_columnWidths[i]);
+    }
+
     return rendering::Size(totalWidth, totalHeight);
 }
 
 rendering::Size Grid::OnArrangeChildren(const rendering::Size& finalSize) {
-    auto* render = GetRender();
-    if (!render) return finalSize;
-    
-    auto contentRect = render->GetRenderRect();
-    
-    // 计算每列和每行的起始位置
-    std::vector<float> colStarts(m_columnWidths.size(), 0);
-    std::vector<float> rowStarts(m_rowHeights.size(), 0);
-    
-    float x = contentRect.x;
+    if (m_columns.empty() && m_rows.empty() && m_cellInfo.empty()) {
+        return Panel::OnArrangeChildren(finalSize);
+    }
+
+    // Recalculate sizes based on actual final size (may differ from measure available size)
+    CalculateSizes(finalSize);
+
+    // Use relative positions (0,0) - the rendering pipeline applies cumulative transforms,
+    // so child positions must be relative to the parent, not absolute screen coordinates
+    std::vector<float> colStarts(m_columnWidths.size(), 0.0f);
+    std::vector<float> rowStarts(m_rowHeights.size(), 0.0f);
+
+    float x = 0.0f;
     for (size_t i = 0; i < m_columnWidths.size(); ++i) {
         colStarts[i] = x;
         x += m_columnWidths[i];
     }
-    
-    float y = contentRect.y;
+
+    float y = 0.0f;
     for (size_t i = 0; i < m_rowHeights.size(); ++i) {
         rowStarts[i] = y;
         y += m_rowHeights[i];
     }
-    
-    // 排列子控件
-    for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
-        
-        if (auto* layoutable = child->AsLayoutable()) {
-            int col = GetColumn(child);
-            int row = GetRow(child);
-            int colSpan = GetColumnSpan(child);
-            int rowSpan = GetRowSpan(child);
-            
-            // 计算子控件的位置和大小
-            float childX = (col < (int)colStarts.size()) ? colStarts[col] : contentRect.x;
-            float childY = (row < (int)rowStarts.size()) ? rowStarts[row] : contentRect.y;
-            
-            float childWidth = 0;
-            float childHeight = 0;
-            
-            for (int c = col; c < col + colSpan && c < (int)m_columnWidths.size(); ++c) {
-                childWidth += m_columnWidths[c];
-            }
-            
-            for (int r = row; r < row + rowSpan && r < (int)m_rowHeights.size(); ++r) {
-                childHeight += m_rowHeights[r];
-            }
-            
-            layoutable->Arrange(rendering::Rect(childX, childY, childWidth, childHeight));
+
+    for (const auto& child : m_children) {
+        if (!child || !child->GetIsVisible()) continue;
+
+        auto* layoutable = child->AsLayoutable();
+        if (!layoutable) continue;
+
+        const int col = GetColumn(child);
+        const int row = GetRow(child);
+        const int colSpan = std::max(1, GetColumnSpan(child));
+        const int rowSpan = std::max(1, GetRowSpan(child));
+
+        const float childX = (col >= 0 && col < static_cast<int>(colStarts.size())) ? colStarts[col] : 0.0f;
+        const float childY = (row >= 0 && row < static_cast<int>(rowStarts.size())) ? rowStarts[row] : 0.0f;
+
+        float childWidth = 0.0f;
+        for (int c = std::max(0, col); c < col + colSpan && c < static_cast<int>(m_columnWidths.size()); ++c) {
+            childWidth += m_columnWidths[c];
         }
+
+        float childHeight = 0.0f;
+        for (int r = std::max(0, row); r < row + rowSpan && r < static_cast<int>(m_rowHeights.size()); ++r) {
+            childHeight += m_rowHeights[r];
+        }
+
+        utils::Logger::InfoF("[Grid Arrange] child=%s col=%d row=%d arrange=%.1fx%.1f@%.1f,%.1f",
+            child->GetTypeName().c_str(), col, row, childWidth, childHeight, childX, childY);
+        layoutable->Arrange(rendering::Rect(childX, childY, childWidth, childHeight));
     }
-    
+
     return finalSize;
 }
 
 void Grid::CalculateSizes(const rendering::Size& availableSize) {
-    // 完整实现：计算行列大小
-    // Auto - 根据内容（子控件最大尺寸）
-    // Pixel - 固定像素
-    // Star - 按比例分配剩余空间
-    
-    // 初始化所有大小为0
-    std::fill(m_columnWidths.begin(), m_columnWidths.end(), 0.0f);
-    std::fill(m_rowHeights.begin(), m_rowHeights.end(), 0.0f);
-    
-    // ========== 第一步：计算Pixel固定大小 ==========
-    float fixedWidth = 0;
-    float fixedHeight = 0;
-    
-    for (size_t i = 0; i < m_columns.size(); ++i) {
-        if (m_columns[i].IsPixel()) {
-            m_columnWidths[i] = m_columns[i].value;
-            fixedWidth += m_columnWidths[i];
+    const size_t effectiveColumns = GetEffectiveColumnCount();
+    const size_t effectiveRows = GetEffectiveRowCount();
+
+    m_columnWidths.assign(effectiveColumns, 0.0f);
+    m_rowHeights.assign(effectiveRows, 0.0f);
+
+    if (effectiveColumns == 0 && effectiveRows == 0) {
+        return;
+    }
+
+    float fixedWidth = 0.0f;
+    float fixedHeight = 0.0f;
+
+    for (size_t i = 0; i < effectiveColumns; ++i) {
+        const GridLength definition = GetColumnDefinitionAt(i);
+        if (definition.IsPixel()) {
+            m_columnWidths[i] = definition.value;
+            fixedWidth += definition.value;
         }
     }
-    
-    for (size_t i = 0; i < m_rows.size(); ++i) {
-        if (m_rows[i].IsPixel()) {
-            m_rowHeights[i] = m_rows[i].value;
-            fixedHeight += m_rowHeights[i];
+
+    for (size_t i = 0; i < effectiveRows; ++i) {
+        const GridLength definition = GetRowDefinitionAt(i);
+        if (definition.IsPixel()) {
+            m_rowHeights[i] = definition.value;
+            fixedHeight += definition.value;
         }
     }
-    
-    // ========== 第二步：计算Auto大小 ==========
-    // 对于每个Auto列，找到该列中所有子控件的最大宽度
-    // 对于每个Auto行，找到该行中所有子控件的最大高度
-    
-    for (auto& child : m_children) {
-        if (!child->GetIsVisible()) continue;
-        
-        int col = GetColumn(child);
-        int row = GetRow(child);
-        int colSpan = GetColumnSpan(child);
-        int rowSpan = GetRowSpan(child);
-        
-        if (auto* layoutable = child->AsLayoutable()) {
-            auto desired = layoutable->GetDesiredSize();
-            
-            // 处理Auto列
-            // 如果子控件跨多列，且所有列都是Auto，则平均分配
-            // 如果子控件跨多列，且部分是Auto，则只分配给Auto列
-            if (colSpan == 1 && col >= 0 && col < (int)m_columns.size()) {
-                if (m_columns[col].IsAuto()) {
-                    m_columnWidths[col] = std::max(m_columnWidths[col], desired.width);
+
+    for (const auto& child : m_children) {
+        if (!child || !child->GetIsVisible()) continue;
+
+        auto* layoutable = child->AsLayoutable();
+        if (!layoutable) continue;
+
+        const rendering::Size desired = layoutable->GetDesiredSize();
+        const int col = GetColumn(child);
+        const int row = GetRow(child);
+        const int colSpan = std::max(1, GetColumnSpan(child));
+        const int rowSpan = std::max(1, GetRowSpan(child));
+
+        if (colSpan == 1 && col >= 0 && col < static_cast<int>(effectiveColumns)) {
+            if (GetColumnDefinitionAt(static_cast<size_t>(col)).IsAuto()) {
+                m_columnWidths[col] = std::max(m_columnWidths[col], desired.width);
+            }
+        } else if (colSpan > 1) {
+            int autoColCount = 0;
+            float allocatedWidth = 0.0f;
+            for (int c = std::max(0, col); c < col + colSpan && c < static_cast<int>(effectiveColumns); ++c) {
+                const GridLength definition = GetColumnDefinitionAt(static_cast<size_t>(c));
+                if (definition.IsAuto()) {
+                    ++autoColCount;
+                } else if (definition.IsPixel()) {
+                    allocatedWidth += m_columnWidths[c];
                 }
-            } else if (colSpan > 1) {
-                // 跨列情况：计算Auto列的数量
-                int autoColCount = 0;
-                for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
-                    if (m_columns[c].IsAuto()) autoColCount++;
-                }
-                if (autoColCount > 0) {
-                    // 计算已分配的固定宽度
-                    float allocatedWidth = 0;
-                    for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
-                        if (m_columns[c].IsPixel()) {
-                            allocatedWidth += m_columnWidths[c];
-                        }
-                    }
-                    // 剩余宽度平均分配给Auto列
-                    float remainingWidth = std::max(0.0f, desired.width - allocatedWidth);
-                    float widthPerAutoCol = remainingWidth / autoColCount;
-                    for (int c = col; c < col + colSpan && c < (int)m_columns.size(); ++c) {
-                        if (m_columns[c].IsAuto()) {
-                            m_columnWidths[c] = std::max(m_columnWidths[c], widthPerAutoCol);
-                        }
+            }
+            if (autoColCount > 0) {
+                const float remainingWidth = std::max(0.0f, desired.width - allocatedWidth);
+                const float widthPerAutoCol = remainingWidth / autoColCount;
+                for (int c = std::max(0, col); c < col + colSpan && c < static_cast<int>(effectiveColumns); ++c) {
+                    if (GetColumnDefinitionAt(static_cast<size_t>(c)).IsAuto()) {
+                        m_columnWidths[c] = std::max(m_columnWidths[c], widthPerAutoCol);
                     }
                 }
             }
-            
-            // 处理Auto行（逻辑同列）
-            if (rowSpan == 1 && row >= 0 && row < (int)m_rows.size()) {
-                if (m_rows[row].IsAuto()) {
-                    m_rowHeights[row] = std::max(m_rowHeights[row], desired.height);
+        }
+
+        if (rowSpan == 1 && row >= 0 && row < static_cast<int>(effectiveRows)) {
+            if (GetRowDefinitionAt(static_cast<size_t>(row)).IsAuto()) {
+                m_rowHeights[row] = std::max(m_rowHeights[row], desired.height);
+            }
+        } else if (rowSpan > 1) {
+            int autoRowCount = 0;
+            float allocatedHeight = 0.0f;
+            for (int r = std::max(0, row); r < row + rowSpan && r < static_cast<int>(effectiveRows); ++r) {
+                const GridLength definition = GetRowDefinitionAt(static_cast<size_t>(r));
+                if (definition.IsAuto()) {
+                    ++autoRowCount;
+                } else if (definition.IsPixel()) {
+                    allocatedHeight += m_rowHeights[r];
                 }
-            } else if (rowSpan > 1) {
-                int autoRowCount = 0;
-                for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
-                    if (m_rows[r].IsAuto()) autoRowCount++;
-                }
-                if (autoRowCount > 0) {
-                    float allocatedHeight = 0;
-                    for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
-                        if (m_rows[r].IsPixel()) {
-                            allocatedHeight += m_rowHeights[r];
-                        }
-                    }
-                    float remainingHeight = std::max(0.0f, desired.height - allocatedHeight);
-                    float heightPerAutoRow = remainingHeight / autoRowCount;
-                    for (int r = row; r < row + rowSpan && r < (int)m_rows.size(); ++r) {
-                        if (m_rows[r].IsAuto()) {
-                            m_rowHeights[r] = std::max(m_rowHeights[r], heightPerAutoRow);
-                        }
+            }
+            if (autoRowCount > 0) {
+                const float remainingHeight = std::max(0.0f, desired.height - allocatedHeight);
+                const float heightPerAutoRow = remainingHeight / autoRowCount;
+                for (int r = std::max(0, row); r < row + rowSpan && r < static_cast<int>(effectiveRows); ++r) {
+                    if (GetRowDefinitionAt(static_cast<size_t>(r)).IsAuto()) {
+                        m_rowHeights[r] = std::max(m_rowHeights[r], heightPerAutoRow);
                     }
                 }
             }
         }
     }
-    
-    // 累加Auto大小
-    float autoWidth = 0;
-    float autoHeight = 0;
-    for (size_t i = 0; i < m_columns.size(); ++i) {
-        if (m_columns[i].IsAuto()) {
+
+    float autoWidth = 0.0f;
+    for (size_t i = 0; i < effectiveColumns; ++i) {
+        if (GetColumnDefinitionAt(i).IsAuto()) {
             autoWidth += m_columnWidths[i];
         }
     }
-    for (size_t i = 0; i < m_rows.size(); ++i) {
-        if (m_rows[i].IsAuto()) {
+
+    float autoHeight = 0.0f;
+    for (size_t i = 0; i < effectiveRows; ++i) {
+        if (GetRowDefinitionAt(i).IsAuto()) {
             autoHeight += m_rowHeights[i];
         }
     }
-    
-    // ========== 第三步：计算Star大小 ==========
-    float totalStarWidth = 0;
-    float totalStarHeight = 0;
-    
-    for (size_t i = 0; i < m_columns.size(); ++i) {
-        if (m_columns[i].IsStar()) {
-            totalStarWidth += m_columns[i].value;
+
+    float totalStarWidth = 0.0f;
+    for (size_t i = 0; i < effectiveColumns; ++i) {
+        const GridLength definition = GetColumnDefinitionAt(i);
+        if (definition.IsStar()) {
+            totalStarWidth += definition.value;
         }
     }
-    for (size_t i = 0; i < m_rows.size(); ++i) {
-        if (m_rows[i].IsStar()) {
-            totalStarHeight += m_rows[i].value;
+
+    float totalStarHeight = 0.0f;
+    for (size_t i = 0; i < effectiveRows; ++i) {
+        const GridLength definition = GetRowDefinitionAt(i);
+        if (definition.IsStar()) {
+            totalStarHeight += definition.value;
         }
     }
-    
-    // 剩余空间 = 可用空间 - 固定大小 - Auto大小
-    float remainingWidth = std::max(0.0f, availableSize.width - fixedWidth - autoWidth);
-    float remainingHeight = std::max(0.0f, availableSize.height - fixedHeight - autoHeight);
-    
-    // 分配Star大小
-    if (totalStarWidth > 0) {
-        for (size_t i = 0; i < m_columns.size(); ++i) {
-            if (m_columns[i].IsStar()) {
-                m_columnWidths[i] = (m_columns[i].value / totalStarWidth) * remainingWidth;
+
+    const bool infiniteWidth = availableSize.width >= 99990.0f;
+    const bool infiniteHeight = availableSize.height >= 99990.0f;
+
+    if (totalStarWidth > 0.0f) {
+        if (infiniteWidth) {
+            // When available width is infinite, Star columns behave like Auto
+            for (const auto& child : m_children) {
+                if (!child || !child->GetIsVisible()) continue;
+                auto* layoutable = child->AsLayoutable();
+                if (!layoutable) continue;
+                const rendering::Size desired = layoutable->GetDesiredSize();
+                const int col = GetColumn(child);
+                const int colSpan = std::max(1, GetColumnSpan(child));
+                if (colSpan == 1 && col >= 0 && col < static_cast<int>(effectiveColumns)) {
+                    if (GetColumnDefinitionAt(static_cast<size_t>(col)).IsStar()) {
+                        m_columnWidths[col] = std::max(m_columnWidths[col], desired.width);
+                    }
+                } else if (colSpan > 1) {
+                    int starColCount = 0;
+                    float allocatedWidth = 0.0f;
+                    for (int c = std::max(0, col); c < col + colSpan && c < static_cast<int>(effectiveColumns); ++c) {
+                        const GridLength definition = GetColumnDefinitionAt(static_cast<size_t>(c));
+                        if (definition.IsStar()) {
+                            ++starColCount;
+                        } else {
+                            allocatedWidth += m_columnWidths[c];
+                        }
+                    }
+                    if (starColCount > 0) {
+                        const float remainingStarWidth = std::max(0.0f, desired.width - allocatedWidth);
+                        const float widthPerStarCol = remainingStarWidth / starColCount;
+                        for (int c = std::max(0, col); c < col + colSpan && c < static_cast<int>(effectiveColumns); ++c) {
+                            if (GetColumnDefinitionAt(static_cast<size_t>(c)).IsStar()) {
+                                m_columnWidths[c] = std::max(m_columnWidths[c], widthPerStarCol);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            const float remainingWidth = std::max(0.0f, availableSize.width - fixedWidth - autoWidth);
+            for (size_t i = 0; i < effectiveColumns; ++i) {
+                const GridLength definition = GetColumnDefinitionAt(i);
+                if (definition.IsStar()) {
+                    m_columnWidths[i] = (definition.value / totalStarWidth) * remainingWidth;
+                }
             }
         }
     }
-    
-    if (totalStarHeight > 0) {
-        for (size_t i = 0; i < m_rows.size(); ++i) {
-            if (m_rows[i].IsStar()) {
-                m_rowHeights[i] = (m_rows[i].value / totalStarHeight) * remainingHeight;
+
+    if (totalStarHeight > 0.0f) {
+        if (infiniteHeight) {
+            // When available height is infinite, Star rows behave like Auto
+            for (const auto& child : m_children) {
+                if (!child || !child->GetIsVisible()) continue;
+                auto* layoutable = child->AsLayoutable();
+                if (!layoutable) continue;
+                const rendering::Size desired = layoutable->GetDesiredSize();
+                const int row = GetRow(child);
+                const int rowSpan = std::max(1, GetRowSpan(child));
+                if (rowSpan == 1 && row >= 0 && row < static_cast<int>(effectiveRows)) {
+                    if (GetRowDefinitionAt(static_cast<size_t>(row)).IsStar()) {
+                        m_rowHeights[row] = std::max(m_rowHeights[row], desired.height);
+                    }
+                } else if (rowSpan > 1) {
+                    int starRowCount = 0;
+                    float allocatedHeight = 0.0f;
+                    for (int r = std::max(0, row); r < row + rowSpan && r < static_cast<int>(effectiveRows); ++r) {
+                        const GridLength definition = GetRowDefinitionAt(static_cast<size_t>(r));
+                        if (definition.IsStar()) {
+                            ++starRowCount;
+                        } else {
+                            allocatedHeight += m_rowHeights[r];
+                        }
+                    }
+                    if (starRowCount > 0) {
+                        const float remainingStarHeight = std::max(0.0f, desired.height - allocatedHeight);
+                        const float heightPerStarRow = remainingStarHeight / starRowCount;
+                        for (int r = std::max(0, row); r < row + rowSpan && r < static_cast<int>(effectiveRows); ++r) {
+                            if (GetRowDefinitionAt(static_cast<size_t>(r)).IsStar()) {
+                                m_rowHeights[r] = std::max(m_rowHeights[r], heightPerStarRow);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            const float remainingHeight = std::max(0.0f, availableSize.height - fixedHeight - autoHeight);
+            for (size_t i = 0; i < effectiveRows; ++i) {
+                const GridLength definition = GetRowDefinitionAt(i);
+                if (definition.IsStar()) {
+                    m_rowHeights[i] = (definition.value / totalStarHeight) * remainingHeight;
+                }
             }
         }
+    }
+}
+
+size_t Grid::GetEffectiveColumnCount() const {
+    size_t count = m_columns.size();
+    for (const auto& child : m_children) {
+        if (!child) continue;
+        const int col = std::max(0, GetColumn(child));
+        const int span = std::max(1, GetColumnSpan(child));
+        count = std::max(count, static_cast<size_t>(col + span));
+    }
+    return count;
+}
+
+size_t Grid::GetEffectiveRowCount() const {
+    size_t count = m_rows.size();
+    for (const auto& child : m_children) {
+        if (!child) continue;
+        const int row = std::max(0, GetRow(child));
+        const int span = std::max(1, GetRowSpan(child));
+        count = std::max(count, static_cast<size_t>(row + span));
+    }
+    return count;
+}
+
+GridLength Grid::GetColumnDefinitionAt(size_t index) const {
+    if (index < m_columns.size()) {
+        return m_columns[index];
+    }
+    return GridLength::Star();
+}
+
+GridLength Grid::GetRowDefinitionAt(size_t index) const {
+    if (index < m_rows.size()) {
+        return m_rows[index];
+    }
+    return GridLength::Auto();
+}
+
+void Grid::InvalidateGridLayout() {
+    if (auto* layout = GetLayout()) {
+        layout->InvalidateMeasure();
     }
 }
 

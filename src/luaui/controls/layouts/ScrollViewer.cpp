@@ -61,12 +61,18 @@ rendering::Size ScrollViewer::OnMeasureChildren(const rendering::Size& available
         auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
             interfaces::LayoutConstraint constraint;
-            // 水平方向允许无限大(可以滚动),垂直方向使用实际可用大小
-            constraint.available = rendering::Size(99999, availableSize.height);
+            bool canHScroll = m_horizontalScrollBarVisibility == ScrollBarVisibility::Auto ||
+                              m_horizontalScrollBarVisibility == ScrollBarVisibility::Visible;
+            constraint.available = rendering::Size(
+                canHScroll ? 99999 : availableSize.width,
+                availableSize.height
+            );
             layoutable->Measure(constraint);
             auto desired = layoutable->GetDesiredSize();
             m_extentWidth = desired.width;
             m_extentHeight = desired.height;
+            utils::Logger::InfoF("[ScrollViewer Measure] canHScroll=%d availW=%.1f childDesired=%.1fx%.1f extent=%.1fx%.1f",
+                canHScroll, availableSize.width, desired.width, desired.height, m_extentWidth, m_extentHeight);
         }
     }
     return availableSize;
@@ -80,10 +86,15 @@ rendering::Size ScrollViewer::OnArrangeChildren(const rendering::Size& finalSize
         if (!m_children[i]->GetIsVisible()) continue;
         auto* layoutable = m_children[i]->AsLayoutable();
         if (layoutable) {
+            bool canHScroll = m_horizontalScrollBarVisibility == ScrollBarVisibility::Auto ||
+                              m_horizontalScrollBarVisibility == ScrollBarVisibility::Visible;
+            float arrangeWidth = canHScroll
+                ? ((m_extentWidth > finalSize.width) ? m_extentWidth : finalSize.width)
+                : finalSize.width;
             layoutable->Arrange(rendering::Rect(
                 -m_horizontalOffset,
                 -m_verticalOffset,
-                (m_extentWidth > finalSize.width) ? m_extentWidth : finalSize.width,
+                arrangeWidth,
                 (m_extentHeight > finalSize.height) ? m_extentHeight : finalSize.height
             ));
         }
