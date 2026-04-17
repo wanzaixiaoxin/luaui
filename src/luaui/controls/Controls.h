@@ -35,6 +35,8 @@
 #include "DataGrid.h"
 #include "DatePicker.h"
 #include "TabControl.h"
+#include "DockContainer.h"
+#include "DockTabGroup.h"
 #include "Dialog.h"
 #include "FileTree.h"
 

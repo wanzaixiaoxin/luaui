@@ -16,7 +16,8 @@ std::string ResolveTestAlias(const std::string& input) {
         {"dock", "DockPanel Layout"},
         {"wrap", "WrapPanel Layout"},
         {"scroll", "ScrollViewer Layout"},
-        {"viewbox", "Viewbox Layout"}
+        {"viewbox", "Viewbox Layout"},
+        {"docklayout", "Dock Layout"}
     };
 
     // Case-insensitive lookup
@@ -38,13 +39,14 @@ void PrintUsage(const std::vector<luaui::test::LuaMvvmTestInfo>& tests) {
     }
     std::cout << std::endl;
     std::cout << "Shortcuts:" << std::endl;
-    std::cout << "  grid     -> Grid Layout" << std::endl;
-    std::cout << "  stack    -> StackPanel Layout" << std::endl;
-    std::cout << "  canvas   -> Canvas Layout" << std::endl;
-    std::cout << "  dock     -> DockPanel Layout" << std::endl;
-    std::cout << "  wrap     -> WrapPanel Layout" << std::endl;
-    std::cout << "  scroll   -> ScrollViewer Layout" << std::endl;
-    std::cout << "  viewbox  -> Viewbox Layout" << std::endl;
+    std::cout << "  grid       -> Grid Layout" << std::endl;
+    std::cout << "  stack      -> StackPanel Layout" << std::endl;
+    std::cout << "  canvas     -> Canvas Layout" << std::endl;
+    std::cout << "  dock       -> DockPanel Layout" << std::endl;
+    std::cout << "  wrap       -> WrapPanel Layout" << std::endl;
+    std::cout << "  scroll     -> ScrollViewer Layout" << std::endl;
+    std::cout << "  viewbox    -> Viewbox Layout" << std::endl;
+    std::cout << "  docklayout -> Dock Layout" << std::endl;
     std::cout << std::endl;
     std::cout << "Use --list or --help to show this message." << std::endl;
 }

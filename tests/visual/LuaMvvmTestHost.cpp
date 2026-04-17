@@ -83,7 +83,14 @@ std::vector<LuaMvvmTestInfo> LuaMvvmTestHost::GetAvailableTests() {
                      m_testLayoutsPath + "/ViewboxTest.xml",
                      m_testScriptsPath + "/ViewboxTestViewModel.lua",
                      "ViewboxTestViewModel"});
-    
+
+    tests.push_back({"Dock Layout",
+                     "VSCode-like docking with nested splits and tab groups",
+                     "Layout",
+                     m_testLayoutsPath + "/DockLayoutTest.xml",
+                     m_testScriptsPath + "/DockLayoutTestViewModel.lua",
+                     "DockLayoutTestViewModel"});
+
     return tests;
 }
 

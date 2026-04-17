@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dock Layout Test - VSCode-like docking system -->
+<DockContainer Orientation="Vertical" SplitterPosition="0.75" SplitterThickness="6">
+
+    <!-- Top area: Left sidebar + Center editor -->
+    <DockContainer Orientation="Horizontal" SplitterPosition="0.22" SplitterThickness="6">
+
+        <!-- Left sidebar -->
+        <DockTabGroup>
+            <TabItem Header="Explorer" IsSelected="True">
+                <Border Background="#F5F5F5" Padding="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Project Files" FontWeight="SemiBold" FontSize="13"/>
+                        <TextBlock Text="- src/" FontSize="12" Foreground="#616161"/>
+                        <TextBlock Text="  - main.cpp" FontSize="12" Foreground="#616161"/>
+                        <TextBlock Text="  - app.h" FontSize="12" Foreground="#616161"/>
+                        <TextBlock Text="- tests/" FontSize="12" Foreground="#616161"/>
+                        <TextBlock Text="  - DockLayoutTest.xml" FontSize="12" Foreground="#616161"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+            <TabItem Header="Search">
+                <Border Background="#F5F5F5" Padding="8">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="Search Results" FontWeight="SemiBold" FontSize="13"/>
+                        <TextBox Placeholder="Type to search..." Height="28"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </DockTabGroup>
+
+        <!-- Center editor area -->
+        <DockTabGroup>
+            <TabItem Header="Main.cpp" IsSelected="True" CanClose="True">
+                <Border Background="#FFFFFF" Padding="16">
+                    <StackPanel Orientation="Vertical" Spacing="12">
+                        <TextBlock Text="// Main.cpp" FontSize="14" FontWeight="SemiBold" Foreground="#1976D2"/>
+                        <TextBlock Text="#include &quot;DockContainer.h&quot;" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="#include &quot;DockTabGroup.h&quot;" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="" FontSize="13"/>
+                        <TextBlock Text="int main() {" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="    auto dock = std::make_shared&lt;DockContainer&gt;();" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="    dock-&gt;Split(Orientation::Horizontal, 0.2f, editor);" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="    return 0;" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="}" FontSize="13" Foreground="#333333"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+            <TabItem Header="DockContainer.h" CanClose="True">
+                <Border Background="#FFFFFF" Padding="16">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="#pragma once" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="#include &quot;Panel.h&quot;" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="" FontSize="13"/>
+                        <TextBlock Text="class DockContainer : public Panel {" FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="    // VSCode-like docking container" FontSize="13" Foreground="#757575"/>
+                        <TextBlock Text="};" FontSize="13" Foreground="#333333"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+            <TabItem Header="Readme.md" CanClose="True">
+                <Border Background="#FFFFFF" Padding="16">
+                    <StackPanel Orientation="Vertical" Spacing="8">
+                        <TextBlock Text="# LuaUI Docking System" FontSize="16" FontWeight="Bold" Foreground="#1976D2"/>
+                        <TextBlock Text="A flexible, VSCode-inspired window docking/layout system." FontSize="13" Foreground="#333333"/>
+                        <TextBlock Text="Supports nested splits, tab groups, and proportional sizing." FontSize="13" Foreground="#333333"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </DockTabGroup>
+
+    </DockContainer>
+
+    <!-- Bottom panel -->
+    <DockTabGroup>
+        <TabItem Header="Terminal" IsSelected="True">
+            <Border Background="#1E1E1E" Padding="8">
+                <StackPanel Orientation="Vertical" Spacing="4">
+                    <TextBlock Text="&gt; cmake --build build" FontSize="12" Foreground="#4CAF50"/>
+                    <TextBlock Text="[100%] Built target LuaUI_Controls" FontSize="12" Foreground="#CCCCCC"/>
+                    <TextBlock Text="&gt; ./visual_tests_lua_mvvm.exe &quot;Dock Layout&quot;" FontSize="12" Foreground="#4CAF50"/>
+                    <TextBlock Text="Running Dock Layout Test... OK" FontSize="12" Foreground="#CCCCCC"/>
+                </StackPanel>
+            </Border>
+        </TabItem>
+        <TabItem Header="Output">
+            <Border Background="#FAFAFA" Padding="8">
+                <TextBlock Text="Build output goes here." FontSize="12" Foreground="#616161"/>
+            </Border>
+        </TabItem>
+        <TabItem Header="Problems">
+            <Border Background="#FAFAFA" Padding="8">
+                <TextBlock Text="No problems detected." FontSize="12" Foreground="#616161"/>
+            </Border>
+        </TabItem>
+    </DockTabGroup>
+
+</DockContainer>

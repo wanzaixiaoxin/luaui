@@ -16,6 +16,8 @@
 #include "layouts/WrapPanel.h"
 #include "layouts/Viewbox.h"
 #include "Menu.h"
+#include "DockContainer.h"
+#include "DockTabGroup.h"
 #include <fstream>
 #include "SideBar.h"
 #include "StatusBar.h"
@@ -240,6 +242,11 @@ private:
         
         // Viewbox
         RegisterElement("Viewbox", []() { return std::make_shared<Viewbox>(); });
+
+        // Docking system
+        RegisterElement("DockContainer", []() { return std::make_shared<DockContainer>(); });
+        RegisterElement("DockTabGroup", []() { return std::make_shared<DockTabGroup>(); });
+        RegisterElement("TabItem", []() { return std::make_shared<TabItem>(); });
     }
     
     std::shared_ptr<luaui::Control> LoadElement(const tinyxml2::XMLElement* element) {
@@ -522,26 +529,6 @@ private:
                     }
                 }
             }
-            // Orientation (StackPanel, WrapPanel)
-            else if (name == "Orientation") {
-                if (IsBindingExpression(value)) {
-                    RecordDeferredBinding(control, "Orientation", value);
-                } else {
-                    if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
-                        if (value == "Horizontal") {
-                            stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
-                        } else if (value == "Vertical") {
-                            stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
-                        }
-                    } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
-                        if (value == "Horizontal") {
-                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Horizontal);
-                        } else if (value == "Vertical") {
-                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Vertical);
-                        }
-                    }
-                }
-            }
             // ItemWidth/ItemHeight (WrapPanel)
             else if (name == "ItemWidth") {
                 float width;
@@ -768,11 +755,25 @@ private:
                     }
                 }
             }
-            // Header (MenuItem, Menu)
+            // Header (MenuItem, Menu, TabItem)
             else if (name == "Header") {
                 std::wstring wval = Utf8ToW(value);
                 if (auto menuItem = std::dynamic_pointer_cast<controls::MenuItem>(control)) {
                     menuItem->SetHeader(wval);
+                } else if (auto tabItem = std::dynamic_pointer_cast<controls::TabItem>(control)) {
+                    tabItem->SetHeader(wval);
+                }
+            }
+            // CanClose (TabItem)
+            else if (name == "CanClose") {
+                if (auto tabItem = std::dynamic_pointer_cast<controls::TabItem>(control)) {
+                    tabItem->SetCanClose(value == "True" || value == "true" || value == "1");
+                }
+            }
+            // IsSelected (TabItem)
+            else if (name == "IsSelected") {
+                if (auto tabItem = std::dynamic_pointer_cast<controls::TabItem>(control)) {
+                    tabItem->SetIsSelected(value == "True" || value == "true" || value == "1");
                 }
             }
             // InputGestureText (MenuItem)
@@ -933,6 +934,48 @@ private:
                     controls::DockPanel::SetDock(control, controls::Dock::Right);
                 } else if (value == "Bottom") {
                     controls::DockPanel::SetDock(control, controls::Dock::Bottom);
+                }
+            }
+            // DockContainer properties
+            else if (name == "Orientation") {
+                if (IsBindingExpression(value)) {
+                    RecordDeferredBinding(control, "Orientation", value);
+                } else {
+                    if (auto dock = std::dynamic_pointer_cast<controls::DockContainer>(control)) {
+                        if (value == "Horizontal") {
+                            dock->SetOrientation(controls::DockContainer::Orientation::Horizontal);
+                        } else if (value == "Vertical") {
+                            dock->SetOrientation(controls::DockContainer::Orientation::Vertical);
+                        }
+                    } else if (auto stack = std::dynamic_pointer_cast<controls::StackPanel>(control)) {
+                        if (value == "Horizontal") {
+                            stack->SetOrientation(controls::StackPanel::Orientation::Horizontal);
+                        } else if (value == "Vertical") {
+                            stack->SetOrientation(controls::StackPanel::Orientation::Vertical);
+                        }
+                    } else if (auto wrapPanel = std::dynamic_pointer_cast<controls::WrapPanel>(control)) {
+                        if (value == "Horizontal") {
+                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Horizontal);
+                        } else if (value == "Vertical") {
+                            wrapPanel->SetOrientation(controls::WrapPanel::Orientation::Vertical);
+                        }
+                    }
+                }
+            }
+            else if (name == "SplitterPosition") {
+                float pos;
+                if (TypeConverter::ToFloat(value, pos)) {
+                    if (auto dock = std::dynamic_pointer_cast<controls::DockContainer>(control)) {
+                        dock->SetSplitterPosition(pos);
+                    }
+                }
+            }
+            else if (name == "SplitterThickness") {
+                float thickness;
+                if (TypeConverter::ToFloat(value, thickness)) {
+                    if (auto dock = std::dynamic_pointer_cast<controls::DockContainer>(control)) {
+                        dock->SetSplitterThickness(thickness);
+                    }
                 }
             }
             // Click event: Click="SomeCommand" or Click="{Binding SomeCommand}"
@@ -1134,6 +1177,27 @@ private:
                     auto item = std::make_shared<StatusBarItem>();
                     ApplyAttributes(item, childElem);
                     statusBar->AddItem(item);
+                }
+            }
+            return;
+        }
+
+        // TabControl / DockTabGroup: 子元素为 TabItem
+        if (auto tabControl = std::dynamic_pointer_cast<controls::TabControl>(parent)) {
+            for (const auto* childElem = element->FirstChildElement(); childElem;
+                 childElem = childElem->NextSiblingElement()) {
+                std::string tag = childElem->Name();
+                if (tag == "TabItem") {
+                    auto item = std::make_shared<TabItem>();
+                    ApplyAttributes(item, childElem);
+                    // TabItem 的第一个子元素作为内容
+                    if (const auto* contentElem = childElem->FirstChildElement()) {
+                        auto content = LoadElement(contentElem);
+                        if (content) {
+                            item->SetContent(content);
+                        }
+                    }
+                    tabControl->AddTab(item);
                 }
             }
             return;

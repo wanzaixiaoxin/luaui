@@ -55,10 +55,10 @@ public:
     std::shared_ptr<interfaces::IControl> GetChild(size_t index) const override;
     const std::vector<std::shared_ptr<interfaces::IControl>>& GetChildren() const { return m_children; }
     
-    void AddChild(const std::shared_ptr<interfaces::IControl>& child);
-    void RemoveChild(const std::shared_ptr<interfaces::IControl>& child);
+    virtual void AddChild(const std::shared_ptr<interfaces::IControl>& child);
+    virtual void RemoveChild(const std::shared_ptr<interfaces::IControl>& child);
     void RemoveChildAt(size_t index);
-    void ClearChildren();
+    virtual void ClearChildren();
     void InsertChild(size_t index, const std::shared_ptr<interfaces::IControl>& child);
 
 protected:

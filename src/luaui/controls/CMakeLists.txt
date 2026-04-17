@@ -31,6 +31,10 @@ add_library(LuaUI_Controls STATIC
     DatePicker.h
     TabControl.cpp
     TabControl.h
+    DockContainer.cpp
+    DockContainer.h
+    DockTabGroup.cpp
+    DockTabGroup.h
     Dialog.cpp
     Dialog.h
     Menu.cpp
